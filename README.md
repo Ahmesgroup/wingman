@@ -4,24 +4,49 @@ Interactive prototype for **Wingman** — a quiet, privacy-first protocol that t
 
 Open [`index.html`](index.html) in a browser (no build step).
 
-## Design principle
+## Semantic Color Contract
 
-Colors encode **state**, not decoration. The brain should read the screen in under a second.
+> **A color never represents an action; it always represents a state. An action is carried by shape, hierarchy, or animation.**
 
-| State | Color | Hex | Shape |
+| Color | Hex | Meaning only | Never |
 | --- | --- | --- | --- |
-| Available | Emerald | `#10B981` | ● Circle |
-| Busy soon | Amber | `#F59E0B` | ▲ Triangle |
-| Unavailable | Red | `#EF4444` | ● Circle |
-| Signal sent | Blue | `#3B82F6` | ◉ Circle + ring |
-| Mutual match | Violet | `#8B5CF6` | ◆ Diamond |
-| Mission active | Orange | `#FB923C` | ⬢ Hexagon |
-| Invisible | Gray | `#6B7280` | — |
-| Offline | Dark gray | `#374151` | ○ Empty circle |
+| Emerald | `#10B981` | Available | Validate / success CTA |
+| Amber | `#F59E0B` | Busy soon | Generic warning chrome |
+| Red | `#EF4444` | Unavailable / danger / critical error | Notifications, badges, CTAs |
+| Blue | `#3B82F6` | Interaction (signal) | Primary button |
+| Violet | `#8B5CF6` | Mutual match | Decoration, brand chrome |
+| Orange | `#FB923C` | Mission active | Graphic accent |
+| Turquoise | `#22D3EE` | Wingman system (radar, GPS, scan, AI) | User presence |
+| Gray | `#6B7280` / `#374151` | Invisible / offline | — |
 
-**Available** intensity uses one green with opacity (`100%` / `80%` / `60%`) — never multiple greens.
+### Signal direction (same blue, different fill)
 
-Surfaces: background `#0B1020`, cards `#171F35`, borders `rgba(255,255,255,.05)`, text `#FFFFFF` / `#AAB2C8` / `#6B7280`.
+| State | Glyph | Treatment |
+| --- | --- | --- |
+| Signal sent | ◉ | Blue **filled** |
+| Signal received | ◎ | Blue **outline** |
+
+### Radar shapes
+
+| State | Shape | Color |
+| --- | --- | --- |
+| Available | ● | Emerald |
+| Busy | ▲ | Amber |
+| Unavailable | ■ | Red |
+| Signal sent | ◉ | Blue filled |
+| Signal received | ◎ | Blue outline |
+| Match | ◆ | Violet |
+| Mission | ⬢ | Orange (slow breath 100%↔96% / 3s) |
+| Invisible | ○ | Gray |
+| Offline | ✕ | Dark gray |
+
+### Notifications
+
+Blue = signals · Violet = match · Orange = mission. **Never red.**
+
+### Surfaces
+
+Background `#0B1020` · Cards `#171F35` · Borders `rgba(255,255,255,.05)` · Text `#FFFFFF` / `#AAB2C8` / `#6B7280` · CTAs use hierarchy (`#F7F8FC`), not state colors.
 
 Canonical tokens: [`design/design-tokens.json`](design/design-tokens.json).
 

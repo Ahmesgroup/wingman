@@ -9,7 +9,7 @@
 <style>
 /* ============================================================================
    Wingman Interactive Prototype — styles.css
-   State-first identity: every color maps to one presence/action meaning.
+   Semantic Color Contract: color = state only; actions use hierarchy/shape/motion.
    Tokens mirror design/design-tokens.json.
    ========================================================================== */
 :root{
@@ -18,22 +18,23 @@
   --card:#171F35; --elevated:#1D2740; --map-el:#161E31; --map-border:#202A40;
   --border:rgba(255,255,255,.05);
   --night:#0B1020;
-  /* Presence / connection states — one color, one meaning */
-  --state-available:#10B981; --state-available-hover:#059669; --glow-available:rgba(16,185,129,.25);
+  /* Human / connection states — never used as CTA fills */
+  --state-available:#10B981; --glow-available:rgba(16,185,129,.25);
   --state-busy:#F59E0B; --glow-busy:rgba(245,158,11,.25);
   --state-unavailable:#EF4444; --glow-unavailable:rgba(239,68,68,.25);
   --state-signal:#3B82F6; --glow-signal:rgba(59,130,246,.30);
   --state-match:#8B5CF6; --glow-match:rgba(139,92,246,.30);
   --state-mission:#FB923C; --glow-mission:rgba(251,146,60,.28);
   --state-invisible:#6B7280; --state-offline:#374151;
-  /* Intensity of Available (same hue, opacity) */
+  /* System Wingman — never a user presence state */
+  --system:#22D3EE; --glow-system:rgba(34,211,238,.28);
   --intensity-full:1; --intensity-long:.8; --intensity-leaving:.6;
-  /* Brand uses Match violet (fusion / “you”) — never reused for presence */
-  --wingman:var(--state-match); --air:#C4B5FD;
+  /* Actions are hierarchical, not colored by state */
+  --cta:#F7F8FC; --cta-text:#0B1020;
   --t-primary:#FFFFFF; --t-secondary:#AAB2C8; --t-muted:#6B7280; --t-disabled:#4B5563;
-  --success:var(--state-available); --warning:var(--state-busy); --error:var(--state-unavailable); --info:var(--state-signal);
+  --error:var(--state-unavailable);
   --r-sm:10px; --r-badge:12px; --r-btn:18px; --r-card:24px; --r-modal:28px;
-  --d-fast:180ms; --d-normal:280ms; --d-slow:500ms; --d-emotional:900ms;
+  --d-fast:180ms; --d-normal:280ms; --d-slow:500ms; --d-emotional:900ms; --d-breath:3000ms;
   --ease:cubic-bezier(.2,0,0,1); --ease-in:cubic-bezier(0,0,.2,1); --ease-out:cubic-bezier(.4,0,1,1);
   --font-ui:'Manrope',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   --font-display:'Sora',var(--font-ui);
@@ -48,18 +49,18 @@ body{
   min-height:100vh;padding:20px 12px;
 }
 button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
-button:focus-visible,[tabindex]:focus-visible,.dot:focus-visible{outline:2px solid var(--air);outline-offset:2px;border-radius:6px}
+button:focus-visible,[tabindex]:focus-visible,.dot:focus-visible{outline:2px solid var(--system);outline-offset:2px;border-radius:6px}
 
 /* ---- phone frame ---- */
 .stage{width:100%;max-width:440px}
 .top-controls{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:8px;flex-wrap:wrap}
-.brand-tag{font-family:var(--font-display);font-size:12px;letter-spacing:2px;color:var(--air);text-transform:uppercase;opacity:.8}
+.brand-tag{font-family:var(--font-display);font-size:12px;letter-spacing:2px;color:var(--system);text-transform:uppercase;opacity:.8}
 .control-group{display:flex;gap:6px}
 .chip{padding:5px 12px;border:1px solid var(--border);border-radius:var(--r-badge);font-size:11px;color:var(--t-secondary);background:var(--card);transition:var(--d-fast) var(--ease)}
-.chip[aria-pressed="true"]{background:var(--wingman);color:#fff;border-color:var(--wingman)}
-.chip.lang[aria-pressed="true"]{background:var(--air);color:var(--night)}
+.chip[aria-pressed="true"]{background:var(--cta);color:var(--cta-text);border-color:var(--cta)}
+.chip.lang[aria-pressed="true"]{background:var(--system);color:var(--night)}
 
-.phone{background:#03060e;border-radius:44px;padding:8px;box-shadow:0 40px 90px rgba(0,0,0,.6),0 0 0 1px rgba(139,92,246,.14)}
+.phone{background:#03060e;border-radius:44px;padding:8px;box-shadow:0 40px 90px rgba(0,0,0,.6),0 0 0 1px rgba(34,211,238,.14)}
 .notch{width:130px;height:24px;background:#03060e;border-radius:0 0 16px 16px;margin:0 auto -24px;position:relative;z-index:30}
 .screen{position:relative;background:var(--bg-primary);border-radius:36px;overflow:hidden;height:720px}
 
@@ -70,10 +71,10 @@ button:focus-visible,[tabindex]:focus-visible,.dot:focus-visible{outline:2px sol
 @keyframes fade{from{opacity:0}to{opacity:1}}
 
 .statusbar{display:flex;justify-content:space-between;padding:20px 22px 6px;font-size:12px;color:var(--t-muted)}
-.statusbar .time{color:var(--air);font-weight:700}
+.statusbar .time{color:var(--system);font-weight:700}
 .topbar{padding:6px 22px 14px;text-align:center;position:relative}
 .logo{font-family:var(--font-display);font-weight:800;letter-spacing:3px;font-size:20px}
-.logo b{color:var(--wingman)}
+.logo b{color:var(--system)}
 .subtitle{font-size:11px;color:var(--t-muted);margin-top:3px}
 .body{flex:1;overflow-y:auto;padding:0 20px 96px}
 .body::-webkit-scrollbar{width:0}
@@ -85,41 +86,40 @@ p.lead{color:var(--t-secondary);font-size:14px;line-height:1.5}
 .muted{color:var(--t-muted)}
 .small{font-size:12px}
 
-/* ---- buttons ---- */
+/* ---- buttons (hierarchy only — never state colors as CTA fills) ---- */
 .btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:15px;border-radius:var(--r-btn);font-weight:700;font-size:15px;transition:transform var(--d-fast) var(--ease),box-shadow var(--d-fast) var(--ease)}
 .btn:active{transform:scale(.98)}
-.btn-primary{background:var(--state-available);color:#fff;box-shadow:0 8px 24px var(--glow-available)}
-.btn-primary:hover{background:var(--state-available-hover)}
+.btn-primary{background:var(--cta);color:var(--cta-text);box-shadow:0 8px 24px rgba(247,248,252,.12)}
 .btn-secondary{background:var(--elevated);color:var(--t-primary);border:1px solid var(--border)}
 .btn-ghost{background:transparent;color:var(--t-secondary);border:1px solid var(--border)}
-.btn-signal{background:var(--state-signal);color:#fff;box-shadow:0 8px 24px var(--glow-signal)}
-.btn-match{background:var(--state-match);color:#fff;box-shadow:0 8px 24px var(--glow-match)}
-.btn-mission{background:var(--state-mission);color:#fff;box-shadow:0 8px 24px var(--glow-mission)}
-.btn-love{background:var(--state-match);color:#fff;box-shadow:0 8px 24px var(--glow-match)}
 .btn-row{display:flex;gap:10px;margin-top:12px}
 .btn-row .btn{margin-top:0}
 
 /* ---- cards ---- */
 .card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-card);padding:16px;margin-bottom:12px}
 .card.elevated{background:var(--elevated)}
-.eyebrow{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--air);font-weight:700}
+.eyebrow{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--system);font-weight:700}
 
 /* ---- bottom nav ---- */
 .nav{position:absolute;bottom:0;left:0;right:0;background:rgba(11,16,32,.92);backdrop-filter:blur(12px);border-top:1px solid var(--border);display:flex;justify-content:space-around;padding:10px 0 14px}
-.nav button{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:9px;color:var(--t-muted);opacity:.7;transition:var(--d-fast) var(--ease)}
-.nav button .ico{width:22px;height:22px;stroke:var(--air);fill:none;stroke-width:1.7}
+.nav button{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:9px;color:var(--t-muted);opacity:.7;transition:var(--d-fast) var(--ease);position:relative}
+.nav button .ico{width:22px;height:22px;stroke:var(--system);fill:none;stroke-width:1.7}
 .nav button[aria-current="page"]{opacity:1;color:var(--t-secondary)}
-.nav button[aria-current="page"] .ico{filter:drop-shadow(0 0 6px var(--glow-signal))}
+.nav button[aria-current="page"] .ico{filter:drop-shadow(0 0 6px var(--glow-system))}
+.nav .notif{position:absolute;top:-2px;right:calc(50% - 18px);min-width:16px;height:16px;padding:0 4px;border-radius:999px;font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center;color:#fff}
+.nav .notif.signal{background:var(--state-signal)}
+.nav .notif.match{background:var(--state-match)}
+.nav .notif.mission{background:var(--state-mission)}
 
 /* ---- onboarding dots ---- */
 .dots{display:flex;gap:6px;justify-content:center;margin:16px 0}
 .dots i{width:7px;height:7px;border-radius:50%;background:var(--border)}
-.dots i.on{background:var(--wingman);width:20px;border-radius:4px;transition:var(--d-normal) var(--ease)}
+.dots i.on{background:var(--system);width:20px;border-radius:4px;transition:var(--d-normal) var(--ease)}
 
 /* ---- OTP ---- */
 .otp{display:flex;gap:8px;justify-content:center;margin:20px 0}
 .otp input{width:42px;height:52px;text-align:center;font-size:22px;font-weight:700;background:var(--card);border:1px solid var(--border);border-radius:var(--r-sm);color:var(--t-primary)}
-.otp input:focus{border-color:var(--wingman);outline:none}
+.otp input:focus{border-color:var(--system);outline:none}
 
 /* ---- form fields ---- */
 .field{margin-bottom:14px}
@@ -127,7 +127,7 @@ p.lead{color:var(--t-secondary);font-size:14px;line-height:1.5}
 .field input,.field select,.field textarea{width:100%;background:var(--card);border:1px solid var(--border);border-radius:var(--r-sm);padding:12px;color:var(--t-primary);font-size:14px;font-family:inherit}
 .pillset{display:flex;flex-wrap:wrap;gap:8px}
 .pill{padding:8px 12px;border-radius:var(--r-badge);border:1px solid var(--border);background:var(--card);font-size:13px;color:var(--t-secondary)}
-.pill[aria-pressed="true"]{background:var(--wingman);color:#fff;border-color:var(--wingman)}
+.pill[aria-pressed="true"]{background:var(--cta);color:var(--cta-text);border-color:var(--cta)}
 
 /* ---- consent ---- */
 .consent-item{display:flex;gap:12px;align-items:flex-start;padding:12px;border:1px solid var(--border);border-radius:var(--r-sm);margin-bottom:10px;background:var(--card)}
@@ -136,7 +136,7 @@ p.lead{color:var(--t-secondary);font-size:14px;line-height:1.5}
 .consent-item .txt p{font-size:11px;color:var(--t-muted);margin-top:2px}
 .switch{width:44px;height:26px;border-radius:999px;background:var(--border);position:relative;flex-shrink:0;transition:var(--d-fast) var(--ease)}
 .switch::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:var(--d-fast) var(--ease)}
-.switch[aria-checked="true"]{background:var(--wingman)}
+.switch[aria-checked="true"]{background:var(--system)}
 .switch[aria-checked="true"]::after{left:21px}
 .consent-required{opacity:.6}
 
@@ -144,20 +144,25 @@ p.lead{color:var(--t-secondary);font-size:14px;line-height:1.5}
 .radar-shell{position:relative;background:var(--bg-radar)}
 #radar-canvas{display:block;width:100%;height:340px}
 .radar-hud{position:absolute;top:12px;left:0;right:0;display:flex;justify-content:space-between;padding:0 16px;pointer-events:none}
-.radar-state{font-size:11px;font-weight:700;padding:5px 12px;border-radius:999px;background:rgba(16,185,129,.16);color:var(--state-available);pointer-events:auto}
+.radar-state{font-size:11px;font-weight:700;padding:5px 12px;border-radius:999px;background:rgba(34,211,238,.14);color:var(--system);pointer-events:auto}
 .radar-state.invisible{background:rgba(107,114,128,.14);color:var(--state-invisible)}
 .radar-distance{align-self:flex-end;position:absolute;bottom:12px;left:16px;font-size:12px;color:var(--t-muted)}
-.radar-toggle{position:absolute;bottom:12px;right:14px;padding:8px 14px;border-radius:999px;background:var(--state-available);color:#fff;font-size:12px;font-weight:700;box-shadow:0 6px 18px var(--glow-available)}
+.radar-toggle{position:absolute;bottom:12px;right:14px;padding:8px 14px;border-radius:999px;background:var(--system);color:var(--night);font-size:12px;font-weight:700;box-shadow:0 6px 18px var(--glow-system)}
 .radar-toggle.off{background:var(--elevated);color:var(--t-secondary);box-shadow:none;border:1px solid var(--border)}
-.state-legend{display:flex;gap:12px;padding:12px 4px 4px;flex-wrap:wrap}
-.state-legend .li{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--t-secondary)}
-.state-legend .sw{width:12px;height:12px;display:inline-flex;align-items:center;justify-content:center;font-size:10px;line-height:1}
+.state-legend{display:flex;gap:10px;padding:12px 4px 4px;flex-wrap:wrap}
+.state-legend .li{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--t-secondary)}
+.state-legend .sw{width:12px;height:12px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
 .state-legend .sw.circle{width:10px;height:10px;border-radius:50%;background:var(--state-available)}
-.state-legend .sw.ring{width:10px;height:10px;border-radius:50%;border:2px solid var(--state-signal);background:transparent;box-sizing:border-box}
-.state-legend .sw.diamond{width:9px;height:9px;background:var(--state-match);transform:rotate(45deg);border-radius:1px}
-.state-legend .sw.hex{width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:10px solid var(--state-mission);position:relative;background:transparent}
 .state-legend .sw.triangle{width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:10px solid var(--state-busy);background:transparent}
-.state-legend .sw.empty{width:10px;height:10px;border-radius:50%;border:1.5px solid var(--state-offline);background:transparent;box-sizing:border-box}
+.state-legend .sw.square{width:9px;height:9px;background:var(--state-unavailable);border-radius:1px}
+.state-legend .sw.sent{width:10px;height:10px;border-radius:50%;background:var(--state-signal);box-shadow:0 0 0 2px var(--bg-primary),0 0 0 3.5px var(--state-signal)}
+.state-legend .sw.received{width:10px;height:10px;border-radius:50%;border:2px solid var(--state-signal);background:transparent;box-sizing:border-box}
+.state-legend .sw.diamond{width:9px;height:9px;background:var(--state-match);transform:rotate(45deg);border-radius:1px}
+.state-legend .sw.hex{color:var(--state-mission);font-size:11px;line-height:1}
+.state-legend .sw.hex::before{content:"⬢"}
+.state-legend .sw.empty{width:10px;height:10px;border-radius:50%;border:1.5px solid var(--state-invisible);background:transparent;box-sizing:border-box}
+.state-legend .sw.cross{color:var(--state-offline);font-size:11px;line-height:1;font-weight:700}
+.state-legend .sw.cross::before{content:"✕"}
 
 .stat-row{display:flex;gap:10px;margin:6px 0 4px}
 .stat{flex:1;background:var(--card);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px;text-align:center}
@@ -170,12 +175,13 @@ p.lead{color:var(--t-secondary);font-size:14px;line-height:1.5}
 .state-btn .swatch{width:22px;height:22px;margin:0 auto 6px;display:flex;align-items:center;justify-content:center}
 .state-btn .swatch.circle{border-radius:50%;background:var(--state-available)}
 .state-btn .swatch.triangle{width:0;height:0;border-left:11px solid transparent;border-right:11px solid transparent;border-bottom:18px solid var(--state-busy);background:transparent}
-.state-btn .swatch.unavailable{border-radius:50%;background:var(--state-unavailable)}
+.state-btn .swatch.unavailable{width:18px;height:18px;border-radius:2px;background:var(--state-unavailable)}
 .state-btn small{display:block;font-size:10px;color:var(--t-muted)}
 .state-btn b{font-size:12px}
-.state-btn[aria-pressed="true"]{border-color:var(--state-available);background:var(--elevated);box-shadow:0 0 0 1px var(--glow-available)}
-.state-btn[data-state="BUSY"][aria-pressed="true"]{border-color:var(--state-busy);box-shadow:0 0 0 1px var(--glow-busy)}
-.state-btn[data-state="UNAVAILABLE"][aria-pressed="true"]{border-color:var(--state-unavailable);box-shadow:0 0 0 1px var(--glow-unavailable)}
+.state-btn[aria-pressed="true"]{border-color:rgba(255,255,255,.2);background:var(--elevated);box-shadow:0 0 0 1px rgba(255,255,255,.06)}
+.state-btn[data-state="AVAILABLE"][aria-pressed="true"]{border-color:var(--state-available)}
+.state-btn[data-state="BUSY"][aria-pressed="true"]{border-color:var(--state-busy)}
+.state-btn[data-state="UNAVAILABLE"][aria-pressed="true"]{border-color:var(--state-unavailable)}
 
 /* anonymous profile card (bottom sheet) */
 .sheet{position:absolute;left:0;right:0;bottom:0;transform:translateY(100%);transition:transform var(--d-slow) var(--ease);z-index:20}
@@ -187,33 +193,33 @@ p.lead{color:var(--t-secondary);font-size:14px;line-height:1.5}
 .sheet .age{font-family:var(--font-display);font-size:22px;font-weight:700;margin:4px 0}
 .sheet .bio{color:var(--t-secondary);font-size:14px;margin-bottom:10px}
 .tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
-.tags span{font-size:11px;padding:4px 9px;border-radius:var(--r-badge);background:rgba(59,130,246,.14);color:var(--state-signal)}
+.tags span{font-size:11px;padding:4px 9px;border-radius:var(--r-badge);background:rgba(255,255,255,.06);color:var(--t-secondary)}
 
 /* signal received list */
 .sig{display:flex;gap:12px;align-items:center;background:var(--card);border:1px solid var(--border);border-radius:var(--r-card);padding:14px;margin-bottom:12px}
-.sig .glyph{width:44px;height:44px;border-radius:50%;background:var(--elevated);display:flex;align-items:center;justify-content:center;color:var(--air);font-weight:800;flex-shrink:0}
+.sig .glyph{width:44px;height:44px;border-radius:50%;background:transparent;border:2px solid var(--state-signal);display:flex;align-items:center;justify-content:center;color:var(--state-signal);font-weight:800;flex-shrink:0;box-sizing:border-box}
 .sig .info{flex:1}
 .sig .info b{font-size:14px}
 .sig .info p{font-size:12px;color:var(--t-muted)}
-.sig .info .exp{color:var(--info);font-size:11px}
+.sig .info .exp{color:var(--state-signal);font-size:11px}
 .sig .info .exp.gone{color:var(--t-disabled)}
 
 /* selfie exchange */
 .selfie-stage{background:#04060d;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center}
 .timer-text{font-family:var(--font-display);font-size:34px;font-weight:700;letter-spacing:1px}
 .selfie-frame{width:220px;height:260px;border-radius:var(--r-card);background:linear-gradient(160deg,#141b33,#0c1122);border:1px solid var(--map-border);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;margin:18px 0;position:relative;overflow:hidden}
-.selfie-frame .cam{width:52px;height:52px;stroke:var(--air);fill:none;stroke-width:1.6}
-.selfie-frame .stamp{position:absolute;bottom:10px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--air);opacity:.85}
+.selfie-frame .cam{width:52px;height:52px;stroke:var(--system);fill:none;stroke-width:1.6}
+.selfie-frame .stamp{position:absolute;bottom:10px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--system);opacity:.85}
 .selfie-badges{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:16px}
 .badge{font-size:11px;padding:5px 10px;border-radius:999px;display:flex;align-items:center;gap:5px}
-.badge.ok{background:rgba(16,185,129,.12);color:var(--state-available)}
+.badge.ok{background:rgba(34,211,238,.12);color:var(--system)}
 .badge.no{background:rgba(239,68,68,.1);color:var(--state-unavailable)}
 .timer-bar{width:100%;height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:6px}
-.timer-bar i{display:block;height:100%;background:var(--state-available);transition:width 1s linear,background var(--d-normal) var(--ease)}
+.timer-bar i{display:block;height:100%;background:var(--system);transition:width 1s linear,background var(--d-normal) var(--ease)}
 .selfie-actions{display:flex;gap:12px;width:100%;max-width:320px}
 /* Refinement 1: secondary action is quiet — no red, no X, no rejection signal */
 .act-secondary{flex:1;padding:14px;border-radius:var(--r-btn);background:transparent;border:1px solid var(--border);color:var(--t-muted);font-weight:600}
-.act-primary{flex:1;padding:14px;border-radius:var(--r-btn);background:var(--state-signal);color:#fff;font-weight:700;box-shadow:0 6px 18px var(--glow-signal)}
+.act-primary{flex:1;padding:14px;border-radius:var(--r-btn);background:var(--cta);color:var(--cta-text);font-weight:700;box-shadow:0 8px 24px rgba(247,248,252,.12)}
 
 /* mutual validation / confirmed */
 .confirm-stage{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;position:relative;overflow:hidden}
@@ -227,7 +233,7 @@ p.lead{color:var(--t-secondary);font-size:14px;line-height:1.5}
 .reduce-motion .halo{animation:none!important}
 .reduce-motion .confirm-stage.fused .halo.left{left:calc(50% - 70px)}
 .reduce-motion .confirm-stage.fused .halo.right{right:calc(50% - 70px)}
-.confirm-title{font-family:var(--font-display);font-size:26px;font-weight:700;position:relative;z-index:2;opacity:0}
+.confirm-title{font-family:var(--font-display);font-size:26px;font-weight:700;position:relative;z-index:2;opacity:0;color:var(--state-match)}
 .confirm-stage.fused .confirm-title{animation:rise var(--d-slow) var(--ease) .5s forwards}
 .reduce-motion .confirm-stage.fused .confirm-title{animation:none;opacity:1}
 @keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
@@ -235,33 +241,35 @@ p.lead{color:var(--t-secondary);font-size:14px;line-height:1.5}
 /* mission meet */
 .chat{flex:1;display:flex;flex-direction:column;padding:14px 18px}
 .chat-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.chat-obj{font-size:12px;color:var(--air);font-weight:600}
+.chat-obj{font-size:12px;color:var(--state-mission);font-weight:600}
 .chat-log{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:8px 0}
 .msg{max-width:78%;padding:10px 13px;border-radius:16px;font-size:13px;line-height:1.4}
 .msg.them{align-self:flex-start;background:var(--card);border:1px solid var(--border)}
-.msg.me{align-self:flex-end;background:var(--state-mission);color:#fff}
+.msg.me{align-self:flex-end;background:var(--elevated);color:var(--t-primary);border:1px solid var(--border)}
 .msg.blocked{align-self:center;background:rgba(239,68,68,.1);color:var(--state-unavailable);font-size:11px;border:1px solid rgba(239,68,68,.25)}
 .chat-input{display:flex;gap:8px;margin-top:8px}
 .chat-input input{flex:1;background:var(--card);border:1px solid var(--border);border-radius:999px;padding:12px 16px;color:var(--t-primary);font-size:13px}
-.chat-input button{width:44px;height:44px;border-radius:50%;background:var(--wingman);display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0}
+.chat-input button{width:44px;height:44px;border-radius:50%;background:var(--cta);display:flex;align-items:center;justify-content:center;color:var(--cta-text);flex-shrink:0}
 .chat-note{font-size:10px;color:var(--t-muted);text-align:center;margin-top:6px}
 
 /* mission mode */
 .mission-mode{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px;text-align:center;gap:14px}
-.mm-ring{width:96px;height:96px;border-radius:50%;border:2px solid var(--wingman);display:flex;align-items:center;justify-content:center;box-shadow:0 0 30px var(--glow-signal)}
-.mm-ring svg{width:40px;height:40px;stroke:var(--air);fill:none;stroke-width:1.6}
+.mm-ring{width:96px;height:96px;border-radius:50%;border:2px solid var(--state-mission);display:flex;align-items:center;justify-content:center;box-shadow:0 0 30px var(--glow-mission);animation:missionBreath var(--d-breath) ease-in-out infinite}
+.mm-ring svg{width:40px;height:40px;stroke:var(--state-mission);fill:none;stroke-width:1.6}
+@keyframes missionBreath{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.96;transform:scale(.98)}}
+.reduce-motion .mm-ring{animation:none}
 
 /* cooldown */
 .cooldown{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px;text-align:center;gap:14px}
 .cd-num{font-family:var(--font-display);font-size:52px;font-weight:700}
-.pill-badge{background:rgba(64,211,156,.12);color:var(--success);padding:8px 16px;border-radius:999px;font-size:13px;font-weight:600}
+.pill-badge{background:rgba(34,211,238,.12);color:var(--system);padding:8px 16px;border-radius:999px;font-size:13px;font-weight:600}
 
 /* destiny */
-.destiny{background:linear-gradient(140deg,#141a33,#1a1533);border:1px solid rgba(139,92,246,.35)}
-.destiny .eyebrow{color:var(--state-match)}
+.destiny{background:linear-gradient(140deg,#141a33,#0f1a22);border:1px solid rgba(34,211,238,.35)}
+.destiny .eyebrow{color:var(--system)}
 
 /* pulse */
-.pulse-map{height:170px;border-radius:var(--r-card);position:relative;overflow:hidden;background:radial-gradient(circle at 32% 40%,rgba(16,185,129,.45),transparent 26%),radial-gradient(circle at 68% 62%,rgba(245,158,11,.4),transparent 24%),radial-gradient(circle at 50% 82%,rgba(139,92,246,.35),transparent 22%),var(--map-el);display:flex;align-items:flex-end;padding:14px}
+.pulse-map{height:170px;border-radius:var(--r-card);position:relative;overflow:hidden;background:radial-gradient(circle at 32% 40%,rgba(16,185,129,.45),transparent 26%),radial-gradient(circle at 68% 62%,rgba(245,158,11,.4),transparent 24%),radial-gradient(circle at 50% 82%,rgba(34,211,238,.35),transparent 22%),var(--map-el);display:flex;align-items:flex-end;padding:14px}
 .pzone{display:flex;gap:12px;align-items:center;background:var(--card);border:1px solid var(--border);border-radius:var(--r-card);padding:12px;margin-bottom:10px}
 .pzone .lvl{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px}
 .pzone .z{flex:1}
@@ -271,24 +279,24 @@ p.lead{color:var(--t-secondary);font-size:14px;line-height:1.5}
 
 /* paywall */
 .tier{border:1px solid var(--border);border-radius:var(--r-card);padding:16px;margin-bottom:12px;background:var(--card)}
-.tier.pro{border:2px solid var(--state-match);background:linear-gradient(180deg,rgba(139,92,246,.06),var(--card))}
+.tier.pro{border:2px solid var(--system);background:linear-gradient(180deg,rgba(34,211,238,.06),var(--card))}
 .tier .th{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
 .tier .tn{font-size:16px;font-weight:800}
-.tier .tp{font-family:var(--font-display);font-weight:700;color:var(--air)}
+.tier .tp{font-family:var(--font-display);font-weight:700;color:var(--system)}
 .feat{display:flex;gap:9px;align-items:center;font-size:13px;padding:4px 0}
-.feat .ck{width:16px;height:16px;stroke:var(--success);fill:none;stroke-width:2.2}
-.tag-reco{display:inline-block;background:var(--wingman);color:#fff;font-size:10px;font-weight:800;padding:3px 9px;border-radius:8px;margin-bottom:8px;letter-spacing:.5px}
+.feat .ck{width:16px;height:16px;stroke:var(--system);fill:none;stroke-width:2.2}
+.tag-reco{display:inline-block;background:var(--cta);color:var(--cta-text);font-size:10px;font-weight:800;padding:3px 9px;border-radius:8px;margin-bottom:8px;letter-spacing:.5px}
 
 /* settings / privacy */
 .row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);font-size:13px}
 .row:last-child{border-bottom:none}
 .row .v{color:var(--t-muted)}
-.row .v.ok{color:var(--success)}
+.row .v.ok{color:var(--system)}
 .row .v.no{color:var(--error)}
 
 /* report flow */
 .report-opt{width:100%;text-align:left;padding:14px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--card);margin-bottom:8px;font-size:13px}
-.report-opt:active{border-color:var(--wingman)}
+.report-opt:active{border-color:var(--system)}
 
 /* admin preview */
 .admin{background:var(--bg-secondary)}
@@ -466,10 +474,13 @@ p.lead{color:var(--t-secondary);font-size:14px;line-height:1.5}
             <div class="state-legend">
               <span class="li"><span class="sw circle"></span><span data-i18n="state_available">Available</span></span>
               <span class="li"><span class="sw triangle"></span><span data-i18n="state_busy">Busy soon</span></span>
-              <span class="li"><span class="sw ring"></span><span data-i18n="state_signal">Signal sent</span></span>
+              <span class="li"><span class="sw square"></span><span data-i18n="state_unavailable">Unavailable</span></span>
+              <span class="li"><span class="sw sent"></span><span data-i18n="state_signal_sent">Signal sent</span></span>
+              <span class="li"><span class="sw received"></span><span data-i18n="state_signal_received">Signal received</span></span>
               <span class="li"><span class="sw diamond"></span><span data-i18n="state_match">Match</span></span>
               <span class="li"><span class="sw hex" title="Mission"></span><span data-i18n="state_mission">Mission</span></span>
-              <span class="li"><span class="sw empty"></span><span data-i18n="state_offline">Offline</span></span>
+              <span class="li"><span class="sw empty"></span><span data-i18n="state_invisible">Invisible</span></span>
+              <span class="li"><span class="sw cross"></span><span data-i18n="state_offline">Offline</span></span>
             </div>
             <div class="stat-row">
               <div class="stat"><b id="stat-signals">2</b><span data-i18n="stat_signals">Signals left</span></div>
@@ -499,7 +510,7 @@ p.lead{color:var(--t-secondary);font-size:14px;line-height:1.5}
             <div class="age" id="sheet-age">26 · 168cm</div>
             <div class="bio" id="sheet-bio">Fun night out ✨</div>
             <div class="tags" id="sheet-tags"><span>🎵</span><span>🍷</span><span>🌍</span></div>
-            <button class="btn btn-signal" id="send-signal-btn" data-i18n="send_signal">Send a Signal</button>
+            <button class="btn btn-primary" id="send-signal-btn" data-i18n="send_signal">Send a Signal</button>
             <button class="btn btn-ghost mt-s" id="close-sheet" data-i18n="close">Close</button>
           </div>
         </div>
@@ -590,7 +601,7 @@ p.lead{color:var(--t-secondary);font-size:14px;line-height:1.5}
           </div>
           <p class="chat-note" data-i18n="mm_note">📵 Phone numbers and social handles are blocked automatically.</p>
           <div class="btn-row">
-            <button class="btn btn-mission" data-go="v-mission-mode" data-i18n="mm_meet">Let's meet</button>
+            <button class="btn btn-primary" data-go="v-mission-mode" data-i18n="mm_meet">Let's meet</button>
             <button class="btn btn-ghost" data-go="v-outcome" data-i18n="mm_not">Not this time</button>
           </div>
         </div>
@@ -636,10 +647,10 @@ p.lead{color:var(--t-secondary);font-size:14px;line-height:1.5}
       <!-- 20. DESTINY PROMPT -->
       <section class="view" id="v-destiny" data-noflow>
         <div class="mission-mode">
-          <div class="eyebrow" style="color:var(--state-match)" data-i18n="destiny_eyebrow">✦ Destiny Connection</div>
+          <div class="eyebrow" style="color:var(--system)" data-i18n="destiny_eyebrow">✦ Destiny Connection</div>
           <h1 class="big center" data-i18n="destiny_title">Fate keeps nudging.</h1>
           <p class="lead center" data-i18n="destiny_body">You've crossed paths with someone compatible several times, in public places, on different days. No location, date, or address is shown.</p>
-          <button class="btn btn-signal mt" data-go="v-signal" data-i18n="destiny_try">Send a Destiny Signal</button>
+          <button class="btn btn-primary mt" data-go="v-signal" data-i18n="destiny_try">Send a Destiny Signal</button>
           <button class="btn btn-ghost mt-s" data-go="v-radar" data-i18n="destiny_ignore">Ignore</button>
           <p class="small muted mt center" data-i18n="destiny_off">Destiny is off by default and can be paused anytime in Settings.</p>
         </div>
@@ -654,7 +665,7 @@ p.lead{color:var(--t-secondary);font-size:14px;line-height:1.5}
           <div class="mt"></div>
           <div class="pzone"><div class="lvl" style="background:rgba(16,185,129,.15)">●</div><div class="z"><b>Rocher du Grund</b><p data-i18n="pz1">Strong compatible activity · 200 m</p></div><span class="tag" style="background:rgba(16,185,129,.15);color:var(--state-available)">HOT</span></div>
           <div class="pzone"><div class="lvl" style="background:rgba(245,158,11,.15)">▲</div><div class="z"><b>City Festival</b><p data-i18n="pz2">Exceptional event · 1.2 km</p></div><span class="tag" style="background:rgba(245,158,11,.15);color:var(--state-busy)">ELECTRIC</span></div>
-          <div class="pzone"><div class="lvl" style="background:rgba(139,92,246,.15)">◆</div><div class="z"><b>Merl Park</b><p data-i18n="pz3">Moderate activity · 800 m</p></div><span class="tag" style="background:rgba(139,92,246,.15);color:var(--state-match)">ACTIVE</span></div>
+          <div class="pzone"><div class="lvl" style="background:rgba(34,211,238,.15)">◈</div><div class="z"><b>Merl Park</b><p data-i18n="pz3">Moderate activity · 800 m</p></div><span class="tag" style="background:rgba(34,211,238,.15);color:var(--system)">ACTIVE</span></div>
           <div class="card center small muted" data-i18n="pulse_plus">⚡ Wingman+ : real-time notifications for Electric zones</div>
         </div>
         <nav class="nav" data-navbar></nav>
@@ -747,7 +758,7 @@ p.lead{color:var(--t-secondary);font-size:14px;line-height:1.5}
           <p class="lead mb" data-i18n="admin_body">Evidence is only created when a user reports during a session, and is stored encrypted outside the main database. Every access is audit-logged.</p>
           <div class="admin-case"><div style="display:flex;justify-content:space-between"><b>Case #4821</b><span class="st" data-i18n="admin_pending">PENDING</span></div><p class="small muted mt-s" data-i18n="admin_c1">3 independent reports · category: Off-platform contact</p></div>
           <div class="admin-case"><div style="display:flex;justify-content:space-between"><b>Case #4820</b><span class="st" data-i18n="admin_review">UNDER REVIEW</span></div><p class="small muted mt-s" data-i18n="admin_c2">1 report · Harassment · evidence sealed</p></div>
-          <div class="admin-case"><div style="display:flex;justify-content:space-between"><b>Case #4818</b><span class="st" style="background:rgba(16,185,129,.15);color:var(--state-available)" data-i18n="admin_resolved">RESOLVED</span></div><p class="small muted mt-s" data-i18n="admin_c3">Dismissed — coordinated false reports detected</p></div>
+          <div class="admin-case"><div style="display:flex;justify-content:space-between"><b>Case #4818</b><span class="st" style="background:rgba(34,211,238,.15);color:var(--system)" data-i18n="admin_resolved">RESOLVED</span></div><p class="small muted mt-s" data-i18n="admin_c3">Dismissed — coordinated false reports detected</p></div>
           <button class="btn btn-ghost mt" data-go="v-settings" data-i18n="admin_back">← Back to app</button>
         </div>
       </section>
@@ -796,7 +807,9 @@ const I18N = {
     c_destiny: 'Destiny Connection', c_destiny_d: 'Off by default. Coarse co-presence to spot repeated paths.', c_push: 'Push notifications', c_push_d: 'Signals, selfies, confirmations.',
     c_analytics: 'Product analytics', c_analytics_d: 'Optional. Helps improve Wingman.', consent_cta: 'Agree & activate Radar',
     radar_sub: 'Real-time discovery', radar_invisible: '—  Invisible', radar_active: '●  Available', radar_dist: 'Someone very close · Nearby', radar_activate: 'Go active', radar_deactivate: 'Go invisible',
-    state_available: 'Available', state_busy: 'Busy soon', state_unavailable: 'Unavailable', state_signal: 'Signal sent', state_match: 'Match', state_mission: 'Mission', state_offline: 'Offline',
+    state_available: 'Available', state_busy: 'Busy soon', state_unavailable: 'Unavailable',
+    state_signal_sent: 'Signal sent', state_signal_received: 'Signal received',
+    state_match: 'Match', state_mission: 'Mission', state_invisible: 'Invisible', state_offline: 'Offline',
     state_available_d: 'Open to meet', state_busy_d: 'Not right now', state_unavailable_d: 'Do not disturb', state_title: 'Your presence',
     stat_signals: 'Signals left', stat_nearby: 'Nearby', stat_zone: 'Active zone',
     destiny_eyebrow: '✦ Destiny Connection', destiny_card_t: 'You keep crossing paths', destiny_card_d: 'Someone compatible keeps crossing your path — even off your radar.',
@@ -840,7 +853,9 @@ const I18N = {
     c_destiny: 'Destiny Connection', c_destiny_d: 'Désactivé par défaut. Co-présence grossière pour repérer les croisements.', c_push: 'Notifications push', c_push_d: 'Signaux, selfies, confirmations.',
     c_analytics: 'Analytique produit', c_analytics_d: 'Optionnel. Aide à améliorer Wingman.', consent_cta: 'Accepter & activer le Radar',
     radar_sub: 'Découverte en temps réel', radar_invisible: '—  Invisible', radar_active: '●  Disponible', radar_dist: 'Quelqu\'un très proche · À proximité', radar_activate: 'Devenir actif', radar_deactivate: 'Devenir invisible',
-    state_available: 'Disponible', state_busy: 'Occupé bientôt', state_unavailable: 'Indisponible', state_signal: 'Signal envoyé', state_match: 'Match', state_mission: 'Mission', state_offline: 'Hors ligne',
+    state_available: 'Disponible', state_busy: 'Occupé bientôt', state_unavailable: 'Indisponible',
+    state_signal_sent: 'Signal envoyé', state_signal_received: 'Signal reçu',
+    state_match: 'Match', state_mission: 'Mission', state_invisible: 'Invisible', state_offline: 'Hors ligne',
     state_available_d: 'Ouvert·e aux rencontres', state_busy_d: 'Pas maintenant', state_unavailable_d: 'Ne pas déranger', state_title: 'Votre présence',
     stat_signals: 'Signaux restants', stat_nearby: 'À proximité', stat_zone: 'Zone active',
     destiny_eyebrow: '✦ Destiny Connection', destiny_card_t: 'Vous vous croisez souvent', destiny_card_d: 'Quelqu\'un de compatible croise votre route — même hors de votre radar.',
@@ -917,6 +932,7 @@ function buildNav() {
     bar.innerHTML = NAV.map(([vid, key, d]) =>
       `<button data-go="${vid}" ${key === current ? 'aria-current="page"' : ''}>
         <svg class="ico" viewBox="0 0 24 24"><path d="${d}"/></svg>
+        ${key === 'signal' ? '<span class="notif signal">2</span>' : ''}
         <span>${t('nav_' + key)}</span></button>`).join('');
     $$('button', bar).forEach(b => b.addEventListener('click', () => show(b.dataset.go)));
   });
@@ -935,47 +951,57 @@ const STATE_COLORS = {
   AVAILABLE: '#10B981',
   BUSY: '#F59E0B',
   UNAVAILABLE: '#EF4444',
-  SIGNAL: '#3B82F6',
+  SIGNAL_SENT: '#3B82F6',
+  SIGNAL_RECEIVED: '#3B82F6',
   MATCH: '#8B5CF6',
   MISSION: '#FB923C',
+  INVISIBLE: '#6B7280',
   OFFLINE: '#374151',
 };
 const STATE_GLOW = {
   AVAILABLE: 'rgba(16,185,129,.25)',
   BUSY: 'rgba(245,158,11,.25)',
   UNAVAILABLE: 'rgba(239,68,68,.25)',
-  SIGNAL: 'rgba(59,130,246,.30)',
+  SIGNAL_SENT: 'rgba(59,130,246,.30)',
+  SIGNAL_RECEIVED: 'rgba(59,130,246,.30)',
   MATCH: 'rgba(139,92,246,.30)',
   MISSION: 'rgba(251,146,60,.28)',
+  INVISIBLE: 'rgba(107,114,128,.20)',
   OFFLINE: 'rgba(55,65,81,.20)',
 };
 const STATE_LABEL = {
   AVAILABLE: 'state_available',
   BUSY: 'state_busy',
   UNAVAILABLE: 'state_unavailable',
-  SIGNAL: 'state_signal',
+  SIGNAL_SENT: 'state_signal_sent',
+  SIGNAL_RECEIVED: 'state_signal_received',
   MATCH: 'state_match',
   MISSION: 'state_mission',
+  INVISIBLE: 'state_invisible',
   OFFLINE: 'state_offline',
 };
 const STATE_GLYPH = {
   AVAILABLE: '●',
   BUSY: '▲',
-  UNAVAILABLE: '●',
-  SIGNAL: '◉',
+  UNAVAILABLE: '■',
+  SIGNAL_SENT: '◉',
+  SIGNAL_RECEIVED: '◎',
   MATCH: '◆',
   MISSION: '⬢',
-  OFFLINE: '○',
+  INVISIBLE: '○',
+  OFFLINE: '✕',
 };
 // Fictional nearby people — state drives color + shape.
 const dots = [
   { x: .30, y: .30, presence: 'AVAILABLE', intensity: 1, age: '26 · 168cm', ageFr: '26 · 168cm', bio: 'Fun night out ✨', bioFr: 'Sortie sympa ✨', tags: ['🎵', '🍷', '🌍'] },
   { x: .68, y: .26, presence: 'BUSY', intensity: 1, age: '29 · 175cm', ageFr: '29 · 175cm', bio: 'Coffee or a walk?', bioFr: 'Café ou balade ?', tags: ['☕', '📚', '🏃'] },
-  { x: .74, y: .62, presence: 'SIGNAL', intensity: 1, age: '24 · 162cm', ageFr: '24 · 162cm', bio: 'You already waved', bioFr: 'Vous avez déjà fait signe', tags: ['🎨', '🐶'] },
+  { x: .74, y: .62, presence: 'SIGNAL_SENT', intensity: 1, age: '24 · 162cm', ageFr: '24 · 162cm', bio: 'You already waved', bioFr: 'Vous avez déjà fait signe', tags: ['🎨', '🐶'] },
+  { x: .58, y: .38, presence: 'SIGNAL_RECEIVED', intensity: 1, age: '27 · 166cm', ageFr: '27 · 166cm', bio: 'Wants to discover you', bioFr: 'Veut vous découvrir', tags: ['🎧', '🌙'] },
+  { x: .85, y: .48, presence: 'UNAVAILABLE', intensity: 1, age: '30 · 178cm', ageFr: '30 · 178cm', bio: 'Do not disturb', bioFr: 'Ne pas déranger', tags: ['🔒'] },
   { x: .40, y: .70, presence: 'MATCH', intensity: 1, age: '31 · 180cm', ageFr: '31 · 180cm', bio: 'Mutual connection', bioFr: 'Connexion mutuelle', tags: ['🎸', '🍕'] },
   { x: .24, y: .55, presence: 'AVAILABLE', intensity: .8, age: '27 · 170cm', ageFr: '27 · 170cm', bio: 'New in town 🌆', bioFr: 'Nouvelle en ville 🌆', tags: ['📷', '🍜'] },
   { x: .55, y: .48, presence: 'MISSION', intensity: 1, age: '28 · 172cm', ageFr: '28 · 172cm', bio: 'Meeting in progress', bioFr: 'Rencontre en cours', tags: ['🤝'] },
-  { x: .18, y: .22, presence: 'OFFLINE', intensity: 1, age: '25 · 165cm', ageFr: '25 · 165cm', bio: 'Last seen nearby', bioFr: 'Vu·e récemment', tags: ['○'] },
+  { x: .18, y: .22, presence: 'OFFLINE', intensity: 1, age: '25 · 165cm', ageFr: '25 · 165cm', bio: 'Last seen nearby', bioFr: 'Vu·e récemment', tags: ['✕'] },
 ];
 let signalWave = null; // {x,y,t}
 let rafId = null, pulsePhase = 0;
@@ -994,10 +1020,16 @@ function drawPresenceShape(ctx, kind, x, y, size, color, alpha) {
   ctx.fillStyle = color;
   ctx.strokeStyle = 'rgba(255,255,255,.35)';
   ctx.lineWidth = 1.5;
-  if (kind === 'AVAILABLE' || kind === 'UNAVAILABLE') {
+  if (kind === 'AVAILABLE') {
     ctx.beginPath(); ctx.arc(x, y, size, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-  } else if (kind === 'SIGNAL') {
+  } else if (kind === 'UNAVAILABLE') {
+    const s = size * 1.7;
+    ctx.beginPath(); ctx.rect(x - s / 2, y - s / 2, s, s); ctx.fill(); ctx.stroke();
+  } else if (kind === 'SIGNAL_SENT') {
     ctx.beginPath(); ctx.arc(x, y, size * 0.55, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(x, y, size + 3, 0, Math.PI * 2);
+    ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.stroke();
+  } else if (kind === 'SIGNAL_RECEIVED') {
     ctx.beginPath(); ctx.arc(x, y, size + 3, 0, Math.PI * 2);
     ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.stroke();
   } else if (kind === 'MATCH') {
@@ -1017,9 +1049,15 @@ function drawPresenceShape(ctx, kind, x, y, size, color, alpha) {
     ctx.beginPath();
     ctx.moveTo(x, y - size); ctx.lineTo(x + size, y + size * 0.85); ctx.lineTo(x - size, y + size * 0.85);
     ctx.closePath(); ctx.fill(); ctx.stroke();
-  } else if (kind === 'OFFLINE') {
+  } else if (kind === 'INVISIBLE') {
     ctx.beginPath(); ctx.arc(x, y, size, 0, Math.PI * 2);
-    ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.stroke();
+    ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.stroke();
+  } else if (kind === 'OFFLINE') {
+    ctx.strokeStyle = color; ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(x - size, y - size); ctx.lineTo(x + size, y + size);
+    ctx.moveTo(x + size, y - size); ctx.lineTo(x - size, y + size);
+    ctx.stroke();
   }
   ctx.restore();
 }
@@ -1031,10 +1069,10 @@ function drawRadar(ts) {
   // abstract urban masses
   ctx.fillStyle = '#161E31';
   buildingShapes(w, h).forEach(b => { roundRect(b.x, b.y, b.w, b.h, 6); ctx.fill(); });
-  // concentric rings
-  ctx.strokeStyle = 'rgba(16,185,129,.10)'; ctx.lineWidth = 1;
+  // concentric rings — system turquoise scan (not presence green)
+  ctx.strokeStyle = 'rgba(34,211,238,.10)'; ctx.lineWidth = 1;
   [50, 100, 150].forEach(r => { ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke(); });
-  // your position — Available emerald when active, gray when invisible
+  // your position — presence color when active, OFFLINE X when invisible
   if (!state.reduceMotion) pulsePhase = (ts % 3000) / 3000;
   const pr = state.reduceMotion ? 0.5 : (0.5 + 0.5 * Math.sin(pulsePhase * Math.PI * 2));
   const selfColor = state.radarActive ? STATE_COLORS[state.presence] || STATE_COLORS.AVAILABLE : STATE_COLORS.OFFLINE;
@@ -1055,10 +1093,14 @@ function drawRadar(ts) {
         ctx.strokeStyle = `rgba(16,185,129,${0.35 * (1 - pulsePhase) * (d.intensity || 1)})`;
         ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, rr, 0, Math.PI * 2); ctx.stroke();
       }
-      drawPresenceShape(ctx, d.presence, x, y, 6.5, col, d.intensity || 1);
+      let alpha = d.intensity || 1;
+      if (d.presence === 'MISSION' && !state.reduceMotion) {
+        alpha = 0.96 + 0.04 * (0.5 + 0.5 * Math.sin((ts / 3000) * Math.PI * 2));
+      }
+      drawPresenceShape(ctx, d.presence, x, y, 6.5, col, alpha);
     });
   }
-  // diffuse Signal wave (omnidirectional, no targeting line)
+  // diffuse Signal wave (omnidirectional, no targeting line) — stays blue
   if (signalWave) {
     const age = (performance.now() - signalWave.t) / 900;
     if (age >= 1) { signalWave = null; }
@@ -1139,8 +1181,8 @@ function makeTimer({ durationSec, textEl, barEl, onWarn, onExpire }) {
     if (barEl) {
       const pct = (remaining / durationSec) * 100;
       barEl.style.width = pct + '%';
-      // Error (red) only near expiry; amber = soon; green = healthy time left
-      barEl.style.background = remaining <= 30 ? '#EF4444' : remaining <= 120 ? '#F59E0B' : '#10B981';
+      // System turquoise healthy; amber = soon; red = critical only
+      barEl.style.background = remaining <= 30 ? '#EF4444' : remaining <= 120 ? '#F59E0B' : '#22D3EE';
     }
     if (remaining <= 30 && !warned) { warned = true; haptic('timeWarning'); onWarn && onWarn(); }
     if (remaining <= 0) { clearInterval(iv); onExpire && onExpire(); }

@@ -1,8 +1,19 @@
 {
-  "$schemaComment": "Wingman design tokens — every color maps to one presence or action meaning.",
+  "$schemaComment": "Wingman design tokens — Semantic Color Contract.",
   "brand": {
     "name": "Wingman",
-    "principle": "Color encodes state. Shape reinforces state. One meaning per color."
+    "principle": "Semantic Color Contract"
+  },
+  "semanticColorContract": {
+    "rule": "A color never represents an action; it always represents a state. Actions are carried by shape, hierarchy, or animation.",
+    "implications": [
+      "Green is never a Validate button — only Available.",
+      "Blue is never the primary button — only Interaction (signal sent/received).",
+      "Violet is never decoration — only Mutual Match.",
+      "Orange is never a graphic accent — only Active Mission.",
+      "Turquoise is never a user state — only Wingman system (radar, GPS, scan, AI).",
+      "Red is only Unavailable, danger, or critical error — never notifications or CTAs."
+    ]
   },
   "surfaces": {
     "bgPrimary": "#0B1020",
@@ -10,7 +21,9 @@
     "bgRadar": "#0B1020",
     "card": "#171F35",
     "elevated": "#1D2740",
-    "border": "rgba(255,255,255,.05)"
+    "border": "rgba(255,255,255,.05)",
+    "cta": "#F7F8FC",
+    "ctaText": "#0B1020"
   },
   "text": {
     "primary": "#FFFFFF",
@@ -18,66 +31,103 @@
     "muted": "#6B7280",
     "disabled": "#4B5563"
   },
+  "system": {
+    "turquoise": "#22D3EE",
+    "glow": "rgba(34,211,238,.28)",
+    "meaning": "Wingman system only: radar, GPS, position, scan, AI, search",
+    "never": "user presence states"
+  },
   "states": {
     "available": {
       "color": "#10B981",
-      "hover": "#059669",
       "glow": "rgba(16,185,129,.25)",
       "shape": "circle",
+      "glyph": "●",
       "meaning": "Open to interactions"
     },
     "busy": {
       "color": "#F59E0B",
       "glow": "rgba(245,158,11,.25)",
       "shape": "triangle",
-      "meaning": "Available but momentarily busy — not do-not-disturb"
+      "glyph": "▲",
+      "meaning": "Momentarily busy — not do-not-disturb"
     },
     "unavailable": {
       "color": "#EF4444",
       "glow": "rgba(239,68,68,.25)",
-      "shape": "circle",
-      "meaning": "Do not disturb / error only"
+      "shape": "square",
+      "glyph": "■",
+      "meaning": "Do not disturb — also danger / critical error only"
     },
-    "signal": {
+    "signalSent": {
       "color": "#3B82F6",
       "glow": "rgba(59,130,246,.30)",
-      "shape": "circle-ring",
-      "meaning": "You made the first move"
+      "shape": "filled-ring-dot",
+      "glyph": "◉",
+      "fill": "solid",
+      "meaning": "You sent a signal"
+    },
+    "signalReceived": {
+      "color": "#3B82F6",
+      "glow": "rgba(59,130,246,.30)",
+      "shape": "outline-ring",
+      "glyph": "◎",
+      "fill": "outline",
+      "meaning": "Someone sent you a signal"
     },
     "match": {
       "color": "#8B5CF6",
       "glow": "rgba(139,92,246,.30)",
       "shape": "diamond",
-      "meaning": "Mutual validated connection (brand accent)"
+      "glyph": "◆",
+      "meaning": "Mutual validated connection — exclusive visual reward",
+      "exclusivity": "Appear only when both parties are officially connected"
     },
     "mission": {
       "color": "#FB923C",
       "glow": "rgba(251,146,60,.28)",
       "shape": "hexagon",
-      "meaning": "Active meetup in progress"
+      "glyph": "⬢",
+      "meaning": "Active meetup",
+      "animation": {
+        "type": "breath",
+        "from": 1,
+        "to": 0.96,
+        "durationMs": 3000,
+        "note": "Slow respiration — never blink"
+      }
     },
     "invisible": {
       "color": "#6B7280",
-      "shape": "none",
+      "shape": "empty-circle",
+      "glyph": "○",
       "meaning": "Off radar"
     },
     "offline": {
       "color": "#374151",
-      "shape": "empty-circle",
+      "shape": "cross",
+      "glyph": "✕",
       "meaning": "Disconnected"
     }
+  },
+  "notifications": {
+    "signals": "#3B82F6",
+    "match": "#8B5CF6",
+    "mission": "#FB923C",
+    "never": "red"
   },
   "intensity": {
     "availableFull": 1,
     "availableLong": 0.8,
     "availableLeaving": 0.6,
-    "note": "One Available green; communicate freshness via opacity only."
+    "note": "One Available green; freshness via opacity only."
   },
   "avoid": [
+    "State colors on CTAs or Validate buttons",
+    "Violet anywhere except mutual match",
+    "Red for notifications, badges, or CTAs",
     "Multiple greens without meaning",
-    "Red for anything except unavailable or error",
-    "Fluorescent yellow",
-    "Blue for presence availability",
+    "Turquoise for human presence",
     "Rainbow decorative effects"
   ]
 }
