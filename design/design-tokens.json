@@ -1,0 +1,83 @@
+{
+  "$schemaComment": "Wingman design tokens — every color maps to one presence or action meaning.",
+  "brand": {
+    "name": "Wingman",
+    "principle": "Color encodes state. Shape reinforces state. One meaning per color."
+  },
+  "surfaces": {
+    "bgPrimary": "#0B1020",
+    "bgSecondary": "#101522",
+    "bgRadar": "#0B1020",
+    "card": "#171F35",
+    "elevated": "#1D2740",
+    "border": "rgba(255,255,255,.05)"
+  },
+  "text": {
+    "primary": "#FFFFFF",
+    "secondary": "#AAB2C8",
+    "muted": "#6B7280",
+    "disabled": "#4B5563"
+  },
+  "states": {
+    "available": {
+      "color": "#10B981",
+      "hover": "#059669",
+      "glow": "rgba(16,185,129,.25)",
+      "shape": "circle",
+      "meaning": "Open to interactions"
+    },
+    "busy": {
+      "color": "#F59E0B",
+      "glow": "rgba(245,158,11,.25)",
+      "shape": "triangle",
+      "meaning": "Available but momentarily busy — not do-not-disturb"
+    },
+    "unavailable": {
+      "color": "#EF4444",
+      "glow": "rgba(239,68,68,.25)",
+      "shape": "circle",
+      "meaning": "Do not disturb / error only"
+    },
+    "signal": {
+      "color": "#3B82F6",
+      "glow": "rgba(59,130,246,.30)",
+      "shape": "circle-ring",
+      "meaning": "You made the first move"
+    },
+    "match": {
+      "color": "#8B5CF6",
+      "glow": "rgba(139,92,246,.30)",
+      "shape": "diamond",
+      "meaning": "Mutual validated connection (brand accent)"
+    },
+    "mission": {
+      "color": "#FB923C",
+      "glow": "rgba(251,146,60,.28)",
+      "shape": "hexagon",
+      "meaning": "Active meetup in progress"
+    },
+    "invisible": {
+      "color": "#6B7280",
+      "shape": "none",
+      "meaning": "Off radar"
+    },
+    "offline": {
+      "color": "#374151",
+      "shape": "empty-circle",
+      "meaning": "Disconnected"
+    }
+  },
+  "intensity": {
+    "availableFull": 1,
+    "availableLong": 0.8,
+    "availableLeaving": 0.6,
+    "note": "One Available green; communicate freshness via opacity only."
+  },
+  "avoid": [
+    "Multiple greens without meaning",
+    "Red for anything except unavailable or error",
+    "Fluorescent yellow",
+    "Blue for presence availability",
+    "Rainbow decorative effects"
+  ]
+}
