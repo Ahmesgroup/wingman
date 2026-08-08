@@ -1,9 +1,10 @@
 import { Body, Controller, Headers, Inject, Injectable, Post } from "@nestjs/common";
 import { AuthService } from "@wingman/auth";
+import type { OtpDeliveryService } from "@wingman/providers";
 import { z } from "zod";
 import { Public } from "../../common/public.decorator.js";
 import { ZodValidationPipe } from "../../common/zod-validation.pipe.js";
-import { AUTH_SERVICE_TOKEN } from "../infra/infra.tokens.js";
+import { AUTH_SERVICE_TOKEN, OTP_DELIVERY } from "../infra/infra.tokens.js";
 
 const RequestOtpSchema = z.object({
   phoneE164: z.string().min(8),
@@ -22,10 +23,13 @@ const RefreshSchema = z.object({
 
 @Injectable()
 export class AuthApiService {
-  constructor(@Inject(AUTH_SERVICE_TOKEN) private readonly auth: AuthService) {}
+  constructor(
+    @Inject(AUTH_SERVICE_TOKEN) private readonly auth: AuthService,
+    @Inject(OTP_DELIVERY) private readonly otpDelivery: OtpDeliveryService,
+  ) {}
 
   requestOtp(phoneE164: string) {
-    return this.auth.requestOtp(phoneE164);
+    return this.otpDelivery.requestAndDeliver(phoneE164);
   }
 
   verify(body: { phoneE164: string; code: string; deviceId: string }) {
@@ -50,9 +54,8 @@ export class AuthController {
   constructor(private readonly authApi: AuthApiService) {}
 
   @Post("otp/request")
-  requestOtp(@Body(new ZodValidationPipe(RequestOtpSchema)) body: { phoneE164: string }) {
-    const result = this.authApi.requestOtp(body.phoneE164);
-    return result;
+  async requestOtp(@Body(new ZodValidationPipe(RequestOtpSchema)) body: { phoneE164: string }) {
+    return this.authApi.requestOtp(body.phoneE164);
   }
 
   @Post("otp/verify")

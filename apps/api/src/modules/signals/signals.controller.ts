@@ -3,10 +3,11 @@ import { CreateSignalSchema } from "@wingman/contracts";
 import type { WingmanEngine } from "@wingman/domain";
 import type { EphemeralStore } from "@wingman/ephemeral";
 import { NotificationOrchestrator, type PushEvent } from "@wingman/notifications";
+import type { ProtocolPersistenceMirror } from "@wingman/persistence";
 import { CurrentUser, IdempotencyKey } from "../../common/auth.js";
 import { ZodValidationPipe } from "../../common/zod-validation.pipe.js";
 import { WINGMAN_ENGINE } from "../../engine/engine.tokens.js";
-import { EPHEMERAL_STORE, NOTIFICATION_ORCH } from "../infra/infra.tokens.js";
+import { EPHEMERAL_STORE, NOTIFICATION_ORCH, PROTOCOL_MIRROR } from "../infra/infra.tokens.js";
 
 @Injectable()
 export class SignalsService {
@@ -14,14 +15,16 @@ export class SignalsService {
     @Inject(WINGMAN_ENGINE) private readonly engine: WingmanEngine,
     @Inject(EPHEMERAL_STORE) private readonly ephemeral: EphemeralStore,
     @Inject(NOTIFICATION_ORCH) private readonly notifications: NotificationOrchestrator,
+    @Inject(PROTOCOL_MIRROR) private readonly mirror: ProtocolPersistenceMirror,
   ) {}
 
-  create(
+  async create(
     userId: string,
     body: { receiverId: string; source: "RADAR" | "DESTINY" | "REMATCH" },
     idem?: string,
   ) {
     const signal = this.engine.sendSignal(userId, body.receiverId, idem, body.source);
+    await this.mirror.mirrorSignal(signal.id);
     const event: PushEvent = {
       id: `push_${signal.id}`,
       type: "signal.received",
@@ -40,16 +43,22 @@ export class SignalsService {
     return { signal };
   }
 
-  open(id: string, userId: string) {
-    return this.engine.openSignal(id, userId);
+  async open(id: string, userId: string) {
+    const signal = this.engine.openSignal(id, userId);
+    await this.mirror.mirrorSignal(id);
+    return signal;
   }
 
-  refuse(id: string, userId: string) {
-    return this.engine.refuseSignal(id, userId);
+  async refuse(id: string, userId: string) {
+    const signal = this.engine.refuseSignal(id, userId);
+    await this.mirror.mirrorSignal(id);
+    return signal;
   }
 
-  cancel(id: string, userId: string) {
-    return this.engine.cancelSignal(id, userId);
+  async cancel(id: string, userId: string) {
+    const signal = this.engine.cancelSignal(id, userId);
+    await this.mirror.mirrorSignal(id);
+    return signal;
   }
 
   async accept(id: string, userId: string) {
@@ -57,11 +66,15 @@ export class SignalsService {
     const owner = `api:${process.pid}:${userId}`;
     const got = await this.ephemeral.acquireLock(lockKey, owner, 15);
     if (!got) {
-      // Another instance won — try read-only path via domain (will fail if already accepted)
-      return this.engine.acceptSignal(id, userId);
+      const connection = this.engine.acceptSignal(id, userId);
+      await this.mirror.mirrorSignal(id);
+      await this.mirror.mirrorConnection(connection.id);
+      return connection;
     }
     try {
       const connection = this.engine.acceptSignal(id, userId);
+      await this.mirror.mirrorSignal(id);
+      await this.mirror.mirrorConnection(connection.id);
       this.notifications.enqueue({
         id: `push_conn_${connection.id}`,
         type: "connection.confirmed",
@@ -94,18 +107,18 @@ export class SignalsController {
   }
 
   @Post(":id/open")
-  open(@CurrentUser() userId: string, @Param("id") id: string) {
-    return { signal: this.signals.open(id, userId) };
+  async open(@CurrentUser() userId: string, @Param("id") id: string) {
+    return { signal: await this.signals.open(id, userId) };
   }
 
   @Post(":id/refuse")
-  refuse(@CurrentUser() userId: string, @Param("id") id: string) {
-    return { signal: this.signals.refuse(id, userId) };
+  async refuse(@CurrentUser() userId: string, @Param("id") id: string) {
+    return { signal: await this.signals.refuse(id, userId) };
   }
 
   @Post(":id/cancel")
-  cancel(@CurrentUser() userId: string, @Param("id") id: string) {
-    return { signal: this.signals.cancel(id, userId) };
+  async cancel(@CurrentUser() userId: string, @Param("id") id: string) {
+    return { signal: await this.signals.cancel(id, userId) };
   }
 
   @Post(":id/accept")

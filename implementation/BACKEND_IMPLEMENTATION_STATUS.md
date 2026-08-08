@@ -1,4 +1,4 @@
-# Backend Implementation Status (S0–S12)
+# Backend Implementation Status (S0–S15)
 
 **Status:** Implemented in this repository · **Language:** English (source of truth for what was built)  
 **Related:** [`apps/BACKEND_README.md`](../apps/BACKEND_README.md), [`operations/PRODUCTION_READINESS.md`](../operations/PRODUCTION_READINESS.md), [`architecture/STATE_MACHINES.md`](../architecture/STATE_MACHINES.md)
@@ -7,6 +7,7 @@ This document describes the **executable backend** that was built from the V4.1 
 
 1. **S0–S7 — Protocol engine** (`packages/domain` + contracts/database bootstrap) — **frozen**
 2. **S8–S12 — Production envelope** (NestJS API, auth, ephemeral Redis layer, push, observability)
+3. **S13–S15 — Persistence write-behind + provider ports** (domain still frozen; Nest mirrors outcomes)
 
 The original product specs under `docs/`, `architecture/`, `api/` remain authoritative for product rules. This file is authoritative for **what code exists today** and how to operate it.
 
@@ -37,7 +38,9 @@ wingman/
 │   ├── auth/                OTP, sessions, refresh, device binding (S9)
 │   ├── ephemeral/           Memory/Redis presence, locks, quotas, pub/sub (S10)
 │   ├── notifications/       Push orchestrator: idempotency, retries, DLQ (S11)
-│   └── observability/       Structured logs, metrics, readiness helper (S12)
+│   ├── observability/       Structured logs, metrics, readiness helper (S12)
+│   ├── persistence/         ProtocolRepository + write-behind mirror (S13)
+│   └── providers/           SMS OTP + push transport ports (S14)
 ├── infrastructure/docker/   Postgres + Redis compose
 └── operations/
     └── PRODUCTION_READINESS.md
@@ -218,7 +221,7 @@ Nest `RadarService` dual-writes domain presence + ephemeral store. `SignalsServi
 3. On failure — retry until `maxAttempts`, then **DEAD** + DLQ
 4. Deep links: `wingman://signals|connections|missions|destiny/...`
 
-Current transport: `InMemoryPushTransport` (replace with APNs/FCM adapter later without touching domain).
+Default Nest transport: `InMemoryPushTransport`. Set `PUSH_PROVIDER=logging` to use `LoggingPushTransport` from `@wingman/providers` (still no APNs/FCM).
 
 Emitted from Nest services on signal create, connection create/validate, mission open.
 
@@ -309,6 +312,8 @@ curl -s -X POST localhost:3000/auth/otp/verify -H 'content-type: application/jso
 | `AUTH_DEBUG_OTP` | unset | Return OTP in response (dev/test only) |
 | `AUTH_ALLOW_DEV` | set by AppModule | Allow `x-user-id` when using session guard |
 | `REDIS_URL` | unset | Use Redis ephemeral store; else memory |
+| `SMS_PROVIDER` | `console` | `noop` disables SMS delivery |
+| `PUSH_PROVIDER` | unset | `logging` uses LoggingPushTransport |
 | `API_INTERNAL_URL` | unset | Workers POST reconcile target |
 | `FAKE_CLOCK` | unset | (legacy/main) not required for Nest tests |
 | `NODE_ENV` | — | `test` skips listen in some entrypoints |
@@ -325,15 +330,54 @@ Approximate commit trail on `master`:
 | `S0` … `S7` | Frozen engine gates |
 | `S8: NestJS strict...` | Nest API + auth/ephemeral/notifications/observability packages |
 | `S9` … `S12` | Gate markers for production envelope |
+| `S13` … `S15` | Persistence write-behind + SMS/push provider ports + Nest wiring |
 
 Always re-verify with `pnpm -r test` after pulls.
 
 ---
 
-## 15. What is intentionally not done yet
+## 15. Sprint delivery — S13–S15 (persistence + providers)
 
-- Full NestJS→Prisma persistence wiring for all durable entities (schema exists; engine still in-memory for protocol state)
-- Real SMS OTP provider / APNs / FCM transports
+Infrastructure continues to **wrap** the frozen domain. Persistence mirrors domain outcomes; providers deliver OTP/push without owning protocol rules.
+
+| Sprint | Objective | What was built | Exit gate |
+|--------|-----------|----------------|-----------|
+| **S13** | Protocol persistence ports | `@wingman/persistence`: `ProtocolRepository`, `MemoryProtocolRepository`, `PrismaProtocolRepository` (Prisma-shaped client), `ProtocolPersistenceMirror` write-behind | Mirror equals domain state after mutations; domain tests still 15/15 |
+| **S14** | Provider ports | `@wingman/providers`: `SmsProvider` (`Console` / `Noop`), `LoggingPushTransport`, `OtpDeliveryService` | OTP delivered via SMS port; push idempotency/retry tests green |
+| **S15** | Nest integration | Nest injects mirror into radar/signals/connections/safety/privacy/dev/internal; auth uses `OtpDeliveryService`; readiness/metrics include persistence | `persistence.e2e.test.ts` green |
+
+### 15.1 Persistence model
+
+```text
+HTTP → Nest service → WingmanEngine (authority)
+                    ↘ ProtocolPersistenceMirror → ProtocolRepository
+```
+
+- **Default repo:** `MemoryProtocolRepository` (tests + single-node default).
+- **Postgres path:** inject `PrismaProtocolRepository` with a real `PrismaClient` when `DATABASE_URL` users exist. UserSeed upsert is a no-op on Prisma (full `User` model requires phone crypto fields from the identity pipeline).
+- Presence remains Redis/ephemeral-authoritative; repository may keep an advisory last-known snapshot.
+
+### 15.2 Providers model
+
+- `POST /auth/otp/request` → `OtpDeliveryService` → `AuthService.requestOtp` + `SmsProvider.send` (phone redacted in provider logs).
+- `SMS_PROVIDER=noop` disables SMS; default is `ConsoleSmsProvider`.
+- `PUSH_PROVIDER=logging` swaps Nest push transport to `LoggingPushTransport`.
+
+### 15.3 Tests added
+
+```bash
+pnpm --filter @wingman/persistence test   # mirror + prisma port
+pnpm --filter @wingman/providers test     # SMS + push ports
+pnpm --filter @wingman/api test           # includes persistence.e2e.test.ts
+```
+
+---
+
+## 16. What is intentionally not done yet
+
+- Live PrismaClient wiring against a migrated Postgres (adapter port exists; default remains memory mirror)
+- Real SMS vendor (Twilio/etc.) and APNs / FCM transports
+- Engine cold-start hydrate from Postgres (write-behind only today)
 - Stripe / Wingman+ billing
 - WebSocket realtime fan-out (pub/sub port exists; mobile WS not built)
 - Destiny V2, ranking radar, behavioral anti-abuse, geo optimization
@@ -341,26 +385,27 @@ Always re-verify with `pnpm -r test` after pulls.
 
 ---
 
-## 16. Where to go next (post-S12)
+## 17. Where to go next (post-S15)
 
-After production envelope is accepted:
-
-1. Persist `WingmanEngine` effects to PostgreSQL via repositories (domain stays pure)
-2. Wire real Redis in staging + multi-instance deploy tests
-3. Replace in-memory push transport with APNs/FCM
-4. Replace OTP debug path with SMS provider
+1. Point Nest `PROTOCOL_REPO` at `PrismaProtocolRepository` + migrate schema; seed identity users before protocol mirrors
+2. Hydrate `WingmanEngine` from durable store on boot (read path)
+3. Wire real Redis in staging + multi-instance deploy tests
+4. Replace console SMS / logging push with vendor adapters
 5. Only then: advanced engines (ranking, Destiny V2, etc.)
 
 ---
 
-## 17. Quick reference — key files
+## 18. Quick reference — key files
 
 | Concern | File |
 |---------|------|
 | Protocol facade | [`packages/domain/src/engine.ts`](../packages/domain/src/engine.ts) |
 | Connection transitions | [`packages/domain/src/connection/transitions.ts`](../packages/domain/src/connection/transitions.ts) |
+| Persistence mirror | [`packages/persistence/src/mirror.ts`](../packages/persistence/src/mirror.ts) |
+| Provider ports | [`packages/providers/src/index.ts`](../packages/providers/src/index.ts) |
 | Nest app composition | [`apps/api/src/app.module.ts`](../apps/api/src/app.module.ts) |
 | Nest e2e loop | [`apps/api/src/e2e.test.ts`](../apps/api/src/e2e.test.ts) |
+| Persistence e2e | [`apps/api/src/persistence.e2e.test.ts`](../apps/api/src/persistence.e2e.test.ts) |
 | Auth e2e | [`apps/api/src/auth.e2e.test.ts`](../apps/api/src/auth.e2e.test.ts) |
 | Multi-instance lock | [`apps/api/src/multi-instance.test.ts`](../apps/api/src/multi-instance.test.ts) |
 | Controller thinness | [`apps/api/src/architecture.test.ts`](../apps/api/src/architecture.test.ts) |

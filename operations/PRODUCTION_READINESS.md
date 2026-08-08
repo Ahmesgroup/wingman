@@ -1,11 +1,11 @@
-# Production readiness (S12)
+# Production readiness (S12–S15)
 
-**Status:** Measured against the S8–S12 envelope (domain S0–S7 frozen).  
+**Status:** Measured against the S8–S15 envelope (domain S0–S7 frozen).  
 **Full build narrative:** [`implementation/BACKEND_IMPLEMENTATION_STATUS.md`](../implementation/BACKEND_IMPLEMENTATION_STATUS.md)
 
 ## Purpose
 
-This checklist proves the backend is operable as a production-shaped service envelope around the frozen protocol engine. It does **not** claim full cloud deploy, SMS, or APNs/FCM are wired — those are explicit next steps after S12.
+This checklist proves the backend is operable as a production-shaped service envelope around the frozen protocol engine. Persistence is write-behind (mirror); SMS/push use safe stub providers until vendor adapters are swapped in.
 
 ## Checks
 
@@ -16,10 +16,12 @@ This checklist proves the backend is operable as a production-shaped service env
 | Controllers stay thin | `architecture.test.ts` | Controllers do not inject/call `WingmanEngine` |
 | Auth non-replay | `packages/auth` + `auth.e2e.test.ts` | Revoke and device mismatch fail closed |
 | Ephemeral locks | `packages/ephemeral` + `multi-instance.test.ts` | Single accept winner across instances |
-| Push idempotency | `packages/notifications` tests | No double send; DLQ after max retries |
-| Readiness endpoint | `GET /internal/ready` | `ready: true` with domain + ephemeral checks |
+| Push idempotency | `packages/notifications` + `packages/providers` tests | No double send; DLQ after max retries |
+| Persistence mirror | `packages/persistence` + `persistence.e2e.test.ts` | HTTP mutations mirrored; readiness includes persistence |
+| OTP SMS port | `providers` + auth OTP path | SMS queued via port; phone redacted in provider logs |
+| Readiness endpoint | `GET /internal/ready` | `ready: true` with domain + ephemeral + persistence |
 | Structured logs | `packages/observability` tests | Sensitive fields redacted |
-| Metrics | `GET /internal/metrics` includes `http` snapshot | Counters present |
+| Metrics | `GET /internal/metrics` includes `http` + `persistence` | Counters present |
 
 ## Run
 
@@ -37,6 +39,8 @@ curl -s localhost:3000/internal/metrics
 | `AUTH_PEPPER` | Yes | Rotate; never use default |
 | `AUTH_DEBUG_OTP` | Must be unset/false | Never expose OTP codes |
 | `REDIS_URL` | Recommended | Memory store is single-instance only |
+| `SMS_PROVIDER` | Prefer real adapter later | `console` / `noop` are stubs |
+| `PUSH_PROVIDER` | Prefer APNs/FCM later | `logging` is a stub |
 | `DESTINY_ENABLED` | Default false | DPIA before enabling |
 | `PORT` | As needed | Default 3000 |
 
@@ -49,12 +53,12 @@ curl -s localhost:3000/internal/metrics
 
 ## Explicit gaps before “full prod”
 
-- PostgreSQL persistence of protocol entities (Prisma schema present; engine state still in-memory)
-- Real SMS OTP provider
-- APNs / FCM push transport
+- Live `PrismaClient` + migrations (port exists; default memory mirror)
+- Engine hydrate-from-DB on boot
+- Real SMS OTP vendor / APNs / FCM
 - Multi-region, autoscaling runbooks beyond compose
 - Load/chaos automation in CI
 
-## Not in scope until post-S12
+## Not in scope until post-S15
 
 Destiny V2, ranking radar, behavioral anti-abuse, geospatial optimization, adaptive intelligence.

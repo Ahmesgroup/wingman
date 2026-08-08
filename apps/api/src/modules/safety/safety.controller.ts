@@ -1,20 +1,30 @@
 import { Body, Controller, Inject, Injectable, Post } from "@nestjs/common";
 import { BlockSchema, ReportSchema } from "@wingman/contracts";
 import type { WingmanEngine } from "@wingman/domain";
+import type { ProtocolPersistenceMirror } from "@wingman/persistence";
 import { CurrentUser } from "../../common/auth.js";
 import { ZodValidationPipe } from "../../common/zod-validation.pipe.js";
 import { WINGMAN_ENGINE } from "../../engine/engine.tokens.js";
+import { PROTOCOL_MIRROR } from "../infra/infra.tokens.js";
 
 @Injectable()
 export class SafetyService {
-  constructor(@Inject(WINGMAN_ENGINE) private readonly engine: WingmanEngine) {}
+  constructor(
+    @Inject(WINGMAN_ENGINE) private readonly engine: WingmanEngine,
+    @Inject(PROTOCOL_MIRROR) private readonly mirror: ProtocolPersistenceMirror,
+  ) {}
 
-  block(actorId: string, targetId: string) {
-    return this.engine.blockUser(actorId, targetId);
+  async block(actorId: string, targetId: string) {
+    const block = this.engine.blockUser(actorId, targetId);
+    await this.mirror.mirrorLatestBlock();
+    await this.mirror.mirrorAll();
+    return block;
   }
 
-  report(actorId: string, body: { userId: string; category: string; connectionId?: string }) {
-    return this.engine.reportUser(actorId, body.userId, body.category, body.connectionId);
+  async report(actorId: string, body: { userId: string; category: string; connectionId?: string }) {
+    const report = this.engine.reportUser(actorId, body.userId, body.category, body.connectionId);
+    await this.mirror.mirrorLatestReport();
+    return report;
   }
 }
 
@@ -23,19 +33,19 @@ export class SafetyController {
   constructor(private readonly safety: SafetyService) {}
 
   @Post("block")
-  block(
+  async block(
     @CurrentUser() userId: string,
     @Body(new ZodValidationPipe(BlockSchema)) body: { userId: string },
   ) {
-    return { block: this.safety.block(userId, body.userId) };
+    return { block: await this.safety.block(userId, body.userId) };
   }
 
   @Post("report")
-  report(
+  async report(
     @CurrentUser() userId: string,
     @Body(new ZodValidationPipe(ReportSchema))
     body: { userId: string; category: string; connectionId?: string },
   ) {
-    return { report: this.safety.report(userId, body) };
+    return { report: await this.safety.report(userId, body) };
   }
 }

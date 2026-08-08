@@ -3,10 +3,11 @@ import type { EphemeralStore } from "@wingman/ephemeral";
 import type { WingmanEngine } from "@wingman/domain";
 import type { MetricsRegistry } from "@wingman/observability";
 import { buildReadiness } from "@wingman/observability";
+import type { ProtocolPersistenceMirror } from "@wingman/persistence";
 import { METRICS } from "../../common/observability.interceptor.js";
 import { Public } from "../../common/public.decorator.js";
 import { WINGMAN_ENGINE } from "../../engine/engine.tokens.js";
-import { EPHEMERAL_STORE } from "../infra/infra.tokens.js";
+import { EPHEMERAL_STORE, PROTOCOL_MIRROR } from "../infra/infra.tokens.js";
 
 @Injectable()
 export class InternalService {
@@ -14,13 +15,17 @@ export class InternalService {
     @Inject(WINGMAN_ENGINE) private readonly engine: WingmanEngine,
     @Inject(METRICS) private readonly metricsRegistry: MetricsRegistry,
     @Inject(EPHEMERAL_STORE) private readonly ephemeral: EphemeralStore,
+    @Inject(PROTOCOL_MIRROR) private readonly mirror: ProtocolPersistenceMirror,
   ) {}
 
-  reconcile() {
-    return this.engine.reconcile();
+  async reconcile() {
+    const result = this.engine.reconcile();
+    await this.mirror.mirrorAll();
+    return result;
   }
 
-  metrics() {
+  async metrics() {
+    const persisted = await this.mirror.repository.stats();
     return {
       users: this.engine.users.size,
       online: [...this.engine.presence.values()].filter((p) => p.online).length,
@@ -30,6 +35,7 @@ export class InternalService {
       events: this.engine.events.length,
       audits: this.engine.audits.length,
       destinyEnabled: this.engine.destinyEnabled,
+      persistence: { name: this.mirror.repository.name, ...persisted },
       http: this.metricsRegistry.snapshot(),
     };
   }
@@ -44,9 +50,18 @@ export class InternalService {
       redisOk = false;
       redisDetail = e instanceof Error ? e.message : "ephemeral failure";
     }
+    let persistenceOk = true;
+    let persistenceDetail = this.mirror.repository.name;
+    try {
+      await this.mirror.repository.stats();
+    } catch (e) {
+      persistenceOk = false;
+      persistenceDetail = e instanceof Error ? e.message : "persistence failure";
+    }
     return buildReadiness({
       domain: { ok: true },
       ephemeral: { ok: redisOk, detail: redisDetail },
+      persistence: { ok: persistenceOk, detail: persistenceDetail },
       destinyFlag: { ok: true, detail: String(this.engine.destinyEnabled) },
     });
   }

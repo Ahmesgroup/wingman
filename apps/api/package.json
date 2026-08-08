@@ -21,6 +21,8 @@
     "@wingman/ephemeral": "workspace:*",
     "@wingman/notifications": "workspace:*",
     "@wingman/observability": "workspace:*",
+    "@wingman/persistence": "workspace:*",
+    "@wingman/providers": "workspace:*",
     "ioredis": "^5.4.2",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",

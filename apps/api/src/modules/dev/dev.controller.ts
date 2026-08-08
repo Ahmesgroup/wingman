@@ -1,13 +1,18 @@
 import { Body, Controller, Inject, Injectable, Post } from "@nestjs/common";
 import type { WingmanEngine } from "@wingman/domain";
+import type { ProtocolPersistenceMirror } from "@wingman/persistence";
 import { Public } from "../../common/public.decorator.js";
 import { WINGMAN_ENGINE } from "../../engine/engine.tokens.js";
+import { PROTOCOL_MIRROR } from "../infra/infra.tokens.js";
 
 @Injectable()
 export class DevService {
-  constructor(@Inject(WINGMAN_ENGINE) private readonly engine: WingmanEngine) {}
+  constructor(
+    @Inject(WINGMAN_ENGINE) private readonly engine: WingmanEngine,
+    @Inject(PROTOCOL_MIRROR) private readonly mirror: ProtocolPersistenceMirror,
+  ) {}
 
-  seed(body: {
+  async seed(body: {
     id: string;
     gender: "MALE" | "FEMALE" | "NON_BINARY";
     interestedIn: Array<"MEN" | "WOMEN" | "NON_BINARY_PEOPLE">;
@@ -18,6 +23,7 @@ export class DevService {
       wingmanPlus: Boolean(body.wingmanPlus),
       profile: { userId: body.id, gender: body.gender, interestedIn: body.interestedIn },
     });
+    await this.mirror.mirrorUser(body.id);
     return { id: body.id };
   }
 }

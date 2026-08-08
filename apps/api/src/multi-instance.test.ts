@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { MemoryEphemeralStore } from "@wingman/ephemeral";
 import { FakeClock, WingmanEngine } from "@wingman/domain";
+import { MemoryProtocolRepository, ProtocolPersistenceMirror } from "@wingman/persistence";
 import { SignalsService } from "./modules/signals/signals.controller.js";
 import { InMemoryPushTransport, NotificationOrchestrator } from "@wingman/notifications";
 
@@ -16,8 +17,9 @@ describe("S10 multi-instance lock envelope", () => {
 
     const shared = new MemoryEphemeralStore();
     const orch = new NotificationOrchestrator(new InMemoryPushTransport());
-    const inst1 = new SignalsService(engine, shared, orch);
-    const inst2 = new SignalsService(engine, shared, orch);
+    const mirror = new ProtocolPersistenceMirror(engine, new MemoryProtocolRepository());
+    const inst1 = new SignalsService(engine, shared, orch, mirror);
+    const inst2 = new SignalsService(engine, shared, orch, mirror);
 
     const results = await Promise.allSettled([inst1.accept(sig.id, "b"), inst2.accept(sig.id, "b")]);
     const fulfilled = results.filter((r) => r.status === "fulfilled");

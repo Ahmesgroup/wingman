@@ -25,6 +25,8 @@ Executable backend for the Wingman protocol loop:
 | `@wingman/ephemeral` | Presence/TTL/locks/quotas (memory or Redis) |
 | `@wingman/notifications` | Push orchestrator (idempotency, retries, DLQ) |
 | `@wingman/observability` | Structured logs, metrics, readiness |
+| `@wingman/persistence` | Protocol write-behind (`ProtocolPersistenceMirror`) |
+| `@wingman/providers` | SMS OTP + push transport ports (stubs) |
 | `@wingman/api` | NestJS modular HTTP API |
 | `@wingman/workers` | Expiration reconciler |
 
@@ -43,7 +45,11 @@ curl -s localhost:3000/health
 curl -s localhost:3000/internal/ready
 ```
 
-Optional: `REDIS_URL=redis://127.0.0.1:6379` to use Redis ephemeral store.
+Optional:
+
+- `REDIS_URL=redis://127.0.0.1:6379` — Redis ephemeral store
+- `SMS_PROVIDER=noop` — disable console SMS
+- `PUSH_PROVIDER=logging` — log push deliveries
 
 ## Auth modes
 
@@ -87,7 +93,9 @@ Optional: `REDIS_URL=redis://127.0.0.1:6379` to use Redis ephemeral store.
 
 ```bash
 pnpm --filter @wingman/domain test          # 15 protocol tests (freeze baseline)
-pnpm --filter @wingman/api test             # Nest e2e + auth + multi-instance + architecture
+pnpm --filter @wingman/api test             # Nest e2e + auth + multi-instance + persistence + architecture
+pnpm --filter @wingman/persistence test
+pnpm --filter @wingman/providers test
 pnpm -r test                                 # everything
 ```
 

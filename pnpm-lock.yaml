@@ -37,6 +37,12 @@ importers:
       '@wingman/observability':
         specifier: workspace:*
         version: link:../../packages/observability
+      '@wingman/persistence':
+        specifier: workspace:*
+        version: link:../../packages/persistence
+      '@wingman/providers':
+        specifier: workspace:*
+        version: link:../../packages/providers
       ioredis:
         specifier: ^5.4.2
         version: 5.11.1
@@ -164,6 +170,35 @@ importers:
         version: 2.1.9(@types/node@22.20.1)
 
   packages/observability:
+    devDependencies:
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.8
+        version: 2.1.9(@types/node@22.20.1)
+
+  packages/persistence:
+    dependencies:
+      '@wingman/domain':
+        specifier: workspace:*
+        version: link:../domain
+    devDependencies:
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.8
+        version: 2.1.9(@types/node@22.20.1)
+
+  packages/providers:
+    dependencies:
+      '@wingman/auth':
+        specifier: workspace:*
+        version: link:../auth
+      '@wingman/notifications':
+        specifier: workspace:*
+        version: link:../notifications
     devDependencies:
       typescript:
         specifier: ^5.7.3

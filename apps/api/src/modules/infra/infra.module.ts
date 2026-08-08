@@ -3,8 +3,30 @@ import { AuthService } from "@wingman/auth";
 import { MemoryEphemeralStore, RedisEphemeralStore, type EphemeralStore } from "@wingman/ephemeral";
 import { InMemoryPushTransport, NotificationOrchestrator } from "@wingman/notifications";
 import { MetricsRegistry, StructuredLogger } from "@wingman/observability";
+import {
+  MemoryProtocolRepository,
+  ProtocolPersistenceMirror,
+  type ProtocolRepository,
+} from "@wingman/persistence";
+import {
+  ConsoleSmsProvider,
+  LoggingPushTransport,
+  NoopSmsProvider,
+  OtpDeliveryService,
+  type SmsProvider,
+} from "@wingman/providers";
+import type { WingmanEngine } from "@wingman/domain";
 import { LOGGER, METRICS } from "../../common/observability.interceptor.js";
-import { AUTH_SERVICE_TOKEN, EPHEMERAL_STORE, NOTIFICATION_ORCH } from "./infra.tokens.js";
+import { WINGMAN_ENGINE } from "../../engine/engine.tokens.js";
+import {
+  AUTH_SERVICE_TOKEN,
+  EPHEMERAL_STORE,
+  NOTIFICATION_ORCH,
+  OTP_DELIVERY,
+  PROTOCOL_MIRROR,
+  PROTOCOL_REPO,
+  SMS_PROVIDER,
+} from "./infra.tokens.js";
 
 export type InfraOptions = {
   ephemeral?: EphemeralStore;
@@ -12,6 +34,8 @@ export type InfraOptions = {
   notifications?: NotificationOrchestrator;
   metrics?: MetricsRegistry;
   logger?: StructuredLogger;
+  protocolRepo?: ProtocolRepository;
+  sms?: SmsProvider;
 };
 
 let sharedInfra: InfraOptions = {};
@@ -35,6 +59,19 @@ async function buildEphemeral(): Promise<EphemeralStore> {
   return new MemoryEphemeralStore();
 }
 
+function buildSms(): SmsProvider {
+  if (sharedInfra.sms) return sharedInfra.sms;
+  if (process.env.SMS_PROVIDER === "noop") return new NoopSmsProvider();
+  return new ConsoleSmsProvider();
+}
+
+function buildNotifications(): NotificationOrchestrator {
+  if (sharedInfra.notifications) return sharedInfra.notifications;
+  const transport =
+    process.env.PUSH_PROVIDER === "logging" ? new LoggingPushTransport() : new InMemoryPushTransport();
+  return new NotificationOrchestrator(transport);
+}
+
 @Global()
 @Module({
   providers: [
@@ -48,9 +85,27 @@ async function buildEphemeral(): Promise<EphemeralStore> {
         sharedInfra.auth ?? new AuthService(process.env.AUTH_PEPPER ?? "dev-pepper-change-me"),
     },
     {
+      provide: SMS_PROVIDER,
+      useFactory: () => buildSms(),
+    },
+    {
+      provide: OTP_DELIVERY,
+      useFactory: (auth: AuthService, sms: SmsProvider) => new OtpDeliveryService(auth, sms),
+      inject: [AUTH_SERVICE_TOKEN, SMS_PROVIDER],
+    },
+    {
       provide: NOTIFICATION_ORCH,
-      useFactory: () =>
-        sharedInfra.notifications ?? new NotificationOrchestrator(new InMemoryPushTransport()),
+      useFactory: () => buildNotifications(),
+    },
+    {
+      provide: PROTOCOL_REPO,
+      useFactory: () => sharedInfra.protocolRepo ?? new MemoryProtocolRepository(),
+    },
+    {
+      provide: PROTOCOL_MIRROR,
+      useFactory: (engine: WingmanEngine, repo: ProtocolRepository) =>
+        new ProtocolPersistenceMirror(engine, repo),
+      inject: [WINGMAN_ENGINE, PROTOCOL_REPO],
     },
     {
       provide: METRICS,
@@ -61,6 +116,16 @@ async function buildEphemeral(): Promise<EphemeralStore> {
       useFactory: () => sharedInfra.logger ?? new StructuredLogger("wingman-api"),
     },
   ],
-  exports: [EPHEMERAL_STORE, AUTH_SERVICE_TOKEN, NOTIFICATION_ORCH, METRICS, LOGGER],
+  exports: [
+    EPHEMERAL_STORE,
+    AUTH_SERVICE_TOKEN,
+    SMS_PROVIDER,
+    OTP_DELIVERY,
+    NOTIFICATION_ORCH,
+    PROTOCOL_REPO,
+    PROTOCOL_MIRROR,
+    METRICS,
+    LOGGER,
+  ],
 })
 export class InfraModule {}

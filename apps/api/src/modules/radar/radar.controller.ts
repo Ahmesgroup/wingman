@@ -2,16 +2,18 @@ import { Body, Controller, Get, Inject, Injectable, Post, Query } from "@nestjs/
 import { ActivateRadarSchema, HeartbeatSchema } from "@wingman/contracts";
 import type { PresenceVisibility, WingmanEngine } from "@wingman/domain";
 import type { EphemeralStore } from "@wingman/ephemeral";
+import type { ProtocolPersistenceMirror } from "@wingman/persistence";
 import { CurrentUser } from "../../common/auth.js";
 import { ZodValidationPipe } from "../../common/zod-validation.pipe.js";
 import { WINGMAN_ENGINE } from "../../engine/engine.tokens.js";
-import { EPHEMERAL_STORE } from "../infra/infra.tokens.js";
+import { EPHEMERAL_STORE, PROTOCOL_MIRROR } from "../infra/infra.tokens.js";
 
 @Injectable()
 export class RadarService {
   constructor(
     @Inject(WINGMAN_ENGINE) private readonly engine: WingmanEngine,
     @Inject(EPHEMERAL_STORE) private readonly ephemeral: EphemeralStore,
+    @Inject(PROTOCOL_MIRROR) private readonly mirror: ProtocolPersistenceMirror,
   ) {}
 
   async activate(userId: string, body: { lat: number; lng: number; visibility: string }) {
@@ -30,12 +32,14 @@ export class RadarService {
       },
       120,
     );
+    await this.mirror.mirrorPresence(userId);
     return presence;
   }
 
   async deactivate(userId: string) {
     const presence = this.engine.deactivateRadar(userId);
     await this.ephemeral.deletePresence(userId);
+    await this.mirror.mirrorPresence(userId);
     return presence;
   }
 
@@ -44,6 +48,7 @@ export class RadarService {
       body.lat !== undefined && body.lng !== undefined ? { lat: body.lat, lng: body.lng } : undefined;
     const presence = this.engine.heartbeat(userId, location);
     await this.ephemeral.heartbeat(userId, 120, location);
+    await this.mirror.mirrorPresence(userId);
     return presence;
   }
 
