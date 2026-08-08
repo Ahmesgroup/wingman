@@ -4,6 +4,8 @@
 
 Start with `README.md`, then `docs/PRD.md`, `architecture/STATE_MACHINES.md`, `database/schema.prisma`, and `prototype/index.html`.
 
+**Executable backend (implemented):** start with [`implementation/BACKEND_IMPLEMENTATION_STATUS.md`](implementation/BACKEND_IMPLEMENTATION_STATUS.md) and [`apps/BACKEND_README.md`](apps/BACKEND_README.md).
+
 
 ## Root
 
@@ -65,6 +67,7 @@ Start with `README.md`, then `docs/PRD.md`, `architecture/STATE_MACHINES.md`, `d
 
 ## API (api/)
 
+- [`api/IMPLEMENTED_HTTP_API.md`](api/IMPLEMENTED_HTTP_API.md) — **routes that exist in NestJS today**
 - [`api/ADMIN_API.md`](api/ADMIN_API.md)
 - [`api/API_OVERVIEW.md`](api/API_OVERVIEW.md)
 - [`api/AUTH_API.md`](api/AUTH_API.md)
@@ -161,6 +164,7 @@ Start with `README.md`, then `docs/PRD.md`, `architecture/STATE_MACHINES.md`, `d
 
 ## Operations (operations/)
 
+- [`operations/PRODUCTION_READINESS.md`](operations/PRODUCTION_READINESS.md) — **S12 readiness gates (implemented)**
 - [`operations/BACKUP_AND_RESTORE.md`](operations/BACKUP_AND_RESTORE.md)
 - [`operations/CI_CD.md`](operations/CI_CD.md)
 - [`operations/DEPLOYMENT.md`](operations/DEPLOYMENT.md)
@@ -173,6 +177,9 @@ Start with `README.md`, then `docs/PRD.md`, `architecture/STATE_MACHINES.md`, `d
 
 ## Implementation (implementation/)
 
+- [`implementation/BACKEND_IMPLEMENTATION_STATUS.md`](implementation/BACKEND_IMPLEMENTATION_STATUS.md) — **what was built (S0–S12), English**
+- [`apps/BACKEND_README.md`](apps/BACKEND_README.md) — developer quick start for the executable API
+- [`operations/PRODUCTION_READINESS.md`](operations/PRODUCTION_READINESS.md) — S12 readiness gates
 - [`implementation/AI_CODING_RULES.md`](implementation/AI_CODING_RULES.md)
 - [`implementation/CODING_STANDARDS.md`](implementation/CODING_STANDARDS.md)
 - [`implementation/DEFINITION_OF_DONE.md`](implementation/DEFINITION_OF_DONE.md)

@@ -1,36 +1,96 @@
-# Wingman backend engine
+# Wingman Backend — Developer Guide
 
-Backend monorepo implementing the Wingman protocol loop:
+**Status:** Implemented · Full narrative: [`implementation/BACKEND_IMPLEMENTATION_STATUS.md`](../implementation/BACKEND_IMPLEMENTATION_STATUS.md)
+
+Executable backend for the Wingman protocol loop:
 
 `Presence → Radar → Signal → Mutual Validation → Match → Mission → Cooldown → Radar`
 
-(+ Destiny behind `DESTINY_ENABLED` feature flag).
+(+ Destiny behind `DESTINY_ENABLED`, default **off**).
 
-**S0–S7 domain is frozen.** S8–S12 wrap it with NestJS, auth, Redis ephemeral envelope, push, observability.
+## Rules
+
+1. **S0–S7 domain is frozen** (`packages/domain`). Do not change protocol rules to fit Nest/Redis.
+2. **Backend is state authority.** Clients request transitions; timers use server `expiresAt` (UTC).
+3. Controllers are HTTP-only; services call `WingmanEngine`.
 
 ## Packages
 
-- `packages/domain` — pure state machines (server-authoritative `expiresAt`) — **frozen**
-- `packages/contracts` — Zod request contracts + error catalog
-- `packages/database` — Prisma schema + invariant migration stubs
-- `packages/auth` — OTP, sessions, refresh/revoke, device binding
-- `packages/ephemeral` — Redis/memory presence, locks, quotas, pub/sub
-- `packages/notifications` — push orchestrator (idempotency, retries, DLQ)
-- `packages/observability` — structured logs, metrics, readiness helper
-- `apps/api` — NestJS modular API (controllers thin; services call domain)
-- `apps/workers` — expiration reconciler
+| Package | Role |
+|---------|------|
+| `@wingman/domain` | Pure protocol engine (**frozen**) |
+| `@wingman/contracts` | Zod DTOs + error catalog |
+| `@wingman/database` | Prisma schema + invariant SQL stubs |
+| `@wingman/auth` | OTP, sessions, refresh, device binding |
+| `@wingman/ephemeral` | Presence/TTL/locks/quotas (memory or Redis) |
+| `@wingman/notifications` | Push orchestrator (idempotency, retries, DLQ) |
+| `@wingman/observability` | Structured logs, metrics, readiness |
+| `@wingman/api` | NestJS modular HTTP API |
+| `@wingman/workers` | Expiration reconciler |
 
 ## Quick start
 
 ```bash
 pnpm install
 pnpm -r test
+
 docker compose -f infrastructure/docker/docker-compose.yml up -d
-# optional: REDIS_URL=redis://127.0.0.1:6379 AUTH_DEBUG_OTP=true
-pnpm --filter @wingman/api dev
+
+# Dev API (DevAuthGuard: pass x-user-id)
+AUTH_DEBUG_OTP=true pnpm --filter @wingman/api dev
+
+curl -s localhost:3000/health
 curl -s localhost:3000/internal/ready
 ```
 
-Authority rule: clients request transitions; they never declare timers or terminal states.
+Optional: `REDIS_URL=redis://127.0.0.1:6379` to use Redis ephemeral store.
 
-Readiness checklist: [operations/PRODUCTION_READINESS.md](../operations/PRODUCTION_READINESS.md).
+## Auth modes
+
+| Mode | How |
+|------|-----|
+| Dev (default e2e) | Header `x-user-id: <userId>` |
+| Session | `POST /auth/otp/*` then `Authorization: Bearer <token>` + `x-device-id` |
+
+## Main HTTP surface
+
+| Method | Path | Auth | Notes |
+|--------|------|------|-------|
+| GET | `/health` | Public | Liveness |
+| GET | `/internal/ready` | Public | Readiness aggregate |
+| GET | `/internal/metrics` | Public | Engine + HTTP metrics |
+| POST | `/internal/reconcile` | Public | Expire presence/signals/connections |
+| POST | `/dev/seed` | Public | Seed test user into engine |
+| POST | `/auth/otp/request` | Public | Start OTP |
+| POST | `/auth/otp/verify` | Public | Issue session |
+| POST | `/auth/refresh` | Public | Rotate session |
+| POST | `/auth/logout` | Public | Revoke access token |
+| POST | `/radar/activate` | User | Presence + location |
+| POST | `/radar/deactivate` | User | Leave radar |
+| POST | `/radar/heartbeat` | User | Refresh TTL |
+| GET | `/radar/candidates` | User | Anonymized candidates |
+| POST | `/signals` | User | Create signal (`Idempotency-Key` supported) |
+| POST | `/signals/:id/open\|refuse\|cancel\|accept` | User | Signal lifecycle |
+| GET | `/connections/:id` | User | Connection state + `expiresAt` |
+| POST | `/connections/:id/selfie` | User | Opaque `mediaId` only |
+| POST | `/connections/:id/approve` | User | → `MUTUALLY_VALIDATED` |
+| POST | `/connections/:id/meet-now` | User | Start Mission Meet |
+| POST | `/connections/:id/ticket*` | User | Hold / available / confirm |
+| POST | `/connections/:id/messages` | User | Anti-contact filtered |
+| POST | `/connections/:id/outcome` | User | YES/NO → cooldown |
+| POST | `/safety/block` | User | Immediate radar exclusion |
+| POST | `/safety/report` | User | Report record |
+| POST | `/privacy/consent` | User | Append-only consent |
+| POST | `/destiny/copresence` | User | Fails if Destiny disabled |
+
+## Tests to trust
+
+```bash
+pnpm --filter @wingman/domain test          # 15 protocol tests (freeze baseline)
+pnpm --filter @wingman/api test             # Nest e2e + auth + multi-instance + architecture
+pnpm -r test                                 # everything
+```
+
+## Production readiness
+
+See [`operations/PRODUCTION_READINESS.md`](../operations/PRODUCTION_READINESS.md).

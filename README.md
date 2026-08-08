@@ -3,12 +3,14 @@
 > **Make the first acquaintance easy.** · *Love is in the air.*
 > Category: **social interaction facilitation technology** — not a traditional dating app.
 
-**Status:** Foundation spec, ready to start V1 implementation.
+**Status:** Foundation spec **plus executable backend (S0–S12)** in this monorepo.
 **Version:** 4.1 · **Region:** Single EU · **Owner:** Igor Chernikov · **Prepared by:** AHMES GROUP
 
-This repository is the complete design-and-engineering dossier for Wingman. It is written so that a
-small team — or several AI coding agents — can begin implementation without re-interpreting the
-product. It is documentation and a working prototype, **not** the application code yet.
+This repository is the complete design-and-engineering dossier for Wingman **and** the working
+backend engine + NestJS production envelope. Product specs remain under `docs/`, `architecture/`,
+`api/`, etc. Application code lives under `apps/` and `packages/`.
+
+**Backend implementation (English):** [`implementation/BACKEND_IMPLEMENTATION_STATUS.md`](implementation/BACKEND_IMPLEMENTATION_STATUS.md) · quick start [`apps/BACKEND_README.md`](apps/BACKEND_README.md).
 
 ## What Wingman is
 
@@ -24,14 +26,16 @@ of a real interaction must be rejected.*
 Start here, then follow the links:
 
 1. `DOCUMENTATION_INDEX.md` — the full map of every document.
-2. `docs/PRD.md` — the product requirements.
-3. `docs/FR_EXECUTIVE_SUMMARY.md` — résumé exécutif en français.
-4. `architecture/SYSTEM_ARCHITECTURE.md` — how the system is built and why.
-5. `architecture/STATE_MACHINES.md` — the heart of the product: the connection protocol.
-6. `database/schema.prisma` + `database/DATABASE_INVARIANTS.md` — the data model and its guarantees.
-7. `design/DESIGN_SYSTEM.md` + `design/design-tokens.json` — the visual language.
-8. `prototype/index.html` — the interactive prototype (see below).
-9. `implementation/REPOSITORY_BOOTSTRAP_PROMPT.md` — the prompt that turns this into real code.
+2. `implementation/BACKEND_IMPLEMENTATION_STATUS.md` — what was built for the backend (S0–S12).
+3. `apps/BACKEND_README.md` — run/test the NestJS API.
+4. `docs/PRD.md` — the product requirements.
+5. `docs/FR_EXECUTIVE_SUMMARY.md` — résumé exécutif en français.
+6. `architecture/SYSTEM_ARCHITECTURE.md` — how the system is built and why.
+7. `architecture/STATE_MACHINES.md` — the heart of the product: the connection protocol.
+8. `database/schema.prisma` + `database/DATABASE_INVARIANTS.md` — the data model and its guarantees.
+9. `design/DESIGN_SYSTEM.md` + `design/design-tokens.json` — the visual language.
+10. `prototype/index.html` — the interactive prototype (see below).
+11. `implementation/REPOSITORY_BOOTSTRAP_PROMPT.md` — original bootstrap prompt for greenfield coding agents.
 
 ## Reading order by role
 
