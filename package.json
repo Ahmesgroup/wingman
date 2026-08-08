@@ -1,0 +1,16 @@
+{
+  "name": "wingman",
+  "private": true,
+  "packageManager": "pnpm@9.15.0",
+  "scripts": {
+    "build": "pnpm -r run build",
+    "test": "pnpm -r run test",
+    "typecheck": "pnpm -r run typecheck",
+    "lint": "pnpm -r run lint",
+    "dev:api": "pnpm --filter @wingman/api dev",
+    "dev:workers": "pnpm --filter @wingman/workers dev"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
