@@ -5,7 +5,7 @@ import { AppModule, type AppModuleOptions } from "../app.module.js";
 
 export async function createNestApp(opts: AppModuleOptions = {}): Promise<INestApplication> {
   const moduleRef = await Test.createTestingModule({
-    imports: [AppModule.register({ useDevAuth: true, ...opts })],
+    imports: [AppModule.register({ useDevAuth: true, skipHydrate: true, ...opts })],
   }).compile();
   const app = moduleRef.createNestApplication();
   await app.init();

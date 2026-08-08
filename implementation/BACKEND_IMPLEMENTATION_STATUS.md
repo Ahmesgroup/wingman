@@ -1,13 +1,14 @@
-# Backend Implementation Status (S0–S15)
+# Backend Implementation Status (S0–S16)
 
 **Status:** Implemented in this repository · **Language:** English (source of truth for what was built)  
-**Related:** [`apps/BACKEND_README.md`](../apps/BACKEND_README.md), [`operations/PRODUCTION_READINESS.md`](../operations/PRODUCTION_READINESS.md), [`architecture/STATE_MACHINES.md`](../architecture/STATE_MACHINES.md)
+**Related:** [`apps/BACKEND_README.md`](../apps/BACKEND_README.md), [`operations/PRODUCTION_READINESS.md`](../operations/PRODUCTION_READINESS.md), [`operations/S16_PERSISTENCE_LIVE.md`](../operations/S16_PERSISTENCE_LIVE.md), [`architecture/STATE_MACHINES.md`](../architecture/STATE_MACHINES.md)
 
 This document describes the **executable backend** that was built from the V4.1 product & engineering specification. It covers:
 
 1. **S0–S7 — Protocol engine** (`packages/domain` + contracts/database bootstrap) — **frozen**
 2. **S8–S12 — Production envelope** (NestJS API, auth, ephemeral Redis layer, push, observability)
 3. **S13–S15 — Persistence write-behind + provider ports** (domain still frozen; Nest mirrors outcomes)
+4. **S16 — Live Prisma + deterministic boot hydration** (PostgreSQL durable; Redis ephemeral-only)
 
 The original product specs under `docs/`, `architecture/`, `api/` remain authoritative for product rules. This file is authoritative for **what code exists today** and how to operate it.
 
@@ -314,6 +315,8 @@ curl -s -X POST localhost:3000/auth/otp/verify -H 'content-type: application/jso
 | `REDIS_URL` | unset | Use Redis ephemeral store; else memory |
 | `SMS_PROVIDER` | `console` | `noop` disables SMS delivery |
 | `PUSH_PROVIDER` | unset | `logging` uses LoggingPushTransport |
+| `DATABASE_URL` | unset | Live Prisma protocol repo when reachable |
+| `PROTOCOL_HYDRATE` | unset | `false` skips boot hydrate |
 | `API_INTERNAL_URL` | unset | Workers POST reconcile target |
 | `FAKE_CLOCK` | unset | (legacy/main) not required for Nest tests |
 | `NODE_ENV` | — | `test` skips listen in some entrypoints |
@@ -331,6 +334,7 @@ Approximate commit trail on `master`:
 | `S8: NestJS strict...` | Nest API + auth/ephemeral/notifications/observability packages |
 | `S9` … `S12` | Gate markers for production envelope |
 | `S13` … `S15` | Persistence write-behind + SMS/push provider ports + Nest wiring |
+| `S16` | Live Prisma durable tables + deterministic boot hydration |
 
 Always re-verify with `pnpm -r test` after pulls.
 
@@ -353,9 +357,9 @@ HTTP → Nest service → WingmanEngine (authority)
                     ↘ ProtocolPersistenceMirror → ProtocolRepository
 ```
 
-- **Default repo:** `MemoryProtocolRepository` (tests + single-node default).
-- **Postgres path:** inject `PrismaProtocolRepository` with a real `PrismaClient` when `DATABASE_URL` users exist. UserSeed upsert is a no-op on Prisma (full `User` model requires phone crypto fields from the identity pipeline).
-- Presence remains Redis/ephemeral-authoritative; repository may keep an advisory last-known snapshot.
+- **Default repo:** `MemoryProtocolRepository` when `DATABASE_URL` is unset.
+- **Postgres path (S16):** `LivePrismaProtocolRepository` via `DATABASE_URL` + `Protocol*` tables (domain-faithful JSON). Full identity `User` (phone crypto) remains separate.
+- Presence remains Redis-authoritative and is **not** hydrated from PostgreSQL.
 
 ### 15.2 Providers model
 
@@ -373,41 +377,62 @@ pnpm --filter @wingman/api test           # includes persistence.e2e.test.ts
 
 ---
 
-## 16. What is intentionally not done yet
+## 16. Sprint delivery — S16 (live persistence + boot hydrate)
 
-- Live PrismaClient wiring against a migrated Postgres (adapter port exists; default remains memory mirror)
-- Real SMS vendor (Twilio/etc.) and APNs / FCM transports
-- Engine cold-start hydrate from Postgres (write-behind only today)
-- Stripe / Wingman+ billing
-- WebSocket realtime fan-out (pub/sub port exists; mobile WS not built)
+| Sprint | Objective | What was built | Exit gate |
+|--------|-----------|----------------|-----------|
+| **S16** | PostgreSQL durable reconstruction | `Protocol*` Prisma tables, `LivePrismaProtocolRepository`, `hydrateFromRepository`, Nest `ProtocolBootService`, accept `$transaction`, readiness `database` check | Restart without durable divergence; presence not revived |
+
+### 16.1 Invariant
+
+```text
+PostgreSQL = durable protocol state for boot reconstruction
+Redis      = presence TTL, transient radar, locks, rate limits, short coordination
+```
+
+Hydration clears process maps, loads durable snapshot, rebuilds locks for non-terminal active connections, runs `engine.reconcile()`, and never restores `presence` / `locations`.
+
+See [`operations/S16_PERSISTENCE_LIVE.md`](../operations/S16_PERSISTENCE_LIVE.md).
+
+---
+
+## 17. What is intentionally not done yet
+
+- S17 WebSocket gateway (events only; same application services as HTTP)
+- S18 real SMS / APNs / FCM behind `@wingman/providers`
+- S19 Stripe + Wingman+ entitlements (backend authority, not client `isPremium`)
+- S20 multi-instance / failure certification go/no-go
 - Destiny V2, ranking radar, behavioral anti-abuse, geo optimization
 - Mobile / web / admin application UIs
 
 ---
 
-## 17. Where to go next (post-S15)
+## 18. Where to go next (S17–S20)
 
-1. Point Nest `PROTOCOL_REPO` at `PrismaProtocolRepository` + migrate schema; seed identity users before protocol mirrors
-2. Hydrate `WingmanEngine` from durable store on boot (read path)
-3. Wire real Redis in staging + multi-instance deploy tests
-4. Replace console SMS / logging push with vendor adapters
-5. Only then: advanced engines (ranking, Destiny V2, etc.)
+1. **S17** Realtime transport — WS gateway, auth, rooms, reconnect/replay; no parallel domain
+2. **S18** Production providers — SMS + APNs/FCM via existing ports
+3. **S19** Payments — Stripe webhooks → entitlements
+4. **S20** Production certification — multi-instance, outages, load/race, final observability
 
 ---
 
-## 18. Quick reference — key files
+## 19. Quick reference — key files
 
 | Concern | File |
 |---------|------|
 | Protocol facade | [`packages/domain/src/engine.ts`](../packages/domain/src/engine.ts) |
 | Connection transitions | [`packages/domain/src/connection/transitions.ts`](../packages/domain/src/connection/transitions.ts) |
 | Persistence mirror | [`packages/persistence/src/mirror.ts`](../packages/persistence/src/mirror.ts) |
+| Boot hydrate | [`packages/persistence/src/hydrate.ts`](../packages/persistence/src/hydrate.ts) |
+| Live Prisma repo | [`packages/persistence/src/live-prisma-repository.ts`](../packages/persistence/src/live-prisma-repository.ts) |
 | Provider ports | [`packages/providers/src/index.ts`](../packages/providers/src/index.ts) |
 | Nest app composition | [`apps/api/src/app.module.ts`](../apps/api/src/app.module.ts) |
+| Restart gate | [`apps/api/src/restart.e2e.test.ts`](../apps/api/src/restart.e2e.test.ts) |
 | Nest e2e loop | [`apps/api/src/e2e.test.ts`](../apps/api/src/e2e.test.ts) |
 | Persistence e2e | [`apps/api/src/persistence.e2e.test.ts`](../apps/api/src/persistence.e2e.test.ts) |
 | Auth e2e | [`apps/api/src/auth.e2e.test.ts`](../apps/api/src/auth.e2e.test.ts) |
 | Multi-instance lock | [`apps/api/src/multi-instance.test.ts`](../apps/api/src/multi-instance.test.ts) |
 | Controller thinness | [`apps/api/src/architecture.test.ts`](../apps/api/src/architecture.test.ts) |
 | Zod contracts | [`packages/contracts/src/index.ts`](../packages/contracts/src/index.ts) |
+| S16 runbook | [`operations/S16_PERSISTENCE_LIVE.md`](../operations/S16_PERSISTENCE_LIVE.md) |
 | Production checklist | [`operations/PRODUCTION_READINESS.md`](../operations/PRODUCTION_READINESS.md) |

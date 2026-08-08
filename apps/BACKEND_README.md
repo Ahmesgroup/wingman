@@ -48,8 +48,11 @@ curl -s localhost:3000/internal/ready
 Optional:
 
 - `REDIS_URL=redis://127.0.0.1:6379` — Redis ephemeral store
+- `DATABASE_URL=postgresql://wingman:wingman@127.0.0.1:5432/wingman` — live Prisma protocol persistence + boot hydrate
 - `SMS_PROVIDER=noop` — disable console SMS
 - `PUSH_PROVIDER=logging` — log push deliveries
+
+S16 details: [`operations/S16_PERSISTENCE_LIVE.md`](../operations/S16_PERSISTENCE_LIVE.md).
 
 ## Auth modes
 

@@ -19,6 +19,8 @@
     "lint": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@prisma/client": "^6.3.0",
+    "@wingman/database": "workspace:*",
     "@wingman/domain": "workspace:*"
   },
   "devDependencies": {

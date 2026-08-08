@@ -3,11 +3,12 @@ import type { EphemeralStore } from "@wingman/ephemeral";
 import type { WingmanEngine } from "@wingman/domain";
 import type { MetricsRegistry } from "@wingman/observability";
 import { buildReadiness } from "@wingman/observability";
+import type { PrismaClient } from "@wingman/database";
 import type { ProtocolPersistenceMirror } from "@wingman/persistence";
 import { METRICS } from "../../common/observability.interceptor.js";
 import { Public } from "../../common/public.decorator.js";
 import { WINGMAN_ENGINE } from "../../engine/engine.tokens.js";
-import { EPHEMERAL_STORE, PROTOCOL_MIRROR } from "../infra/infra.tokens.js";
+import { EPHEMERAL_STORE, PRISMA_CLIENT, PROTOCOL_MIRROR } from "../infra/infra.tokens.js";
 
 @Injectable()
 export class InternalService {
@@ -16,6 +17,7 @@ export class InternalService {
     @Inject(METRICS) private readonly metricsRegistry: MetricsRegistry,
     @Inject(EPHEMERAL_STORE) private readonly ephemeral: EphemeralStore,
     @Inject(PROTOCOL_MIRROR) private readonly mirror: ProtocolPersistenceMirror,
+    @Inject(PRISMA_CLIENT) private readonly prisma: PrismaClient | null,
   ) {}
 
   async reconcile() {
@@ -58,10 +60,25 @@ export class InternalService {
       persistenceOk = false;
       persistenceDetail = e instanceof Error ? e.message : "persistence failure";
     }
+    let databaseOk = true;
+    let databaseDetail = "not-configured";
+    if (this.prisma) {
+      try {
+        await this.prisma.$queryRaw`SELECT 1`;
+        databaseDetail = "postgres";
+      } catch (e) {
+        databaseOk = false;
+        databaseDetail = e instanceof Error ? e.message : "database failure";
+      }
+    } else if (process.env.DATABASE_URL) {
+      databaseOk = false;
+      databaseDetail = "DATABASE_URL set but prisma client unavailable";
+    }
     return buildReadiness({
       domain: { ok: true },
       ephemeral: { ok: redisOk, detail: redisDetail },
       persistence: { ok: persistenceOk, detail: persistenceDetail },
+      database: { ok: databaseOk, detail: databaseDetail },
       destinyFlag: { ok: true, detail: String(this.engine.destinyEnabled) },
     });
   }

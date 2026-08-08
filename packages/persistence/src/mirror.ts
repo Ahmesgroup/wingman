@@ -32,6 +32,25 @@ export class ProtocolPersistenceMirror {
     await this.repo.savePresence(userId, presence, this.engine.locations.get(userId));
   }
 
+  async mirrorSignalUsage(userId?: string): Promise<void> {
+    if (userId) {
+      for (const [key, count] of this.engine.signalUsage) {
+        if (key.startsWith(`${userId}|`)) await this.repo.saveSignalUsage(key, count);
+      }
+      return;
+    }
+    for (const [key, count] of this.engine.signalUsage) {
+      await this.repo.saveSignalUsage(key, count);
+    }
+  }
+
+  async mirrorAccept(signalId: string, connectionId: string): Promise<void> {
+    const signal = this.engine.signals.get(signalId);
+    const connection = this.engine.connections.get(connectionId);
+    if (!signal || !connection) return;
+    await this.repo.saveAcceptTransition(signal, connection);
+  }
+
   async mirrorLatestBlock(): Promise<void> {
     const block = this.engine.blocks[this.engine.blocks.length - 1];
     if (block) await this.repo.saveBlock(block);
@@ -47,11 +66,10 @@ export class ProtocolPersistenceMirror {
     if (consent) await this.repo.saveConsent(consent);
   }
 
-  /** Best-effort full snapshot after reconcile / bulk mutations. */
+  /** Best-effort full durable snapshot (excludes relying on presence for rebuild). */
   async mirrorAll(): Promise<void> {
     for (const userId of this.engine.users.keys()) {
       await this.mirrorUser(userId);
-      await this.mirrorPresence(userId);
     }
     for (const signalId of this.engine.signals.keys()) {
       await this.mirrorSignal(signalId);
@@ -59,6 +77,10 @@ export class ProtocolPersistenceMirror {
     for (const connectionId of this.engine.connections.keys()) {
       await this.mirrorConnection(connectionId);
     }
+    for (const block of this.engine.blocks) {
+      await this.repo.saveBlock(block);
+    }
+    await this.mirrorSignalUsage();
   }
 
   get repository(): ProtocolRepository {

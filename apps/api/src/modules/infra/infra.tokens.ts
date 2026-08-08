@@ -3,5 +3,6 @@ export const NOTIFICATION_ORCH = Symbol("NOTIFICATION_ORCH");
 export const AUTH_SERVICE_TOKEN = Symbol("AUTH_SERVICE_TOKEN");
 export const PROTOCOL_REPO = Symbol("PROTOCOL_REPO");
 export const PROTOCOL_MIRROR = Symbol("PROTOCOL_MIRROR");
+export const PRISMA_CLIENT = Symbol("PRISMA_CLIENT");
 export const SMS_PROVIDER = Symbol("SMS_PROVIDER");
 export const OTP_DELIVERY = Symbol("OTP_DELIVERY");

@@ -729,3 +729,81 @@ model DestinyCandidate {
 
   @@index([purgeAt])
 }
+
+// -------------------------------- S16 DURABLE PROTOCOL (boot hydrate) --------
+// These tables store domain-faithful JSON for reconstruction after restart.
+// Presence / radar locations / sockets are NOT stored here (Redis only).
+// Full identity User (phone crypto) remains separate; ProtocolIdentity is the
+// durable radar profile + entitlement seed used by WingmanEngine.
+
+model ProtocolIdentity {
+  id           String           @id
+  gender       Gender
+  interestedIn InterestTarget[]
+  wingmanPlus  Boolean          @default(false)
+  payload      Json
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+}
+
+model ProtocolSignalRow {
+  id        String   @id
+  pairKey   String
+  isActive  Boolean
+  status    String
+  expiresAt DateTime
+  payload   Json
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive, expiresAt])
+  @@index([pairKey])
+}
+
+model ProtocolConnectionRow {
+  id          String   @id
+  pairKey     String
+  initiatorId String
+  recipientId String
+  state       String
+  isActive    Boolean
+  expiresAt   DateTime
+  payload     Json
+  updatedAt   DateTime @updatedAt
+
+  @@index([isActive, expiresAt])
+  @@index([pairKey])
+  @@index([initiatorId, isActive])
+  @@index([recipientId, isActive])
+}
+
+model ProtocolBlockRow {
+  id        String   @id
+  blockerId String
+  blockedId String
+  payload   Json
+  createdAt DateTime @default(now())
+
+  @@unique([blockerId, blockedId])
+  @@index([blockedId])
+}
+
+model ProtocolReportRow {
+  id        String   @id
+  payload   Json
+  createdAt DateTime @default(now())
+}
+
+model ProtocolConsentRow {
+  id        String   @id
+  userId    String
+  payload   Json
+  occurredAt DateTime
+
+  @@index([userId, occurredAt])
+}
+
+model ProtocolSignalUsageRow {
+  usageKey  String   @id
+  count     Int
+  updatedAt DateTime @updatedAt
+}

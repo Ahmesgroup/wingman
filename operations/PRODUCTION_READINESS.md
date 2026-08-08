@@ -1,11 +1,11 @@
-# Production readiness (S12–S15)
+# Production readiness (S12–S16)
 
-**Status:** Measured against the S8–S15 envelope (domain S0–S7 frozen).  
+**Status:** Measured against the S8–S16 envelope (domain S0–S7 frozen).  
 **Full build narrative:** [`implementation/BACKEND_IMPLEMENTATION_STATUS.md`](../implementation/BACKEND_IMPLEMENTATION_STATUS.md)
 
 ## Purpose
 
-This checklist proves the backend is operable as a production-shaped service envelope around the frozen protocol engine. Persistence is write-behind (mirror); SMS/push use safe stub providers until vendor adapters are swapped in.
+This checklist proves the backend is operable as a production-shaped service envelope around the frozen protocol engine. S16 adds live Prisma durable protocol tables + deterministic boot hydration. SMS/push remain stub providers until S18.
 
 ## Checks
 
@@ -18,8 +18,9 @@ This checklist proves the backend is operable as a production-shaped service env
 | Ephemeral locks | `packages/ephemeral` + `multi-instance.test.ts` | Single accept winner across instances |
 | Push idempotency | `packages/notifications` + `packages/providers` tests | No double send; DLQ after max retries |
 | Persistence mirror | `packages/persistence` + `persistence.e2e.test.ts` | HTTP mutations mirrored; readiness includes persistence |
+| Boot hydrate / restart | `hydrate.test.ts` + `restart.e2e.test.ts` | Durable state restored; presence not revived |
 | OTP SMS port | `providers` + auth OTP path | SMS queued via port; phone redacted in provider logs |
-| Readiness endpoint | `GET /internal/ready` | `ready: true` with domain + ephemeral + persistence |
+| Readiness endpoint | `GET /internal/ready` | `ready: true` with domain + ephemeral + persistence (+ database when configured) |
 | Structured logs | `packages/observability` tests | Sensitive fields redacted |
 | Metrics | `GET /internal/metrics` includes `http` + `persistence` | Counters present |
 
@@ -39,6 +40,7 @@ curl -s localhost:3000/internal/metrics
 | `AUTH_PEPPER` | Yes | Rotate; never use default |
 | `AUTH_DEBUG_OTP` | Must be unset/false | Never expose OTP codes |
 | `REDIS_URL` | Recommended | Memory store is single-instance only |
+| `DATABASE_URL` | Yes for durable restart | Live `LivePrismaProtocolRepository` |
 | `SMS_PROVIDER` | Prefer real adapter later | `console` / `noop` are stubs |
 | `PUSH_PROVIDER` | Prefer APNs/FCM later | `logging` is a stub |
 | `DESTINY_ENABLED` | Default false | DPIA before enabling |
@@ -53,12 +55,13 @@ curl -s localhost:3000/internal/metrics
 
 ## Explicit gaps before “full prod”
 
-- Live `PrismaClient` + migrations (port exists; default memory mirror)
-- Engine hydrate-from-DB on boot
-- Real SMS OTP vendor / APNs / FCM
+- S17 WebSocket realtime (same services as HTTP)
+- S18 real SMS OTP vendor / APNs / FCM
+- S19 Stripe entitlements
+- S20 multi-instance / outage certification
 - Multi-region, autoscaling runbooks beyond compose
 - Load/chaos automation in CI
 
-## Not in scope until post-S15
+## Not in scope until post-S20
 
 Destiny V2, ranking radar, behavioral anti-abuse, geospatial optimization, adaptive intelligence.

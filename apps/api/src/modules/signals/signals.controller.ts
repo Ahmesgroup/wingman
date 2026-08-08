@@ -25,6 +25,7 @@ export class SignalsService {
   ) {
     const signal = this.engine.sendSignal(userId, body.receiverId, idem, body.source);
     await this.mirror.mirrorSignal(signal.id);
+    await this.mirror.mirrorSignalUsage(userId);
     const event: PushEvent = {
       id: `push_${signal.id}`,
       type: "signal.received",
@@ -67,14 +68,12 @@ export class SignalsService {
     const got = await this.ephemeral.acquireLock(lockKey, owner, 15);
     if (!got) {
       const connection = this.engine.acceptSignal(id, userId);
-      await this.mirror.mirrorSignal(id);
-      await this.mirror.mirrorConnection(connection.id);
+      await this.mirror.mirrorAccept(id, connection.id);
       return connection;
     }
     try {
       const connection = this.engine.acceptSignal(id, userId);
-      await this.mirror.mirrorSignal(id);
-      await this.mirror.mirrorConnection(connection.id);
+      await this.mirror.mirrorAccept(id, connection.id);
       this.notifications.enqueue({
         id: `push_conn_${connection.id}`,
         type: "connection.confirmed",

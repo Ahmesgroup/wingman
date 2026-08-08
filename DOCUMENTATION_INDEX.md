@@ -177,7 +177,8 @@ Start with `README.md`, then `docs/PRD.md`, `architecture/STATE_MACHINES.md`, `d
 
 ## Implementation (implementation/)
 
-- [`implementation/BACKEND_IMPLEMENTATION_STATUS.md`](implementation/BACKEND_IMPLEMENTATION_STATUS.md) — **what was built (S0–S15), English**
+- [`implementation/BACKEND_IMPLEMENTATION_STATUS.md`](implementation/BACKEND_IMPLEMENTATION_STATUS.md) — **what was built (S0–S16), English**
+- [`operations/S16_PERSISTENCE_LIVE.md`](operations/S16_PERSISTENCE_LIVE.md) — live Prisma + boot hydrate
 - [`apps/BACKEND_README.md`](apps/BACKEND_README.md) — developer quick start for the executable API
 - [`operations/PRODUCTION_READINESS.md`](operations/PRODUCTION_READINESS.md) — S12 readiness gates
 - [`implementation/AI_CODING_RULES.md`](implementation/AI_CODING_RULES.md)

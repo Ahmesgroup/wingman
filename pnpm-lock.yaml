@@ -25,6 +25,9 @@ importers:
       '@wingman/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@wingman/database':
+        specifier: workspace:*
+        version: link:../../packages/database
       '@wingman/domain':
         specifier: workspace:*
         version: link:../../packages/domain
@@ -180,6 +183,12 @@ importers:
 
   packages/persistence:
     dependencies:
+      '@prisma/client':
+        specifier: ^6.3.0
+        version: 6.19.3(prisma@6.19.3(typescript@5.9.3))(typescript@5.9.3)
+      '@wingman/database':
+        specifier: workspace:*
+        version: link:../database
       '@wingman/domain':
         specifier: workspace:*
         version: link:../domain
