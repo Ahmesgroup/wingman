@@ -9,6 +9,7 @@ import { METRICS } from "../../common/observability.interceptor.js";
 import { Public } from "../../common/public.decorator.js";
 import { WINGMAN_ENGINE } from "../../engine/engine.tokens.js";
 import { EPHEMERAL_STORE, PRISMA_CLIENT, PROTOCOL_MIRROR } from "../infra/infra.tokens.js";
+import { RealtimeAppService } from "../realtime/realtime-app.service.js";
 
 @Injectable()
 export class InternalService {
@@ -18,11 +19,41 @@ export class InternalService {
     @Inject(EPHEMERAL_STORE) private readonly ephemeral: EphemeralStore,
     @Inject(PROTOCOL_MIRROR) private readonly mirror: ProtocolPersistenceMirror,
     @Inject(PRISMA_CLIENT) private readonly prisma: PrismaClient | null,
+    private readonly realtime: RealtimeAppService,
   ) {}
 
   async reconcile() {
     const result = this.engine.reconcile();
     await this.mirror.mirrorAll();
+    for (const id of result.connections) {
+      const c = this.engine.connections.get(id);
+      if (!c) continue;
+      if (c.state === "EXPIRED" || c.state === "OUTCOME_PENDING") {
+        await this.realtime.publish({
+          type: c.state === "EXPIRED" ? "mission.expired" : "mission.updated",
+          aggregateId: id,
+          rooms: [
+            this.realtime.userRoom(c.initiatorId),
+            this.realtime.userRoom(c.recipientId),
+            this.realtime.connectionRoom(id),
+            this.realtime.missionRoom(id),
+          ],
+          payload: { connectionId: id, state: c.state },
+        });
+      }
+      if (["EXPIRED", "CANCELLED", "BLOCKED", "COMPLETED", "FAILED"].includes(c.state)) {
+        await this.realtime.publish({
+          type: "connection.closed",
+          aggregateId: id,
+          rooms: [
+            this.realtime.userRoom(c.initiatorId),
+            this.realtime.userRoom(c.recipientId),
+            this.realtime.connectionRoom(id),
+          ],
+          payload: { connectionId: id, state: c.state },
+        });
+      }
+    }
     return result;
   }
 

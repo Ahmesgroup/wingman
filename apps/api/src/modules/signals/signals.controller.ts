@@ -8,6 +8,7 @@ import { CurrentUser, IdempotencyKey } from "../../common/auth.js";
 import { ZodValidationPipe } from "../../common/zod-validation.pipe.js";
 import { WINGMAN_ENGINE } from "../../engine/engine.tokens.js";
 import { EPHEMERAL_STORE, NOTIFICATION_ORCH, PROTOCOL_MIRROR } from "../infra/infra.tokens.js";
+import { RealtimeAppService } from "../realtime/realtime-app.service.js";
 
 @Injectable()
 export class SignalsService {
@@ -16,6 +17,7 @@ export class SignalsService {
     @Inject(EPHEMERAL_STORE) private readonly ephemeral: EphemeralStore,
     @Inject(NOTIFICATION_ORCH) private readonly notifications: NotificationOrchestrator,
     @Inject(PROTOCOL_MIRROR) private readonly mirror: ProtocolPersistenceMirror,
+    private readonly realtime: RealtimeAppService,
   ) {}
 
   async create(
@@ -37,28 +39,48 @@ export class SignalsService {
     };
     this.notifications.enqueue(event);
     void this.notifications.processQueue();
-    void this.ephemeral.publish(
-      "wingman.events",
-      JSON.stringify({ type: "signal.received", signalId: signal.id }),
-    );
+    await this.realtime.publish({
+      type: "signal.received",
+      aggregateId: signal.id,
+      rooms: [this.realtime.userRoom(body.receiverId)],
+      payload: { signalId: signal.id, senderId: userId, status: signal.status },
+    });
     return { signal };
   }
 
   async open(id: string, userId: string) {
     const signal = this.engine.openSignal(id, userId);
     await this.mirror.mirrorSignal(id);
+    await this.realtime.publish({
+      type: "signal.updated",
+      aggregateId: id,
+      rooms: [this.realtime.userRoom(signal.senderId), this.realtime.userRoom(signal.receiverId)],
+      payload: { signalId: id, status: signal.status },
+    });
     return signal;
   }
 
   async refuse(id: string, userId: string) {
     const signal = this.engine.refuseSignal(id, userId);
     await this.mirror.mirrorSignal(id);
+    await this.realtime.publish({
+      type: "signal.updated",
+      aggregateId: id,
+      rooms: [this.realtime.userRoom(signal.senderId), this.realtime.userRoom(signal.receiverId)],
+      payload: { signalId: id, status: signal.status },
+    });
     return signal;
   }
 
   async cancel(id: string, userId: string) {
     const signal = this.engine.cancelSignal(id, userId);
     await this.mirror.mirrorSignal(id);
+    await this.realtime.publish({
+      type: "signal.updated",
+      aggregateId: id,
+      rooms: [this.realtime.userRoom(signal.senderId), this.realtime.userRoom(signal.receiverId)],
+      payload: { signalId: id, status: signal.status },
+    });
     return signal;
   }
 
@@ -84,6 +106,16 @@ export class SignalsService {
         createdAt: new Date(),
       });
       void this.notifications.processQueue();
+      await this.realtime.publish({
+        type: "match.created",
+        aggregateId: connection.id,
+        rooms: [
+          this.realtime.userRoom(connection.initiatorId),
+          this.realtime.userRoom(connection.recipientId),
+          this.realtime.connectionRoom(connection.id),
+        ],
+        payload: { connectionId: connection.id, state: connection.state },
+      });
       return connection;
     } finally {
       await this.ephemeral.releaseLock(lockKey, owner);

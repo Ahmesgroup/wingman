@@ -7,6 +7,7 @@ import { CurrentUser } from "../../common/auth.js";
 import { ZodValidationPipe } from "../../common/zod-validation.pipe.js";
 import { WINGMAN_ENGINE } from "../../engine/engine.tokens.js";
 import { NOTIFICATION_ORCH, PROTOCOL_MIRROR } from "../infra/infra.tokens.js";
+import { RealtimeAppService } from "../realtime/realtime-app.service.js";
 
 @Injectable()
 export class ConnectionsService {
@@ -14,6 +15,7 @@ export class ConnectionsService {
     @Inject(WINGMAN_ENGINE) private readonly engine: WingmanEngine,
     @Inject(NOTIFICATION_ORCH) private readonly notifications: NotificationOrchestrator,
     @Inject(PROTOCOL_MIRROR) private readonly mirror: ProtocolPersistenceMirror,
+    private readonly realtime: RealtimeAppService,
   ) {}
 
   get(id: string) {
@@ -22,12 +24,27 @@ export class ConnectionsService {
     return { connection, serverTime: this.engine.clock.now().toISOString() };
   }
 
+  private async publishConnection(connection: { id: string; initiatorId: string; recipientId: string; state: string }, type: "validation.updated" | "mission.updated" | "connection.closed") {
+    await this.realtime.publish({
+      type,
+      aggregateId: connection.id,
+      rooms: [
+        this.realtime.userRoom(connection.initiatorId),
+        this.realtime.userRoom(connection.recipientId),
+        this.realtime.connectionRoom(connection.id),
+        this.realtime.missionRoom(connection.id),
+      ],
+      payload: { connectionId: connection.id, state: connection.state },
+    });
+  }
+
   async selfie(id: string, userId: string, mediaId: string) {
     const c = this.engine.connections.get(id);
     if (!c) throw new DomainError("CONNECTION_NOT_FOUND", "Not found");
     const event = userId === c.initiatorId ? "initiator_selfie" : "recipient_selfie";
     const connection = this.engine.applyConnection(id, event, userId, { mediaId });
     await this.mirror.mirrorConnection(id);
+    await this.publishConnection(connection, "validation.updated");
     return connection;
   }
 
@@ -44,6 +61,7 @@ export class ConnectionsService {
       createdAt: new Date(),
     });
     void this.notifications.processQueue();
+    await this.publishConnection(connection, "validation.updated");
     return connection;
   }
 
@@ -60,12 +78,15 @@ export class ConnectionsService {
       createdAt: new Date(),
     });
     void this.notifications.processQueue();
+    await this.publishConnection(connection, "mission.updated");
     return connection;
   }
 
   async apply(id: string, event: Parameters<WingmanEngine["applyConnection"]>[1], userId: string) {
     const connection = this.engine.applyConnection(id, event, userId);
     await this.mirror.mirrorConnection(id);
+    const closed = ["EXPIRED", "CANCELLED", "BLOCKED", "COMPLETED", "FAILED"].includes(connection.state);
+    await this.publishConnection(connection, closed ? "connection.closed" : "mission.updated");
     return connection;
   }
 
@@ -76,6 +97,7 @@ export class ConnectionsService {
   async outcome(id: string, userId: string, outcome: "YES" | "NO") {
     const connection = this.engine.recordOutcome(id, userId, outcome);
     await this.mirror.mirrorConnection(id);
+    await this.publishConnection(connection, "mission.updated");
     return connection;
   }
 }

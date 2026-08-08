@@ -27,7 +27,8 @@ Executable backend for the Wingman protocol loop:
 | `@wingman/observability` | Structured logs, metrics, readiness |
 | `@wingman/persistence` | Protocol write-behind (`ProtocolPersistenceMirror`) |
 | `@wingman/providers` | SMS OTP + push transport ports (stubs) |
-| `@wingman/api` | NestJS modular HTTP API |
+| `@wingman/realtime` | WS envelope, rooms, hub, replay buffer |
+| `@wingman/api` | NestJS modular HTTP + WebSocket API |
 | `@wingman/workers` | Expiration reconciler |
 
 ## Quick start
@@ -52,7 +53,7 @@ Optional:
 - `SMS_PROVIDER=noop` — disable console SMS
 - `PUSH_PROVIDER=logging` — log push deliveries
 
-S16 details: [`operations/S16_PERSISTENCE_LIVE.md`](../operations/S16_PERSISTENCE_LIVE.md).
+S16: [`operations/S16_PERSISTENCE_LIVE.md`](../operations/S16_PERSISTENCE_LIVE.md) · S17 WS path `/ws`: [`operations/S17_WEBSOCKET.md`](../operations/S17_WEBSOCKET.md).
 
 ## Auth modes
 

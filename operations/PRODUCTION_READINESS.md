@@ -1,11 +1,11 @@
-# Production readiness (S12–S16)
+# Production readiness (S12–S17)
 
-**Status:** Measured against the S8–S16 envelope (domain S0–S7 frozen).  
+**Status:** Measured against the S8–S17 envelope (domain S0–S7 frozen).  
 **Full build narrative:** [`implementation/BACKEND_IMPLEMENTATION_STATUS.md`](../implementation/BACKEND_IMPLEMENTATION_STATUS.md)
 
 ## Purpose
 
-This checklist proves the backend is operable as a production-shaped service envelope around the frozen protocol engine. S16 adds live Prisma durable protocol tables + deterministic boot hydration. SMS/push remain stub providers until S18.
+This checklist proves the backend is operable as a production-shaped service envelope around the frozen protocol engine. S16–S17 add durable hydrate + WebSocket transport. SMS/push remain stub providers until S18.
 
 ## Checks
 
@@ -19,6 +19,8 @@ This checklist proves the backend is operable as a production-shaped service env
 | Push idempotency | `packages/notifications` + `packages/providers` tests | No double send; DLQ after max retries |
 | Persistence mirror | `packages/persistence` + `persistence.e2e.test.ts` | HTTP mutations mirrored; readiness includes persistence |
 | Boot hydrate / restart | `hydrate.test.ts` + `restart.e2e.test.ts` | Durable state restored; presence not revived |
+| WebSocket transport | `ws.e2e.test.ts` + realtime package tests | Signal/match live; unauth rejected; block forbids rooms; dual-device sync |
+| WS architecture | `architecture.test.ts` | Gateway does not import `@wingman/domain` |
 | OTP SMS port | `providers` + auth OTP path | SMS queued via port; phone redacted in provider logs |
 | Readiness endpoint | `GET /internal/ready` | `ready: true` with domain + ephemeral + persistence (+ database when configured) |
 | Structured logs | `packages/observability` tests | Sensitive fields redacted |
@@ -55,7 +57,6 @@ curl -s localhost:3000/internal/metrics
 
 ## Explicit gaps before “full prod”
 
-- S17 WebSocket realtime (same services as HTTP)
 - S18 real SMS OTP vendor / APNs / FCM
 - S19 Stripe entitlements
 - S20 multi-instance / outage certification

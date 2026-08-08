@@ -7,6 +7,7 @@ import { CurrentUser } from "../../common/auth.js";
 import { ZodValidationPipe } from "../../common/zod-validation.pipe.js";
 import { WINGMAN_ENGINE } from "../../engine/engine.tokens.js";
 import { EPHEMERAL_STORE, PROTOCOL_MIRROR } from "../infra/infra.tokens.js";
+import { RealtimeAppService } from "../realtime/realtime-app.service.js";
 
 @Injectable()
 export class RadarService {
@@ -14,6 +15,7 @@ export class RadarService {
     @Inject(WINGMAN_ENGINE) private readonly engine: WingmanEngine,
     @Inject(EPHEMERAL_STORE) private readonly ephemeral: EphemeralStore,
     @Inject(PROTOCOL_MIRROR) private readonly mirror: ProtocolPersistenceMirror,
+    private readonly realtime: RealtimeAppService,
   ) {}
 
   async activate(userId: string, body: { lat: number; lng: number; visibility: string }) {
@@ -33,6 +35,7 @@ export class RadarService {
       120,
     );
     await this.mirror.mirrorPresence(userId);
+    await this.realtime.noteRadarPresence(userId, body.lat, body.lng, true);
     return presence;
   }
 
@@ -40,6 +43,8 @@ export class RadarService {
     const presence = this.engine.deactivateRadar(userId);
     await this.ephemeral.deletePresence(userId);
     await this.mirror.mirrorPresence(userId);
+    const loc = this.engine.locations.get(userId);
+    if (loc) await this.realtime.noteRadarPresence(userId, loc.lat, loc.lng, false);
     return presence;
   }
 
@@ -49,6 +54,8 @@ export class RadarService {
     const presence = this.engine.heartbeat(userId, location);
     await this.ephemeral.heartbeat(userId, 120, location);
     await this.mirror.mirrorPresence(userId);
+    const loc = location ?? this.engine.locations.get(userId);
+    if (loc) await this.realtime.noteRadarPresence(userId, loc.lat, loc.lng, true);
     return presence;
   }
 

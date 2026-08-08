@@ -18,6 +18,7 @@ import { AUTH_SERVICE_TOKEN } from "./modules/infra/infra.tokens.js";
 import { InternalModule } from "./modules/internal/internal.module.js";
 import { PrivacyModule } from "./modules/privacy/privacy.module.js";
 import { RadarModule } from "./modules/radar/radar.module.js";
+import { RealtimeModule } from "./modules/realtime/realtime.module.js";
 import { SafetyModule } from "./modules/safety/safety.module.js";
 import { SignalsModule } from "./modules/signals/signals.module.js";
 
@@ -67,6 +68,7 @@ export class AppModule {
         PrivacyModule,
         DestinyModule,
         InternalModule,
+        RealtimeModule,
       ],
       providers: [
         engineProvider,
