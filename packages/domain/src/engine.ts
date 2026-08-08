@@ -87,16 +87,42 @@ export class WingmanEngine {
   idempotency = new IdempotencyStore();
   missionMessages: Array<{ connectionId: string; senderId: string; text: string; at: Date }> = [];
 
-  constructor(opts?: { clock?: Clock; destinyEnabled?: boolean }) {
+  /**
+   * Optional billing-backed resolver. Must not know Stripe — only return Entitlements.
+   * Falls back to UserSeed.wingmanPlus when unset.
+   */
+  private entitlementsForUser?: (userId: string, now: Date) => Entitlements;
+
+  constructor(opts?: {
+    clock?: Clock;
+    destinyEnabled?: boolean;
+    entitlementsForUser?: (userId: string, now: Date) => Entitlements;
+  }) {
     this.clock = opts?.clock ?? new SystemClock();
     this.destinyEnabled = opts?.destinyEnabled ?? false;
+    this.entitlementsForUser = opts?.entitlementsForUser;
+  }
+
+  /** Wire billing EntitlementService after construction (Nest DI). */
+  setEntitlementsForUser(fn: (userId: string, now: Date) => Entitlements): void {
+    this.entitlementsForUser = fn;
   }
 
   seedUser(user: UserSeed): void {
     this.users.set(user.id, user);
   }
 
+  /** Sync seed flag after billing changes (never accept client isPremium). */
+  setWingmanPlus(userId: string, wingmanPlus: boolean): void {
+    const user = this.users.get(userId);
+    if (!user) return;
+    this.users.set(userId, { ...user, wingmanPlus });
+  }
+
   entitlements(userId: string): Entitlements {
+    if (this.entitlementsForUser) {
+      return this.entitlementsForUser(userId, this.clock.now());
+    }
     return entitlementsFor(Boolean(this.users.get(userId)?.wingmanPlus));
   }
 

@@ -50,6 +50,8 @@ export const WINDOWS_MS = {
 export const QUOTAS = {
   SIGNAL_FREE_DAILY: 2,
   SIGNAL_PLUS_DAILY: 25,
+  TICKETS_FREE: 1,
+  TICKETS_PLUS: 3,
 } as const;
 
 export interface Entitlements {
@@ -58,6 +60,8 @@ export interface Entitlements {
   selfieWindowMs: number;
   ticketMaxDurationMs: number;
   missionMeetDurationMs: number;
+  /** Max concurrent connection tickets (derived plan capability). */
+  activeConnectionTickets: number;
 }
 
 export function entitlementsFor(wingmanPlus: boolean): Entitlements {
@@ -67,6 +71,7 @@ export function entitlementsFor(wingmanPlus: boolean): Entitlements {
     selfieWindowMs: WINDOWS_MS.SELFIE + (wingmanPlus ? WINDOWS_MS.SELFIE_PLUS_EXTRA : 0),
     ticketMaxDurationMs: wingmanPlus ? WINDOWS_MS.TICKET_PLUS : WINDOWS_MS.TICKET_FREE,
     missionMeetDurationMs: wingmanPlus ? WINDOWS_MS.MISSION_PLUS : WINDOWS_MS.MISSION_FREE,
+    activeConnectionTickets: wingmanPlus ? QUOTAS.TICKETS_PLUS : QUOTAS.TICKETS_FREE,
   };
 }
 

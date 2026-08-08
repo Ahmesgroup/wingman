@@ -59,3 +59,31 @@ describe("S18 architecture: no vendor SDKs in protocol modules", () => {
     }
   });
 });
+
+describe("S19 architecture: no Stripe SDK in domain or protocol modules", () => {
+  it("domain/signals/connections/mission/destiny never import stripe or @wingman/billing", () => {
+    const domainRoot = join(__dirname, "..", "..", "..", "packages", "domain", "src");
+    const domainFiles = walk(domainRoot, (p) => p.endsWith(".ts") && !p.endsWith(".test.ts"));
+    expect(domainFiles.length).toBeGreaterThan(5);
+    for (const file of domainFiles) {
+      const src = readFileSync(file, "utf8");
+      expect(src).not.toMatch(/from\s+["']stripe["']/);
+      expect(src).not.toMatch(/from\s+["']@wingman\/billing["']/);
+      expect(src).not.toMatch(/stripeCustomerId|Stripe\./);
+    }
+
+    const root = join(__dirname, "modules");
+    const protocolFiles = walk(
+      root,
+      (p) =>
+        /[\\/](signals|connections|safety|destiny|radar)[\\/].*\.ts$/.test(p) &&
+        !p.endsWith(".test.ts"),
+    );
+    expect(protocolFiles.length).toBeGreaterThan(3);
+    for (const file of protocolFiles) {
+      const src = readFileSync(file, "utf8");
+      expect(src).not.toMatch(/from\s+["']stripe["']/);
+      expect(src).not.toMatch(/from\s+["']@wingman\/billing["']/);
+    }
+  });
+});

@@ -18,6 +18,7 @@
     "@nestjs/platform-socket.io": "^10.4.15",
     "@nestjs/websockets": "^10.4.15",
     "@wingman/auth": "workspace:*",
+    "@wingman/billing": "workspace:*",
     "@wingman/contracts": "workspace:*",
     "@wingman/database": "workspace:*",
     "@wingman/domain": "workspace:*",

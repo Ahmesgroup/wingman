@@ -7,7 +7,7 @@ export async function createNestApp(opts: AppModuleOptions = {}): Promise<INestA
   const moduleRef = await Test.createTestingModule({
     imports: [AppModule.register({ useDevAuth: true, skipHydrate: true, ...opts })],
   }).compile();
-  const app = moduleRef.createNestApplication();
+  const app = moduleRef.createNestApplication({ rawBody: true });
   await app.init();
   return app;
 }

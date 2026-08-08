@@ -27,6 +27,7 @@ Executable backend for the Wingman protocol loop:
 | `@wingman/observability` | Structured logs, metrics, readiness |
 | `@wingman/persistence` | Protocol write-behind (`ProtocolPersistenceMirror`) |
 | `@wingman/providers` | SMS OTP + push transport ports (stubs) |
+| `@wingman/billing` | Stripe port → billing state → entitlements |
 | `@wingman/realtime` | WS envelope, rooms, hub, replay buffer |
 | `@wingman/api` | NestJS modular HTTP + WebSocket API |
 | `@wingman/workers` | Expiration reconciler |
@@ -53,9 +54,10 @@ Optional:
 - `SMS_PROVIDER=noop` — disable console SMS
 - `PUSH_PROVIDER=logging` — log push deliveries
 
-S16: [`operations/S16_PERSISTENCE_LIVE.md`](../operations/S16_PERSISTENCE_LIVE.md) · S17 `/ws`: [`operations/S17_WEBSOCKET.md`](../operations/S17_WEBSOCKET.md) · S18 providers: [`operations/S18_PROVIDERS.md`](../operations/S18_PROVIDERS.md).
+S16: [`operations/S16_PERSISTENCE_LIVE.md`](../operations/S16_PERSISTENCE_LIVE.md) · S17 `/ws`: [`operations/S17_WEBSOCKET.md`](../operations/S17_WEBSOCKET.md) · S18 providers: [`operations/S18_PROVIDERS.md`](../operations/S18_PROVIDERS.md) · S19 billing: [`operations/S19_BILLING_ENTITLEMENTS.md`](../operations/S19_BILLING_ENTITLEMENTS.md).
 
-`POST /devices/push-token` registers FCM/APNs tokens for the authenticated user.
+`POST /devices/push-token` registers FCM/APNs tokens for the authenticated user.  
+`GET /billing/entitlements` returns effective plan capabilities (never trust client `isPremium`).
 
 ## Auth modes
 
@@ -99,9 +101,10 @@ S16: [`operations/S16_PERSISTENCE_LIVE.md`](../operations/S16_PERSISTENCE_LIVE.m
 
 ```bash
 pnpm --filter @wingman/domain test          # 15 protocol tests (freeze baseline)
-pnpm --filter @wingman/api test             # Nest e2e + auth + multi-instance + persistence + architecture
+pnpm --filter @wingman/api test             # Nest e2e + auth + multi-instance + persistence + billing + architecture
 pnpm --filter @wingman/persistence test
 pnpm --filter @wingman/providers test
+pnpm --filter @wingman/billing test
 pnpm -r test                                 # everything
 ```
 

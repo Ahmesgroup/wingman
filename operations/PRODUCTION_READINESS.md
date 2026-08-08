@@ -1,11 +1,11 @@
-# Production readiness (S12–S18)
+# Production readiness (S12–S19)
 
-**Status:** Measured against the S8–S18 envelope (domain S0–S7 frozen).  
+**Status:** Measured against the S8–S19 envelope (domain S0–S7 frozen).  
 **Full build narrative:** [`implementation/BACKEND_IMPLEMENTATION_STATUS.md`](../implementation/BACKEND_IMPLEMENTATION_STATUS.md)
 
 ## Purpose
 
-This checklist proves the backend is operable as a production-shaped service envelope around the frozen protocol engine. S16–S18 cover durable hydrate, WebSocket transport, and production-shaped SMS/push provider ports.
+This checklist proves the backend is operable as a production-shaped service envelope around the frozen protocol engine. S16–S19 cover durable hydrate, WebSocket transport, production-shaped SMS/push provider ports, and billing → entitlements.
 
 ## Checks
 
@@ -24,6 +24,8 @@ This checklist proves the backend is operable as a production-shaped service env
 | Provider ports | `packages/providers` + S18 architecture gate | Twilio/FCM/APNs behind ports; no vendors in protocol modules |
 | OTP SMS port | `providers` + auth OTP path | SMS queued via port; phone/OTP body redacted in logs |
 | Push reliability | orchestrator + mobile transport tests | Idempotent; invalid tokens deactivated; outage ≠ protocol failure |
+| Billing → entitlements | `packages/billing` + `billing.e2e.test.ts` | Free/Plus caps; webhook idempotence; no client self-promote; Stripe outage ≠ core failure |
+| Billing architecture | S19 architecture gate | No Stripe SDK in domain/signals/connections/mission/destiny |
 | Readiness endpoint | `GET /internal/ready` | `ready: true` with domain + ephemeral + persistence (+ database when configured) |
 | Structured logs | `packages/observability` tests | Sensitive fields redacted |
 | Metrics | `GET /internal/metrics` includes `http` + `persistence` | Counters present |

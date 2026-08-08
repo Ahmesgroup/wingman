@@ -807,3 +807,29 @@ model ProtocolSignalUsageRow {
   count     Int
   updatedAt DateTime @updatedAt
 }
+
+// -------------------------------- S19 BILLING STATE (entitlements) ------------
+// Durable billing facts only. Entitlements are derived at read time from these
+// rows — never from client isPremium and never by calling Stripe per request.
+
+model BillingAccount {
+  userId               String    @id
+  plan                 String
+  status               String
+  source               String
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  currentPeriodStart   DateTime?
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean   @default(false)
+  updatedAt            DateTime  @updatedAt
+
+  @@index([stripeCustomerId])
+  @@index([stripeSubscriptionId])
+}
+
+model BillingWebhookEvent {
+  eventId     String   @id
+  type        String
+  processedAt DateTime @default(now())
+}

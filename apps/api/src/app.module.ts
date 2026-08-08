@@ -9,6 +9,7 @@ import { LOGGER, METRICS, ObservabilityInterceptor } from "./common/observabilit
 import { createEngine, EngineModule } from "./engine/engine.module.js";
 import { WINGMAN_ENGINE } from "./engine/engine.tokens.js";
 import { AuthModule } from "./modules/auth/auth.module.js";
+import { BillingModule, setBillingOverrides, type BillingOverrides } from "./modules/billing/billing.module.js";
 import { ConnectionsModule } from "./modules/connections/connections.module.js";
 import { DestinyModule } from "./modules/destiny/destiny.module.js";
 import { DevicesModule } from "./modules/devices/devices.module.js";
@@ -23,16 +24,18 @@ import { RealtimeModule } from "./modules/realtime/realtime.module.js";
 import { SafetyModule } from "./modules/safety/safety.module.js";
 import { SignalsModule } from "./modules/signals/signals.module.js";
 
-export type AppModuleOptions = InfraOptions & {
-  engine?: WingmanEngine;
-  useDevAuth?: boolean;
-};
+export type AppModuleOptions = InfraOptions &
+  BillingOverrides & {
+    engine?: WingmanEngine;
+    useDevAuth?: boolean;
+  };
 
 @Global()
 @Module({})
 export class AppModule {
   static register(opts: AppModuleOptions = {}): DynamicModule {
     setInfraOverrides(opts);
+    setBillingOverrides({ stripePort: opts.stripePort, billingStore: opts.billingStore });
     process.env.AUTH_ALLOW_DEV = opts.useDevAuth === false ? "false" : "true";
 
     const engineProvider: Provider = {
@@ -59,6 +62,7 @@ export class AppModule {
       imports: [
         EngineModule,
         InfraModule,
+        BillingModule,
         HealthModule,
         DevModule,
         AuthModule,

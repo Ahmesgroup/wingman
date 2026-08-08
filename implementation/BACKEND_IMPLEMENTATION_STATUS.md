@@ -1,7 +1,7 @@
-# Backend Implementation Status (S0–S18)
+# Backend Implementation Status (S0–S19)
 
 **Status:** Implemented in this repository · **Language:** English (source of truth for what was built)  
-**Related:** [`apps/BACKEND_README.md`](../apps/BACKEND_README.md), [`operations/PRODUCTION_READINESS.md`](../operations/PRODUCTION_READINESS.md), [`operations/S16_PERSISTENCE_LIVE.md`](../operations/S16_PERSISTENCE_LIVE.md), [`operations/S17_WEBSOCKET.md`](../operations/S17_WEBSOCKET.md), [`operations/S18_PROVIDERS.md`](../operations/S18_PROVIDERS.md), [`architecture/STATE_MACHINES.md`](../architecture/STATE_MACHINES.md)
+**Related:** [`apps/BACKEND_README.md`](../apps/BACKEND_README.md), [`operations/PRODUCTION_READINESS.md`](../operations/PRODUCTION_READINESS.md), [`operations/S16_PERSISTENCE_LIVE.md`](../operations/S16_PERSISTENCE_LIVE.md), [`operations/S17_WEBSOCKET.md`](../operations/S17_WEBSOCKET.md), [`operations/S18_PROVIDERS.md`](../operations/S18_PROVIDERS.md), [`operations/S19_BILLING_ENTITLEMENTS.md`](../operations/S19_BILLING_ENTITLEMENTS.md), [`architecture/STATE_MACHINES.md`](../architecture/STATE_MACHINES.md)
 
 This document describes the **executable backend** that was built from the V4.1 product & engineering specification. It covers:
 
@@ -11,6 +11,7 @@ This document describes the **executable backend** that was built from the V4.1 
 4. **S16 — Live Prisma + deterministic boot hydration** (PostgreSQL durable; Redis ephemeral-only)
 5. **S17 — WebSocket realtime transport** (same application services as HTTP; no parallel domain)
 6. **S18 — Production SMS/Push providers + channel orchestrator** (no vendor imports in protocol modules)
+7. **S19 — Billing → Entitlements** (Stripe as external billing facts; backend-owned rights)
 
 The original product specs under `docs/`, `architecture/`, `api/` remain authoritative for product rules. This file is authoritative for **what code exists today** and how to operate it.
 
@@ -340,6 +341,7 @@ Approximate commit trail on `master`:
 | `S16` | Live Prisma durable tables + deterministic boot hydration |
 | `S17` | WebSocket transport + multi-client realtime gates |
 | `S18` | Production SMS/Push providers + device tokens |
+| `S19` | Billing → Entitlements (Stripe facts → backend rights) |
 
 Always re-verify with `pnpm -r test` after pulls.
 
@@ -428,24 +430,41 @@ See [`operations/S18_PROVIDERS.md`](../operations/S18_PROVIDERS.md).
 
 ---
 
-## 19. What is intentionally not done yet
+## 19. Sprint delivery — S19 (Billing → Entitlements)
 
-- S19 Stripe + Wingman+ entitlements (backend authority, not client `isPremium`)
-- S20 multi-instance / failure certification go/no-go
+| Sprint | Objective | What was built | Exit gate |
+|--------|-----------|----------------|-----------|
+| **S19** | Billing → Entitlements (not Stripe-in-domain) | `@wingman/billing`: plan model, Stripe port, webhook idempotence by `event.id`, reconciler → `BillingState` → `EntitlementService.forUser`; Nest `/billing/*`; Prisma `BillingAccount` / `BillingWebhookEvent` | billing package tests + `billing.e2e.test.ts` + architecture: no Stripe in domain/protocol |
+
+### 19.1 Rules
+
+- Stripe is an **external source of billing facts**; Wingman decides effective entitlements
+- Domain asks `entitlements.forUser(userId, now)` (wired via `WingmanEngine.setEntitlementsForUser`) — never reads Stripe objects or client `isPremium`
+- Pipeline: Stripe → Billing Adapter → Billing State → Entitlement Service → signal/ticket/mission caps
+- Webhook replay is idempotent; cancel-at-period-end keeps Plus until `currentPeriodEnd`
+- Stripe outage must not break core protocol; restart reconstructs rights from DB/cache
+
+See [`operations/S19_BILLING_ENTITLEMENTS.md`](../operations/S19_BILLING_ENTITLEMENTS.md).
+
+---
+
+## 20. What is intentionally not done yet
+
+- **S20** production certification only (multi-instance, chaos/recovery, load, observability, go/no-go) — **no new product features**
+- Live Stripe credentials + price wiring in staging (FakeStripe + live port ready)
 - Live APNs JWT / FCM HTTP v1 credentials wiring in staging (ports + simulators ready)
 - Destiny V2, ranking radar, behavioral anti-abuse, geo optimization
 - Mobile / web / admin application UIs
 
 ---
 
-## 20. Where to go next (S19–S20)
+## 21. Where to go next (S20)
 
-1. **S19** Payments — Stripe webhooks → entitlements
-2. **S20** Production certification — multi-instance, outages, load/race, final observability
+1. **S20** Production certification — multi-instance, outages, load/race, final observability, go/no-go
 
 ---
 
-## 21. Quick reference — key files
+## 22. Quick reference — key files
 
 | Concern | File |
 |---------|------|
@@ -458,12 +477,15 @@ See [`operations/S18_PROVIDERS.md`](../operations/S18_PROVIDERS.md).
 | WS gateway | [`apps/api/src/modules/realtime/realtime.gateway.ts`](../apps/api/src/modules/realtime/realtime.gateway.ts) |
 | Realtime app facade | [`apps/api/src/modules/realtime/realtime-app.service.ts`](../apps/api/src/modules/realtime/realtime-app.service.ts) |
 | Provider ports | [`packages/providers/src/index.ts`](../packages/providers/src/index.ts) |
+| Billing / entitlements | [`packages/billing/src/index.ts`](../packages/billing/src/index.ts) |
 | Nest app composition | [`apps/api/src/app.module.ts`](../apps/api/src/app.module.ts) |
 | WS e2e | [`apps/api/src/ws.e2e.test.ts`](../apps/api/src/ws.e2e.test.ts) |
+| Billing e2e | [`apps/api/src/billing.e2e.test.ts`](../apps/api/src/billing.e2e.test.ts) |
 | Restart gate | [`apps/api/src/restart.e2e.test.ts`](../apps/api/src/restart.e2e.test.ts) |
 | Nest e2e loop | [`apps/api/src/e2e.test.ts`](../apps/api/src/e2e.test.ts) |
 | Architecture gates | [`apps/api/src/architecture.test.ts`](../apps/api/src/architecture.test.ts) |
 | S16 runbook | [`operations/S16_PERSISTENCE_LIVE.md`](../operations/S16_PERSISTENCE_LIVE.md) |
 | S17 runbook | [`operations/S17_WEBSOCKET.md`](../operations/S17_WEBSOCKET.md) |
 | S18 runbook | [`operations/S18_PROVIDERS.md`](../operations/S18_PROVIDERS.md) |
+| S19 runbook | [`operations/S19_BILLING_ENTITLEMENTS.md`](../operations/S19_BILLING_ENTITLEMENTS.md) |
 | Production checklist | [`operations/PRODUCTION_READINESS.md`](../operations/PRODUCTION_READINESS.md) |
