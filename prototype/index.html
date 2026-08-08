@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wingman — Interactive Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Sora:wght@600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="stage">
+  <div class="top-controls">
+    <span class="brand-tag" data-i18n="brandtag">Make the first acquaintance easy</span>
+    <div class="control-group">
+      <button class="chip lang" data-lang="en" aria-pressed="true">EN</button>
+      <button class="chip lang" data-lang="fr" aria-pressed="false">FR</button>
+      <button class="chip" id="rm-toggle" aria-pressed="false" title="Reduce motion">Reduce motion</button>
+      <button class="chip" id="offline-toggle" aria-pressed="false" title="Simulate offline">Offline</button>
+    </div>
+  </div>
+
+  <div class="phone">
+    <div class="notch"></div>
+    <div class="screen" id="screen">
+      <div class="offline-banner hidden" id="offline-banner">Offline — server timers keep running</div>
+
+      <!-- 1. SPLASH -->
+      <section class="view active" id="v-splash" data-noflow>
+        <div class="mission-mode">
+          <div class="mm-ring"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg></div>
+          <h1 class="big">Wingman</h1>
+          <p class="lead center" data-i18n="splash_tag">Make the first acquaintance easy.</p>
+          <p class="small muted" data-i18n="splash_love">Love is in the air.</p>
+          <button class="btn btn-primary mt" data-go="v-onboard1" data-i18n="splash_cta">Begin</button>
+        </div>
+      </section>
+
+      <!-- 2. ONBOARDING -->
+      <section class="view" id="v-onboard1" data-noflow>
+        <div class="statusbar"><span class="time">21:47</span><span>Wingman</span></div>
+        <div class="body pad grow" style="display:flex;flex-direction:column;justify-content:center">
+          <div class="eyebrow center" data-i18n="ob_eyebrow">The problem</div>
+          <h1 class="big center mt-s" data-i18n="ob1_title">You cross paths. Nothing happens.</h1>
+          <p class="lead center mt" data-i18n="ob1_body">Every day you pass someone you'd like to meet — and say nothing. Wingman is built for that exact moment.</p>
+          <div class="dots"><i class="on"></i><i></i><i></i></div>
+          <button class="btn btn-primary" data-go="v-onboard2" data-i18n="next">Next</button>
+        </div>
+      </section>
+      <section class="view" id="v-onboard2" data-noflow>
+        <div class="statusbar"><span class="time">21:47</span><span>Wingman</span></div>
+        <div class="body pad grow" style="display:flex;flex-direction:column;justify-content:center">
+          <div class="eyebrow center" data-i18n="ob2_eyebrow">The solution</div>
+          <h1 class="big center mt-s" data-i18n="ob2_title">A quiet protocol, not a swipe feed.</h1>
+          <p class="lead center mt" data-i18n="ob2_body">No public profiles. No endless chat. A short, private path from "someone's near" to "let's meet."</p>
+          <div class="dots"><i></i><i class="on"></i><i></i></div>
+          <button class="btn btn-primary" data-go="v-onboard3" data-i18n="next">Next</button>
+        </div>
+      </section>
+      <section class="view" id="v-onboard3" data-noflow>
+        <div class="statusbar"><span class="time">21:47</span><span>Wingman</span></div>
+        <div class="body pad grow" style="display:flex;flex-direction:column;justify-content:center">
+          <div class="eyebrow center" data-i18n="ob3_eyebrow">The promise</div>
+          <h1 class="big center mt-s" data-i18n="ob3_title">Make the first move, safely.</h1>
+          <p class="lead center mt" data-i18n="ob3_body">No explicit rejection. Approximate location only. You stay in control of who can find you.</p>
+          <div class="dots"><i></i><i></i><i class="on"></i></div>
+          <button class="btn btn-primary" data-go="v-phone" data-i18n="ob3_cta">Create my account</button>
+        </div>
+      </section>
+
+      <!-- 3. PHONE VERIFICATION -->
+      <section class="view" id="v-phone" data-noflow>
+        <div class="statusbar"><span class="time">21:47</span><span>Wingman</span></div>
+        <div class="topbar"><div class="logo">WING<b>MAN</b></div><div class="subtitle" data-i18n="phone_sub">Verify your number</div></div>
+        <div class="body pad">
+          <h2 class="head" data-i18n="phone_title">Enter your phone</h2>
+          <p class="lead mb" data-i18n="phone_body">We send a 6-digit code. Your number is never shown to anyone.</p>
+          <div class="field"><label data-i18n="phone_label">Phone number</label><input type="tel" value="+352 621 000 000" inputmode="tel"></div>
+          <button class="btn btn-primary" data-go="v-otp" data-i18n="phone_cta">Send code</button>
+          <p class="small muted center mt" data-i18n="phone_note">Verification only — used to keep Wingman free of fake profiles.</p>
+        </div>
+      </section>
+      <section class="view" id="v-otp" data-noflow>
+        <div class="statusbar"><span class="time">21:47</span><span>Wingman</span></div>
+        <div class="topbar"><div class="logo">WING<b>MAN</b></div><div class="subtitle" data-i18n="otp_sub">Enter the code</div></div>
+        <div class="body pad">
+          <h2 class="head" data-i18n="otp_title">6-digit code</h2>
+          <p class="lead" data-i18n="otp_body">Sent to +352 621 000 000</p>
+          <div class="otp" id="otp-inputs">
+            <input maxlength="1" value="4" aria-label="digit 1"><input maxlength="1" value="1" aria-label="digit 2"><input maxlength="1" value="9" aria-label="digit 3"><input maxlength="1" value="2" aria-label="digit 4"><input maxlength="1" value="0" aria-label="digit 5"><input maxlength="1" value="7" aria-label="digit 6">
+          </div>
+          <button class="btn btn-primary" data-go="v-profile" data-i18n="otp_cta">Verify</button>
+        </div>
+      </section>
+
+      <!-- 4. BASIC PROFILE -->
+      <section class="view" id="v-profile" data-noflow>
+        <div class="statusbar"><span class="time">21:48</span><span>Wingman</span></div>
+        <div class="topbar"><div class="logo">WING<b>MAN</b></div><div class="subtitle" data-i18n="profile_sub">Your profile</div></div>
+        <div class="body pad">
+          <div class="field"><label data-i18n="pf_name">First name</label><input value="Alex"></div>
+          <div class="field"><label data-i18n="pf_birth">Date of birth</label><input type="date" value="1998-05-14"></div>
+          <div class="field"><label data-i18n="pf_gender">Gender</label>
+            <div class="pillset"><button class="pill" aria-pressed="true" data-i18n="g_male">Male</button><button class="pill" aria-pressed="false" data-i18n="g_female">Female</button><button class="pill" aria-pressed="false" data-i18n="g_nb">Non-binary</button></div>
+          </div>
+          <div class="field"><label data-i18n="pf_interest">Interested in</label>
+            <div class="pillset"><button class="pill" aria-pressed="false" data-i18n="t_men">Men</button><button class="pill" aria-pressed="true" data-i18n="t_women">Women</button><button class="pill" aria-pressed="false" data-i18n="t_nb">Non-binary</button></div>
+          </div>
+          <div class="field"><label data-i18n="pf_height">Height (cm)</label><input type="number" value="178"></div>
+          <div class="field"><label data-i18n="pf_interests">Interests (max 5)</label>
+            <div class="pillset"><button class="pill" aria-pressed="true">🎵</button><button class="pill" aria-pressed="true">🌍</button><button class="pill" aria-pressed="true">🍕</button><button class="pill" aria-pressed="false">🏋️</button><button class="pill" aria-pressed="false">🎨</button></div>
+          </div>
+          <div class="field"><label data-i18n="pf_bio">Daily bio (150 max)</label><textarea rows="2" maxlength="150">At the festival — looking for a good encounter 🎵</textarea></div>
+          <button class="btn btn-primary" data-go="v-consent" data-i18n="next">Next</button>
+        </div>
+      </section>
+
+      <!-- 5. CONSENT -->
+      <section class="view" id="v-consent" data-noflow>
+        <div class="statusbar"><span class="time">21:48</span><span>Wingman</span></div>
+        <div class="topbar"><div class="logo">WING<b>MAN</b></div><div class="subtitle" data-i18n="consent_sub">Your choices</div></div>
+        <div class="body pad">
+          <h2 class="head" data-i18n="consent_title">What you agree to</h2>
+          <p class="lead mb" data-i18n="consent_body">Each purpose is separate. You can change these anytime in Settings.</p>
+          <div class="consent-item consent-required">
+            <div class="txt"><b data-i18n="c_core">Run the service</b><p data-i18n="c_core_d">Required to match you and operate the protocol.</p></div>
+            <div class="switch" role="switch" aria-checked="true" aria-disabled="true"></div>
+          </div>
+          <div class="consent-item">
+            <div class="txt"><b data-i18n="c_loc">Approximate location</b><p data-i18n="c_loc_d">Coarse radius only — never your exact position.</p></div>
+            <div class="switch" role="switch" aria-checked="true" tabindex="0"></div>
+          </div>
+          <div class="consent-item">
+            <div class="txt"><b data-i18n="c_destiny">Destiny Connection</b><p data-i18n="c_destiny_d">Off by default. Coarse co-presence to spot repeated paths.</p></div>
+            <div class="switch" role="switch" aria-checked="false" tabindex="0"></div>
+          </div>
+          <div class="consent-item">
+            <div class="txt"><b data-i18n="c_push">Push notifications</b><p data-i18n="c_push_d">Signals, selfies, confirmations.</p></div>
+            <div class="switch" role="switch" aria-checked="true" tabindex="0"></div>
+          </div>
+          <div class="consent-item">
+            <div class="txt"><b data-i18n="c_analytics">Product analytics</b><p data-i18n="c_analytics_d">Optional. Helps improve Wingman.</p></div>
+            <div class="switch" role="switch" aria-checked="false" tabindex="0"></div>
+          </div>
+          <button class="btn btn-primary mt" data-go="v-radar" data-i18n="consent_cta">Agree & activate Radar</button>
+        </div>
+      </section>
+
+      <!-- 6/7. RADAR (invisible + active share one canvas) -->
+      <section class="view" id="v-radar" data-nav="radar">
+        <div class="statusbar"><span class="time">21:49</span><span>Wingman</span></div>
+        <div class="topbar"><div class="logo">WING<b>MAN</b></div><div class="subtitle" data-i18n="radar_sub">Real-time discovery</div></div>
+        <div class="body" style="padding-bottom:96px">
+          <div class="radar-shell">
+            <canvas id="radar-canvas" width="400" height="340" aria-label="Radar showing anonymous nearby mood dots"></canvas>
+            <div class="radar-hud"><span class="radar-state invisible" id="radar-state" data-i18n="radar_invisible">�―  Invisible</span></div>
+            <span class="radar-distance" id="radar-distance" data-i18n="radar_dist">Someone very close · Nearby</span>
+            <button class="radar-toggle off" id="radar-toggle" aria-pressed="false" data-i18n="radar_activate">Go active</button>
+          </div>
+          <div class="pad" style="padding-top:12px">
+            <div class="mood-legend">
+              <span class="li"><span class="sw" style="background:var(--mood-ready)"></span><span data-i18n="mood_ready">Super ready</span></span>
+              <span class="li"><span class="sw" style="background:var(--mood-open)"></span><span data-i18n="mood_open">Open</span></span>
+              <span class="li"><span class="sw" style="background:var(--mood-explore)"></span><span data-i18n="mood_explore">Exploring</span></span>
+            </div>
+            <div class="stat-row">
+              <div class="stat"><b id="stat-signals">2</b><span data-i18n="stat_signals">Signals left</span></div>
+              <div class="stat"><b>5</b><span data-i18n="stat_nearby">Nearby</span></div>
+              <div class="stat"><b>🔥</b><span data-i18n="stat_zone">Active zone</span></div>
+            </div>
+            <div class="card">
+              <div class="eyebrow" data-i18n="mood_title">Your mood</div>
+              <div class="mood-select" id="mood-select">
+                <button class="mood-btn" data-mood="SUPER_READY" aria-pressed="false"><span class="swatch" style="background:var(--mood-ready)"></span><b data-i18n="mood_ready">Super ready</b><small data-i18n="mood_ready_d">Meet now</small></button>
+                <button class="mood-btn" data-mood="OPEN" aria-pressed="true"><span class="swatch" style="background:var(--mood-open)"></span><b data-i18n="mood_open">Open</b><small data-i18n="mood_open_d">If it's right</small></button>
+                <button class="mood-btn" data-mood="EXPLORING" aria-pressed="false"><span class="swatch" style="background:var(--mood-explore)"></span><b data-i18n="mood_explore">Exploring</b><small data-i18n="mood_explore_d">Just looking</small></button>
+              </div>
+            </div>
+            <div class="card destiny" data-go="v-destiny" role="button" tabindex="0">
+              <div class="eyebrow" data-i18n="destiny_eyebrow">✦ Destiny Connection</div>
+              <b data-i18n="destiny_card_t">You keep crossing paths</b>
+              <p class="small muted mt-s" data-i18n="destiny_card_d">Someone compatible keeps crossing your path — even off your radar.</p>
+            </div>
+          </div>
+        </div>
+        <!-- 9. anonymous profile card -->
+        <div class="sheet" id="dot-sheet">
+          <div class="sheet-inner">
+            <div class="sheet-grab"></div>
+            <div class="mood-tag" id="sheet-mood" style="color:var(--mood-ready)">● Super ready</div>
+            <div class="age" id="sheet-age">26 · 168cm</div>
+            <div class="bio" id="sheet-bio">Fun night out ✨</div>
+            <div class="tags" id="sheet-tags"><span>🎵</span><span>🍷</span><span>🌍</span></div>
+            <button class="btn btn-primary" id="send-signal-btn" data-i18n="send_signal">Send a Signal</button>
+            <button class="btn btn-ghost mt-s" id="close-sheet" data-i18n="close">Close</button>
+          </div>
+        </div>
+        <nav class="nav" data-navbar></nav>
+      </section>
+
+      <!-- 11. SIGNAL RECEIVED -->
+      <section class="view" id="v-signal" data-nav="signal">
+        <div class="statusbar"><span class="time">21:50</span><span>Wingman</span></div>
+        <div class="topbar"><div class="logo">WING<b>MAN</b></div><div class="subtitle" data-i18n="signal_sub">Signals received</div></div>
+        <div class="body pad">
+          <h2 class="head" data-i18n="signal_title">Someone wants to discover you</h2>
+          <p class="lead mb" data-i18n="signal_body">Respond before it silently expires. No one is ever told they were declined.</p>
+          <div class="sig">
+            <div class="glyph">M</div>
+            <div class="info"><b>28 · 165cm</b><p>Night at the Rock — up to meet ✨</p><p class="exp" id="sig-timer">Expires in 7:00</p></div>
+            <button class="btn btn-secondary" style="width:auto;padding:10px 16px" data-go="v-selfie" data-i18n="open">Open</button>
+          </div>
+          <div class="sig" style="opacity:.55">
+            <div class="glyph">J</div>
+            <div class="info"><b>25 · 172cm</b><p>Neighborhood explorer 🗺️</p><p class="exp gone" data-i18n="sig_expired">Expired — 2 min ago</p></div>
+          </div>
+          <div class="silent-note" data-i18n="signal_silent">No "decline" button exists. Silent expiration is the only failure signal.</div>
+        </div>
+        <nav class="nav" data-navbar></nav>
+      </section>
+
+      <!-- 12. SELFIE EXCHANGE -->
+      <section class="view" id="v-selfie" data-noflow>
+        <div class="statusbar"><span class="time">21:50</span><span>Wingman</span></div>
+        <div class="selfie-stage">
+          <div class="timer-text" id="selfie-timer">5:00</div>
+          <div class="selfie-frame">
+            <svg class="cam" viewBox="0 0 24 24"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
+            <span class="stamp" id="selfie-stamp">2026-07-10 · 21:50:07</span>
+          </div>
+          <div class="selfie-badges">
+            <span class="badge ok">✓ <span data-i18n="s_live">Liveness verified</span></span>
+            <span class="badge ok">✓ <span data-i18n="s_stamp">Timestamped</span></span>
+            <span class="badge no">⛔ <span data-i18n="s_gallery">Gallery blocked</span></span>
+          </div>
+          <button class="btn btn-primary" style="max-width:320px" id="selfie-send" data-i18n="s_send">Take & send selfie</button>
+          <!-- Refinement 1: quiet secondary action, no red X -->
+          <div class="selfie-actions mt hidden" id="selfie-validate">
+            <button class="act-secondary" data-go="v-radar" data-i18n="s_letexpire">Let it expire</button>
+            <button class="act-primary" data-go="v-confirmed" data-i18n="s_approve">Approve</button>
+          </div>
+          <div class="timer-bar mt" style="max-width:320px"><i id="selfie-bar" style="width:100%"></i></div>
+          <p class="small muted mt" data-i18n="s_note">The app blocks saving and sharing through its own interface; it cannot prevent every external capture.</p>
+        </div>
+      </section>
+
+      <!-- 13/14. MUTUAL VALIDATION -> CONFIRMED -->
+      <section class="view" id="v-confirmed" data-noflow>
+        <div class="confirm-stage" id="confirm-stage">
+          <div class="halo left"></div><div class="halo right"></div>
+          <div class="confirm-title" data-i18n="confirmed">Connection confirmed</div>
+        </div>
+      </section>
+
+      <!-- 15. CONNECTION TICKET -->
+      <section class="view" id="v-ticket" data-noflow>
+        <div class="statusbar"><span class="time">21:52</span><span>Wingman</span></div>
+        <div class="topbar"><div class="logo">WING<b>MAN</b></div><div class="subtitle" data-i18n="ticket_sub">Connection Ticket</div></div>
+        <div class="body pad" style="display:flex;flex-direction:column;justify-content:center;text-align:center;flex:1">
+          <div class="pill-badge" style="align-self:center" data-i18n="ticket_badge">🎟 Ticket active</div>
+          <h2 class="head mt" data-i18n="ticket_title">Can't meet right now?</h2>
+          <p class="lead mt-s" data-i18n="ticket_body">Hold this opportunity — up to 2 hours (Free) or 24 hours (Wingman+). No chat until you both open Mission Meet.</p>
+          <div class="cd-num mt" style="font-size:34px" id="ticket-time">2:00:00</div>
+          <button class="btn btn-primary mt" data-go="v-mission-meet" data-i18n="ticket_open">I'm available now</button>
+          <button class="btn btn-ghost mt-s" data-go="v-radar" data-i18n="ticket_later">Later</button>
+        </div>
+      </section>
+
+      <!-- 16. MISSION MEET -->
+      <section class="view" id="v-mission-meet" data-noflow>
+        <div class="statusbar"><span class="time">21:53</span><span>Wingman</span></div>
+        <div class="topbar"><div class="logo">WING<b>MAN</b></div><div class="subtitle" data-i18n="mm_sub">Mission Meet</div></div>
+        <div class="chat">
+          <div class="chat-head"><span class="chat-obj" data-i18n="mm_obj">Decide where to meet</span><span class="timer-text" style="font-size:18px" id="mm-timer">15:00</span></div>
+          <div class="timer-bar mb"><i id="mm-bar" style="width:100%"></i></div>
+          <div class="chat-log" id="chat-log">
+            <div class="msg them">Hey! Coffee at Chez Léon? ☕</div>
+          </div>
+          <div class="chat-input">
+            <input id="chat-field" data-i18n-ph="mm_ph" placeholder="Terrace side sounds good…">
+            <button id="chat-send" aria-label="Send"><svg width="18" height="18" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><path d="M4 12l16-8-6 16-3-6z"/></svg></button>
+          </div>
+          <p class="chat-note" data-i18n="mm_note">📵 Phone numbers and social handles are blocked automatically.</p>
+          <div class="btn-row">
+            <button class="btn btn-love" data-go="v-mission-mode" data-i18n="mm_meet">Let's meet</button>
+            <button class="btn btn-ghost" data-go="v-outcome" data-i18n="mm_not">Not this time</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 17. MISSION MODE -->
+      <section class="view" id="v-mission-mode" data-noflow>
+        <div class="mission-mode">
+          <div class="eyebrow" data-i18n="mode_eyebrow">MISSION MODE</div>
+          <div class="mm-ring"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-7-10a4 4 0 018-1 4 4 0 018 1c0 5.5-7 10-7 10z"/></svg></div>
+          <h1 class="big center" data-i18n="mode_title">Focus on this connection</h1>
+          <p class="lead center" data-i18n="mode_body">"Great meetings deserve your full attention."</p>
+          <span class="pill-badge" data-i18n="mode_invisible">● You're invisible on the Radar</span>
+          <button class="btn btn-primary mt" data-go="v-outcome" data-i18n="mode_cta">We met — continue</button>
+        </div>
+      </section>
+
+      <!-- 18. OUTCOME -->
+      <section class="view" id="v-outcome" data-noflow>
+        <div class="mission-mode">
+          <h2 class="head center" data-i18n="outcome_title">Did you meet?</h2>
+          <p class="lead center" data-i18n="outcome_body">Your answer stays private. The other person never sees it.</p>
+          <button class="btn btn-primary mt" data-go="v-cooldown" data-outcome="yes" data-i18n="outcome_yes">Yes, we met</button>
+          <button class="btn btn-ghost mt-s" data-go="v-cooldown" data-outcome="no" data-i18n="outcome_no">Not this time</button>
+        </div>
+      </section>
+
+      <!-- 19. COOLDOWN -->
+      <section class="view" id="v-cooldown" data-noflow>
+        <div class="cooldown">
+          <div class="eyebrow" data-i18n="cd_eyebrow">COOLDOWN</div>
+          <div class="cd-num" id="cd-num">30</div>
+          <span class="muted small" data-i18n="cd_min">minutes</span>
+          <h2 class="head center" data-i18n="cd_title">Take your time.</h2>
+          <p class="lead center" data-i18n="cd_body">"Great conversations don't need another match immediately."</p>
+          <div class="btn-row" style="max-width:320px">
+            <button class="btn btn-ghost" data-go="v-radar" data-i18n="cd_skip">Skip · €0.99</button>
+            <button class="btn btn-primary" data-go="v-radar" data-i18n="cd_ok">Back to Radar</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 20. DESTINY PROMPT -->
+      <section class="view" id="v-destiny" data-noflow>
+        <div class="mission-mode">
+          <div class="eyebrow" style="color:var(--love)" data-i18n="destiny_eyebrow">✦ Destiny Connection</div>
+          <h1 class="big center" data-i18n="destiny_title">Fate keeps nudging.</h1>
+          <p class="lead center" data-i18n="destiny_body">You've crossed paths with someone compatible several times, in public places, on different days. No location, date, or address is shown.</p>
+          <button class="btn btn-love mt" data-go="v-signal" data-i18n="destiny_try">Send a Destiny Signal</button>
+          <button class="btn btn-ghost mt-s" data-go="v-radar" data-i18n="destiny_ignore">Ignore</button>
+          <p class="small muted mt center" data-i18n="destiny_off">Destiny is off by default and can be paused anytime in Settings.</p>
+        </div>
+      </section>
+
+      <!-- 21. PULSE -->
+      <section class="view" id="v-pulse" data-nav="pulse">
+        <div class="statusbar"><span class="time">21:47</span><span>Wingman</span></div>
+        <div class="topbar"><div class="logo">WING<b>MAN</b></div><div class="subtitle" data-i18n="pulse_sub">Compatible activity zones</div></div>
+        <div class="body pad">
+          <div class="pulse-map"><div><b style="font-family:var(--font-display)">Luxembourg · Tonight</b><p class="small muted" data-i18n="pulse_anon">Aggregated · Anonymized</p></div></div>
+          <div class="mt"></div>
+          <div class="pzone"><div class="lvl" style="background:rgba(255,77,103,.15)">🔥</div><div class="z"><b>Rocher du Grund</b><p data-i18n="pz1">Strong compatible activity · 200 m</p></div><span class="tag" style="background:rgba(255,77,103,.15);color:var(--mood-ready)">HOT</span></div>
+          <div class="pzone"><div class="lvl" style="background:rgba(255,200,87,.15)">⚡</div><div class="z"><b>City Festival</b><p data-i18n="pz2">Exceptional event · 1.2 km</p></div><span class="tag" style="background:rgba(255,200,87,.15);color:var(--mood-open)">ELECTRIC</span></div>
+          <div class="pzone"><div class="lvl" style="background:rgba(124,92,252,.15)">🌿</div><div class="z"><b>Merl Park</b><p data-i18n="pz3">Moderate activity · 800 m</p></div><span class="tag" style="background:rgba(124,92,252,.15);color:var(--air)">ACTIVE</span></div>
+          <div class="card center small muted" data-i18n="pulse_plus">⚡ Wingman+ : real-time notifications for Electric zones</div>
+        </div>
+        <nav class="nav" data-navbar></nav>
+      </section>
+
+      <!-- 22. SETTINGS & PRIVACY -->
+      <section class="view" id="v-settings" data-nav="settings">
+        <div class="statusbar"><span class="time">21:47</span><span>Wingman</span></div>
+        <div class="topbar"><div class="logo">WING<b>MAN</b></div><div class="subtitle" data-i18n="settings_sub">Settings & privacy</div></div>
+        <div class="body pad">
+          <div class="card">
+            <div class="eyebrow mb" data-i18n="set_privacy">Privacy</div>
+            <div class="row"><span data-i18n="set_photo">Public photo</span><span class="v no" data-i18n="set_none">✗ None</span></div>
+            <div class="row"><span data-i18n="set_loc">Precise location</span><span class="v no" data-i18n="set_never">✗ Never shared</span></div>
+            <div class="row"><span data-i18n="set_consent">Data consent</span><span class="v ok" data-i18n="set_accepted">✓ Managed</span></div>
+            <div class="row"><span data-i18n="set_gdpr">GDPR compliance</span><span class="v ok" data-i18n="set_designed">✓ Designed for</span></div>
+          </div>
+          <div class="card">
+            <div class="eyebrow mb" data-i18n="set_controls">Controls</div>
+            <div class="row"><span data-i18n="set_destiny">Destiny Connection</span><div class="switch" role="switch" aria-checked="false" tabindex="0"></div></div>
+            <div class="row"><span data-i18n="set_rm">Reduce motion</span><div class="switch" role="switch" aria-checked="false" tabindex="0" id="rm-switch"></div></div>
+            <div class="row"><span data-i18n="set_haptics">Haptics</span><div class="switch" role="switch" aria-checked="true" tabindex="0"></div></div>
+          </div>
+          <div class="card">
+            <div class="eyebrow mb" data-i18n="set_rights">Your data (GDPR)</div>
+            <button class="report-opt" data-i18n="set_export">Export my data (JSON)</button>
+            <button class="report-opt" data-i18n="set_delete">Delete my account</button>
+          </div>
+          <button class="report-opt" data-go="v-admin" data-i18n="set_admin">Admin moderation preview →</button>
+        </div>
+        <nav class="nav" data-navbar></nav>
+      </section>
+
+      <!-- 23. REPORT & BLOCK -->
+      <section class="view" id="v-report" data-noflow>
+        <div class="statusbar"><span class="time">21:53</span><span>Wingman</span></div>
+        <div class="topbar"><div class="logo">WING<b>MAN</b></div><div class="subtitle" data-i18n="report_sub">Report & block</div></div>
+        <div class="body pad">
+          <h2 class="head" data-i18n="report_title">What happened?</h2>
+          <p class="lead mb" data-i18n="report_body">Blocking is instant and silent. The other person is never notified.</p>
+          <button class="report-opt" data-go="v-report-done" data-i18n="rc_harass">Harassment</button>
+          <button class="report-opt" data-go="v-report-done" data-i18n="rc_threat">Threat</button>
+          <button class="report-opt" data-go="v-report-done" data-i18n="rc_imp">Impersonation</button>
+          <button class="report-opt" data-go="v-report-done" data-i18n="rc_sexual">Sexual content</button>
+          <button class="report-opt" data-go="v-report-done" data-i18n="rc_minor">Minor safety</button>
+          <button class="report-opt" data-go="v-report-done" data-i18n="rc_contact">Off-platform contact</button>
+        </div>
+      </section>
+      <section class="view" id="v-report-done" data-noflow>
+        <div class="mission-mode">
+          <div class="pill-badge" data-i18n="report_done_badge">✓ Blocked & reported</div>
+          <h2 class="head center" data-i18n="report_done_t">You won't see each other again.</h2>
+          <p class="lead center" data-i18n="report_done_b">Repeated independent reports trigger human review — not an automatic permanent ban.</p>
+          <button class="btn btn-primary mt" data-go="v-radar" data-i18n="report_done_cta">Back to Radar</button>
+        </div>
+      </section>
+
+      <!-- 24. PAYWALL -->
+      <section class="view" id="v-paywall" data-nav="plus">
+        <div class="statusbar"><span class="time">21:47</span><span>Wingman</span></div>
+        <div class="topbar"><div class="logo">WING<b>MAN</b></div><div class="subtitle" data-i18n="pw_sub">Wingman+</div></div>
+        <div class="body pad">
+          <div class="tier">
+            <div class="th"><span class="tn" data-i18n="pw_free">Free</span><span class="tp">€0</span></div>
+            <div class="feat"><svg class="ck" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg><span data-i18n="pw_f1">2 Signals / day</span></div>
+            <div class="feat"><svg class="ck" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg><span data-i18n="pw_f2">1 Ticket — up to 2h</span></div>
+            <div class="feat"><svg class="ck" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg><span data-i18n="pw_f3">Destiny Connection included</span></div>
+            <div class="feat"><svg class="ck" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg><span data-i18n="pw_f4">Mission Meet 15 min</span></div>
+          </div>
+          <div class="tier pro">
+            <span class="tag-reco" data-i18n="pw_reco">RECOMMENDED</span>
+            <div class="th"><span class="tn">Wingman+</span><span class="tp">€9.99/mo</span></div>
+            <div class="feat"><svg class="ck" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg><span data-i18n="pw_p1">20–25 Signals / day</span></div>
+            <div class="feat"><svg class="ck" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg><span data-i18n="pw_p2">2 Tickets — up to 24h — 1 renewal</span></div>
+            <div class="feat"><svg class="ck" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg><span data-i18n="pw_p3">Verified selfie cache — 24h</span></div>
+            <div class="feat"><svg class="ck" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg><span data-i18n="pw_p4">Discovery priority + Pulse notifs</span></div>
+            <div class="feat"><svg class="ck" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg><span data-i18n="pw_p5">Mission Meet 20 min</span></div>
+          </div>
+          <button class="btn btn-primary" data-i18n="pw_cta" id="pw-cta">Upgrade to Wingman+</button>
+          <p class="small muted center mt" data-i18n="pw_note">No boosted profiles. No ads in the meeting flow. No selling of behavioral data.</p>
+        </div>
+        <nav class="nav" data-navbar></nav>
+      </section>
+
+      <!-- 25. ADMIN MODERATION PREVIEW -->
+      <section class="view admin" id="v-admin" data-noflow>
+        <div class="statusbar"><span class="time">09:12</span><span>Wingman Admin</span></div>
+        <div class="topbar"><div class="logo">WING<b>MAN</b> · Ops</div><div class="subtitle" data-i18n="admin_sub">Moderation queue</div></div>
+        <div class="body pad">
+          <p class="lead mb" data-i18n="admin_body">Evidence is only created when a user reports during a session, and is stored encrypted outside the main database. Every access is audit-logged.</p>
+          <div class="admin-case"><div style="display:flex;justify-content:space-between"><b>Case #4821</b><span class="st" data-i18n="admin_pending">PENDING</span></div><p class="small muted mt-s" data-i18n="admin_c1">3 independent reports · category: Off-platform contact</p></div>
+          <div class="admin-case"><div style="display:flex;justify-content:space-between"><b>Case #4820</b><span class="st" data-i18n="admin_review">UNDER REVIEW</span></div><p class="small muted mt-s" data-i18n="admin_c2">1 report · Harassment · evidence sealed</p></div>
+          <div class="admin-case"><div style="display:flex;justify-content:space-between"><b>Case #4818</b><span class="st" style="background:rgba(64,211,156,.15);color:var(--success)" data-i18n="admin_resolved">RESOLVED</span></div><p class="small muted mt-s" data-i18n="admin_c3">Dismissed — coordinated false reports detected</p></div>
+          <button class="btn btn-ghost mt" data-go="v-settings" data-i18n="admin_back">← Back to app</button>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="app.js"></script>
+</body>
+</html>

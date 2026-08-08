@@ -1,0 +1,424 @@
+/* ============================================================================
+   Wingman Interactive Prototype — app.js  (vanilla JS, no dependencies)
+   Implements: Canvas radar, screen flow, i18n (EN/FR), mood selection,
+   diffuse Signal wave, server-authoritative timers with locally-derived
+   warning, reduce-motion, offline simulation, haptics policy.
+   ========================================================================== */
+'use strict';
+
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+
+const state = {
+  lang: 'en',
+  reduceMotion: false,
+  offline: false,
+  radarActive: false,
+  mood: 'OPEN',
+  signalsLeft: 2,
+  serverNow: () => Date.now(), // server-authoritative clock (simulated)
+};
+
+/* ---------------------------------------------------------------- i18n ---- */
+const I18N = {
+  en: {
+    brandtag: 'Make the first acquaintance easy', splash_tag: 'Make the first acquaintance easy.', splash_love: 'Love is in the air.', splash_cta: 'Begin',
+    next: 'Next', ob_eyebrow: 'The problem',
+    ob1_title: 'You cross paths. Nothing happens.', ob1_body: "Every day you pass someone you'd like to meet — and say nothing. Wingman is built for that exact moment.",
+    ob2_eyebrow: 'The solution', ob2_title: 'A quiet protocol, not a swipe feed.', ob2_body: 'No public profiles. No endless chat. A short, private path from "someone\'s near" to "let\'s meet."',
+    ob3_eyebrow: 'The promise', ob3_title: 'Make the first move, safely.', ob3_body: 'No explicit rejection. Approximate location only. You stay in control of who can find you.', ob3_cta: 'Create my account',
+    phone_sub: 'Verify your number', phone_title: 'Enter your phone', phone_body: 'We send a 6-digit code. Your number is never shown to anyone.', phone_label: 'Phone number', phone_cta: 'Send code', phone_note: 'Verification only — used to keep Wingman free of fake profiles.',
+    otp_sub: 'Enter the code', otp_title: '6-digit code', otp_body: 'Sent to +352 621 000 000', otp_cta: 'Verify',
+    profile_sub: 'Your profile', pf_name: 'First name', pf_birth: 'Date of birth', pf_gender: 'Gender', g_male: 'Male', g_female: 'Female', g_nb: 'Non-binary',
+    pf_interest: 'Interested in', t_men: 'Men', t_women: 'Women', t_nb: 'Non-binary', pf_height: 'Height (cm)', pf_interests: 'Interests (max 5)', pf_bio: 'Daily bio (150 max)',
+    consent_sub: 'Your choices', consent_title: 'What you agree to', consent_body: 'Each purpose is separate. You can change these anytime in Settings.',
+    c_core: 'Run the service', c_core_d: 'Required to match you and operate the protocol.', c_loc: 'Approximate location', c_loc_d: 'Coarse radius only — never your exact position.',
+    c_destiny: 'Destiny Connection', c_destiny_d: 'Off by default. Coarse co-presence to spot repeated paths.', c_push: 'Push notifications', c_push_d: 'Signals, selfies, confirmations.',
+    c_analytics: 'Product analytics', c_analytics_d: 'Optional. Helps improve Wingman.', consent_cta: 'Agree & activate Radar',
+    radar_sub: 'Real-time discovery', radar_invisible: '—  Invisible', radar_active: '●  Active', radar_dist: 'Someone very close · Nearby', radar_activate: 'Go active', radar_deactivate: 'Go invisible',
+    mood_ready: 'Super ready', mood_open: 'Open', mood_explore: 'Exploring', mood_ready_d: 'Meet now', mood_open_d: "If it's right", mood_explore_d: 'Just looking', mood_title: 'Your mood',
+    stat_signals: 'Signals left', stat_nearby: 'Nearby', stat_zone: 'Active zone',
+    destiny_eyebrow: '✦ Destiny Connection', destiny_card_t: 'You keep crossing paths', destiny_card_d: 'Someone compatible keeps crossing your path — even off your radar.',
+    send_signal: 'Send a Signal', close: 'Close',
+    signal_sub: 'Signals received', signal_title: 'Someone wants to discover you', signal_body: 'Respond before it silently expires. No one is ever told they were declined.', open: 'Open', sig_expired: 'Expired — 2 min ago',
+    signal_silent: 'No "decline" button exists. Silent expiration is the only failure signal.',
+    s_live: 'Liveness verified', s_stamp: 'Timestamped', s_gallery: 'Gallery blocked', s_send: 'Take & send selfie', s_letexpire: 'Let it expire', s_approve: 'Approve',
+    s_note: 'The app blocks saving and sharing through its own interface; it cannot prevent every external capture.',
+    confirmed: 'Connection confirmed',
+    ticket_sub: 'Connection Ticket', ticket_badge: '🎟 Ticket active', ticket_title: "Can't meet right now?", ticket_body: 'Hold this opportunity — up to 2 hours (Free) or 24 hours (Wingman+). No chat until you both open Mission Meet.', ticket_open: "I'm available now", ticket_later: 'Later',
+    mm_sub: 'Mission Meet', mm_obj: 'Decide where to meet', mm_ph: 'Terrace side sounds good…', mm_note: '📵 Phone numbers and social handles are blocked automatically.', mm_meet: "Let's meet", mm_not: 'Not this time',
+    mode_eyebrow: 'MISSION MODE', mode_title: 'Focus on this connection', mode_body: '"Great meetings deserve your full attention."', mode_invisible: "● You're invisible on the Radar", mode_cta: 'We met — continue',
+    outcome_title: 'Did you meet?', outcome_body: 'Your answer stays private. The other person never sees it.', outcome_yes: 'Yes, we met', outcome_no: 'Not this time',
+    cd_eyebrow: 'COOLDOWN', cd_min: 'minutes', cd_title: 'Take your time.', cd_body: '"Great conversations don\'t need another match immediately."', cd_skip: 'Skip · €0.99', cd_ok: 'Back to Radar',
+    destiny_title: 'Fate keeps nudging.', destiny_body: "You've crossed paths with someone compatible several times, in public places, on different days. No location, date, or address is shown.", destiny_try: 'Send a Destiny Signal', destiny_ignore: 'Ignore', destiny_off: 'Destiny is off by default and can be paused anytime in Settings.',
+    pulse_sub: 'Compatible activity zones', pulse_anon: 'Aggregated · Anonymized', pz1: 'Strong compatible activity · 200 m', pz2: 'Exceptional event · 1.2 km', pz3: 'Moderate activity · 800 m', pulse_plus: '⚡ Wingman+ : real-time notifications for Electric zones',
+    settings_sub: 'Settings & privacy', set_privacy: 'Privacy', set_photo: 'Public photo', set_none: '✗ None', set_loc: 'Precise location', set_never: '✗ Never shared', set_consent: 'Data consent', set_accepted: '✓ Managed', set_gdpr: 'GDPR compliance', set_designed: '✓ Designed for',
+    set_controls: 'Controls', set_destiny: 'Destiny Connection', set_rm: 'Reduce motion', set_haptics: 'Haptics', set_rights: 'Your data (GDPR)', set_export: 'Export my data (JSON)', set_delete: 'Delete my account', set_admin: 'Admin moderation preview →',
+    report_sub: 'Report & block', report_title: 'What happened?', report_body: 'Blocking is instant and silent. The other person is never notified.',
+    rc_harass: 'Harassment', rc_threat: 'Threat', rc_imp: 'Impersonation', rc_sexual: 'Sexual content', rc_minor: 'Minor safety', rc_contact: 'Off-platform contact',
+    report_done_badge: '✓ Blocked & reported', report_done_t: "You won't see each other again.", report_done_b: 'Repeated independent reports trigger human review — not an automatic permanent ban.', report_done_cta: 'Back to Radar',
+    pw_sub: 'Wingman+', pw_free: 'Free', pw_f1: '2 Signals / day', pw_f2: '1 Ticket — up to 2h', pw_f3: 'Destiny Connection included', pw_f4: 'Mission Meet 15 min',
+    pw_reco: 'RECOMMENDED', pw_p1: '20–25 Signals / day', pw_p2: '2 Tickets — up to 24h — 1 renewal', pw_p3: 'Verified selfie cache — 24h', pw_p4: 'Discovery priority + Pulse notifs', pw_p5: 'Mission Meet 20 min', pw_cta: 'Upgrade to Wingman+', pw_note: 'No boosted profiles. No ads in the meeting flow. No selling of behavioral data.',
+    admin_sub: 'Moderation queue', admin_body: 'Evidence is only created when a user reports during a session, and is stored encrypted outside the main database. Every access is audit-logged.',
+    admin_pending: 'PENDING', admin_review: 'UNDER REVIEW', admin_resolved: 'RESOLVED', admin_c1: '3 independent reports · category: Off-platform contact', admin_c2: '1 report · Harassment · evidence sealed', admin_c3: 'Dismissed — coordinated false reports detected', admin_back: '← Back to app',
+    nav_radar: 'Radar', nav_signal: 'Signal', nav_pulse: 'Pulse', nav_plus: 'Wingman+', nav_settings: 'Settings',
+    t_signal_sent: 'Signal sent · silent expiry in 10 min', t_mood: 'Mood updated', t_blocked: 'Blocked: contact details are not allowed', t_active: "You're visible on the Radar", t_invisible: "You're invisible",
+  },
+  fr: {
+    brandtag: 'Facilitez la première rencontre', splash_tag: "Facilitez la première rencontre.", splash_love: "L'amour est dans l'air.", splash_cta: 'Commencer',
+    next: 'Suivant', ob_eyebrow: 'Le problème',
+    ob1_title: 'Vous vous croisez. Rien ne se passe.', ob1_body: "Chaque jour, vous croisez quelqu'un que vous aimeriez rencontrer — sans rien dire. Wingman est fait pour cet instant précis.",
+    ob2_eyebrow: 'La solution', ob2_title: 'Un protocole discret, pas un fil de swipe.', ob2_body: "Pas de profils publics. Pas de chat infini. Un chemin court et privé de « quelqu'un est proche » à « on se voit ».",
+    ob3_eyebrow: 'La promesse', ob3_title: 'Faites le premier pas, en sécurité.', ob3_body: "Aucun rejet explicite. Localisation approximative uniquement. Vous contrôlez qui peut vous trouver.", ob3_cta: 'Créer mon compte',
+    phone_sub: 'Vérifiez votre numéro', phone_title: 'Votre téléphone', phone_body: 'Nous envoyons un code à 6 chiffres. Votre numéro n\'est jamais montré.', phone_label: 'Numéro de téléphone', phone_cta: 'Envoyer le code', phone_note: 'Vérification uniquement — pour garder Wingman sans faux profils.',
+    otp_sub: 'Entrez le code', otp_title: 'Code à 6 chiffres', otp_body: 'Envoyé au +352 621 000 000', otp_cta: 'Vérifier',
+    profile_sub: 'Votre profil', pf_name: 'Prénom', pf_birth: 'Date de naissance', pf_gender: 'Genre', g_male: 'Homme', g_female: 'Femme', g_nb: 'Non-binaire',
+    pf_interest: 'Intéressé·e par', t_men: 'Hommes', t_women: 'Femmes', t_nb: 'Non-binaire', pf_height: 'Taille (cm)', pf_interests: "Centres d'intérêt (max 5)", pf_bio: 'Bio du jour (150 max)',
+    consent_sub: 'Vos choix', consent_title: 'Ce que vous acceptez', consent_body: 'Chaque finalité est distincte. Modifiable à tout moment dans Réglages.',
+    c_core: 'Faire fonctionner le service', c_core_d: 'Nécessaire pour vous mettre en relation et opérer le protocole.', c_loc: 'Localisation approximative', c_loc_d: 'Rayon grossier uniquement — jamais votre position exacte.',
+    c_destiny: 'Destiny Connection', c_destiny_d: 'Désactivé par défaut. Co-présence grossière pour repérer les croisements.', c_push: 'Notifications push', c_push_d: 'Signaux, selfies, confirmations.',
+    c_analytics: 'Analytique produit', c_analytics_d: 'Optionnel. Aide à améliorer Wingman.', consent_cta: 'Accepter & activer le Radar',
+    radar_sub: 'Découverte en temps réel', radar_invisible: '—  Invisible', radar_active: '●  Actif', radar_dist: 'Quelqu\'un très proche · À proximité', radar_activate: 'Devenir actif', radar_deactivate: 'Devenir invisible',
+    mood_ready: 'Prêt·e', mood_open: 'Ouvert·e', mood_explore: 'Explore', mood_ready_d: 'Se voir maintenant', mood_open_d: 'Si c\'est le bon', mood_explore_d: 'Juste explorer', mood_title: 'Mon humeur',
+    stat_signals: 'Signaux restants', stat_nearby: 'À proximité', stat_zone: 'Zone active',
+    destiny_eyebrow: '✦ Destiny Connection', destiny_card_t: 'Vous vous croisez souvent', destiny_card_d: 'Quelqu\'un de compatible croise votre route — même hors de votre radar.',
+    send_signal: 'Envoyer un Signal', close: 'Fermer',
+    signal_sub: 'Signaux reçus', signal_title: 'Quelqu\'un veut vous découvrir', signal_body: 'Répondez avant l\'expiration silencieuse. Personne n\'est jamais informé d\'un refus.', open: 'Ouvrir', sig_expired: 'Expiré — il y a 2 min',
+    signal_silent: 'Aucun bouton « Refuser ». L\'expiration silencieuse est le seul signal d\'échec.',
+    s_live: 'Vivacité vérifiée', s_stamp: 'Horodaté', s_gallery: 'Galerie bloquée', s_send: 'Prendre & envoyer', s_letexpire: 'Laisser expirer', s_approve: 'Approuver',
+    s_note: 'L\'app empêche l\'enregistrement et le partage via ses propres interfaces ; elle ne peut empêcher toute capture externe.',
+    confirmed: 'Connexion confirmée',
+    ticket_sub: 'Connection Ticket', ticket_badge: '🎟 Ticket actif', ticket_title: 'Pas dispo maintenant ?', ticket_body: 'Gardez cette opportunité — jusqu\'à 2 h (Gratuit) ou 24 h (Wingman+). Pas de chat avant d\'ouvrir Mission Meet à deux.', ticket_open: 'Je suis dispo', ticket_later: 'Plus tard',
+    mm_sub: 'Mission Meet', mm_obj: 'Décidez d\'un lieu', mm_ph: 'Côté terrasse, ça marche…', mm_note: '📵 Numéros et réseaux sociaux bloqués automatiquement.', mm_meet: 'On se retrouve', mm_not: 'Pas cette fois',
+    mode_eyebrow: 'MODE MISSION', mode_title: 'Concentrez-vous sur cette connexion', mode_body: '« Les vraies rencontres méritent toute votre attention. »', mode_invisible: '● Vous êtes invisible sur le Radar', mode_cta: 'On s\'est vus — continuer',
+    outcome_title: 'Vous êtes-vous rencontrés ?', outcome_body: 'Votre réponse reste privée. L\'autre ne la voit jamais.', outcome_yes: 'Oui, on s\'est vus', outcome_no: 'Pas cette fois',
+    cd_eyebrow: 'COOLDOWN', cd_min: 'minutes', cd_title: 'Prenez le temps.', cd_body: '« Les bonnes rencontres n\'ont pas besoin d\'un nouveau match immédiatement. »', cd_skip: 'Passer · 0,99 €', cd_ok: 'Retour au Radar',
+    destiny_title: 'Le destin insiste.', destiny_body: 'Vous avez croisé quelqu\'un de compatible plusieurs fois, dans des lieux publics, à des jours différents. Aucun lieu, date ou adresse n\'est montré.', destiny_try: 'Envoyer un Signal Destiny', destiny_ignore: 'Ignorer', destiny_off: 'Destiny est désactivé par défaut et peut être mis en pause dans Réglages.',
+    pulse_sub: 'Zones d\'activité compatibles', pulse_anon: 'Agrégé · Anonymisé', pz1: 'Forte activité compatible · 200 m', pz2: 'Événement exceptionnel · 1,2 km', pz3: 'Activité modérée · 800 m', pulse_plus: '⚡ Wingman+ : notifications en temps réel des zones Électriques',
+    settings_sub: 'Réglages & vie privée', set_privacy: 'Vie privée', set_photo: 'Photo publique', set_none: '✗ Aucune', set_loc: 'Localisation précise', set_never: '✗ Jamais partagée', set_consent: 'Consentement données', set_accepted: '✓ Géré', set_gdpr: 'Conformité RGPD', set_designed: '✓ Conçu pour',
+    set_controls: 'Contrôles', set_destiny: 'Destiny Connection', set_rm: 'Réduire les animations', set_haptics: 'Retour haptique', set_rights: 'Vos données (RGPD)', set_export: 'Exporter mes données (JSON)', set_delete: 'Supprimer mon compte', set_admin: 'Aperçu modération admin →',
+    report_sub: 'Signaler & bloquer', report_title: 'Que s\'est-il passé ?', report_body: 'Le blocage est instantané et silencieux. L\'autre personne n\'est jamais notifiée.',
+    rc_harass: 'Harcèlement', rc_threat: 'Menace', rc_imp: 'Usurpation', rc_sexual: 'Contenu sexuel', rc_minor: 'Sécurité mineurs', rc_contact: 'Contact hors plateforme',
+    report_done_badge: '✓ Bloqué & signalé', report_done_t: 'Vous ne vous reverrez plus.', report_done_b: 'Des signalements indépendants répétés déclenchent une revue humaine — pas un bannissement automatique définitif.', report_done_cta: 'Retour au Radar',
+    pw_sub: 'Wingman+', pw_free: 'Gratuit', pw_f1: '2 Signaux / jour', pw_f2: '1 Ticket — jusqu\'à 2 h', pw_f3: 'Destiny Connection incluse', pw_f4: 'Mission Meet 15 min',
+    pw_reco: 'RECOMMANDÉ', pw_p1: '20–25 Signaux / jour', pw_p2: '2 Tickets — jusqu\'à 24 h — 1 renouvellement', pw_p3: 'Cache selfie vérifié — 24 h', pw_p4: 'Priorité découverte + notifs Pulse', pw_p5: 'Mission Meet 20 min', pw_cta: 'Passer à Wingman+', pw_note: 'Aucun profil boosté. Aucune pub dans le flux. Aucune revente de données comportementales.',
+    admin_sub: 'File de modération', admin_body: 'La preuve n\'est créée que si un utilisateur signale pendant une session, et stockée chiffrée hors de la base principale. Chaque accès est journalisé.',
+    admin_pending: 'EN ATTENTE', admin_review: 'EN REVUE', admin_resolved: 'RÉSOLU', admin_c1: '3 signalements indépendants · catégorie : Contact hors plateforme', admin_c2: '1 signalement · Harcèlement · preuve scellée', admin_c3: 'Rejeté — faux signalements coordonnés détectés', admin_back: '← Retour à l\'app',
+    nav_radar: 'Radar', nav_signal: 'Signal', nav_pulse: 'Pulse', nav_plus: 'Wingman+', nav_settings: 'Réglages',
+    t_signal_sent: 'Signal envoyé · expiration silencieuse dans 10 min', t_mood: 'Humeur mise à jour', t_blocked: 'Bloqué : les coordonnées ne sont pas autorisées', t_active: 'Vous êtes visible sur le Radar', t_invisible: 'Vous êtes invisible',
+  },
+};
+
+function applyLang() {
+  const dict = I18N[state.lang];
+  $$('[data-i18n]').forEach(el => { const k = el.dataset.i18n; if (dict[k] != null) el.textContent = dict[k]; });
+  $$('[data-i18n-ph]').forEach(el => { const k = el.dataset.i18nPh; if (dict[k] != null) el.placeholder = dict[k]; });
+  buildNav();
+  // keep radar state label correct
+  const rs = $('#radar-state');
+  if (rs) rs.textContent = state.radarActive ? dict.radar_active : dict.radar_invisible;
+}
+const t = k => I18N[state.lang][k] || k;
+
+/* ------------------------------------------------------------ toast/haptic */
+let toastTimer;
+function toast(msg) {
+  const el = $('#toast'); el.textContent = msg; el.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 2400);
+}
+// Haptics policy — doubleSoft reserved for connectionConfirmed.
+function haptic(kind) {
+  if (!('vibrate' in navigator)) return;
+  const map = { selection: 10, signalSent: 20, connectionConfirmed: [30, 40, 30], timeWarning: 25, error: [40] };
+  navigator.vibrate(map[kind] || 0);
+}
+
+/* ------------------------------------------------------------- navigation */
+function show(id) {
+  $$('.view').forEach(v => v.classList.remove('active'));
+  const v = $('#' + id); if (!v) return;
+  v.classList.add('active');
+  $('#screen').scrollTop = 0;
+  const body = $('.body', v); if (body) body.scrollTop = 0;
+  onEnter(id);
+}
+const NAV = [
+  ['v-radar', 'radar', 'M12 12m-2 0a2 2 0 104 0 2 2 0 10-4 0 M12 12m-6 0a6 6 0 1012 0 6 6 0 10-12 0'],
+  ['v-signal', 'signal', 'M13 2L4 14h7l-1 8 9-12h-7z'],
+  ['v-pulse', 'pulse', 'M3 12h4l2-7 4 14 2-7h6'],
+  ['v-paywall', 'plus', 'M12 3l2.5 5 5.5.8-4 4 1 5.5L12 20l-5 2.8 1-5.5-4-4 5.5-.8z'],
+  ['v-settings', 'settings', 'M12 15a3 3 0 100-6 3 3 0 000 6z M19 12a7 7 0 00-.1-1l2-1.6-2-3.4-2.4 1a7 7 0 00-1.7-1L14.5 3h-4l-.3 2.6a7 7 0 00-1.7 1l-2.4-1-2 3.4L4.1 11a7 7 0 000 2l-2 1.6 2 3.4 2.4-1a7 7 0 001.7 1L9.5 21h4l.3-2.6a7 7 0 001.7-1l2.4 1 2-3.4-2-1.6a7 7 0 00.1-1z'],
+];
+function buildNav() {
+  $$('[data-navbar]').forEach(bar => {
+    const current = bar.closest('.view').dataset.nav;
+    bar.innerHTML = NAV.map(([vid, key, d]) =>
+      `<button data-go="${vid}" ${key === current ? 'aria-current="page"' : ''}>
+        <svg class="ico" viewBox="0 0 24 24"><path d="${d}"/></svg>
+        <span>${t('nav_' + key)}</span></button>`).join('');
+    $$('button', bar).forEach(b => b.addEventListener('click', () => show(b.dataset.go)));
+  });
+}
+
+/* ------------------------------------------------------------- RADAR canvas */
+const canvas = $('#radar-canvas');
+const ctx = canvas.getContext('2d');
+const DPR = Math.min(window.devicePixelRatio || 1, 2);
+function sizeCanvas() {
+  const w = canvas.clientWidth || 400, h = 340;
+  canvas.width = w * DPR; canvas.height = h * DPR;
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+}
+const MOOD_COLORS = { SUPER_READY: '#FF4D67', OPEN: '#FFC857', EXPLORING: '#F4F5F7' };
+const MOOD_GLOW = { SUPER_READY: 'rgba(255,77,103,.34)', OPEN: 'rgba(255,200,87,.30)', EXPLORING: 'rgba(244,245,247,.20)' };
+// Fictional dots only.
+const dots = [
+  { x: .30, y: .30, mood: 'SUPER_READY', age: '26 · 168cm', ageFr: '26 · 168cm', bio: 'Fun night out ✨', bioFr: 'Sortie sympa ✨', tags: ['🎵', '🍷', '🌍'] },
+  { x: .68, y: .26, mood: 'OPEN', age: '29 · 175cm', ageFr: '29 · 175cm', bio: 'Coffee or a walk?', bioFr: 'Café ou balade ?', tags: ['☕', '📚', '🏃'] },
+  { x: .74, y: .62, mood: 'EXPLORING', age: '24 · 162cm', ageFr: '24 · 162cm', bio: 'Just exploring 🗺️', bioFr: 'Juste explorer 🗺️', tags: ['🎨', '🐶'] },
+  { x: .40, y: .70, mood: 'SUPER_READY', age: '31 · 180cm', ageFr: '31 · 180cm', bio: 'Up for a real meet', bioFr: 'Envie de vraie rencontre', tags: ['🎸', '🍕'] },
+  { x: .24, y: .55, mood: 'OPEN', age: '27 · 170cm', ageFr: '27 · 170cm', bio: 'New in town 🌆', bioFr: 'Nouvelle en ville 🌆', tags: ['📷', '🍜'] },
+];
+let signalWave = null; // {x,y,t}
+let rafId = null, pulsePhase = 0;
+
+function buildingShapes(w, h) {
+  // deterministic abstract urban masses (no real geography)
+  return [
+    [.10, .12, .16, .22], [.62, .10, .20, .16], [.80, .40, .14, .30],
+    [.08, .60, .18, .26], [.44, .18, .12, .12], [.30, .78, .22, .14], [.58, .70, .18, .18],
+  ].map(([x, y, bw, bh]) => ({ x: x * w, y: y * h, w: bw * w, h: bh * h }));
+}
+function drawRadar(ts) {
+  const w = canvas.clientWidth || 400, h = 340, cx = w / 2, cy = h / 2;
+  ctx.clearRect(0, 0, w, h);
+  ctx.fillStyle = '#080D1A'; ctx.fillRect(0, 0, w, h);
+  // abstract urban masses
+  ctx.fillStyle = '#161E31';
+  buildingShapes(w, h).forEach(b => { roundRect(b.x, b.y, b.w, b.h, 6); ctx.fill(); });
+  // concentric rings
+  ctx.strokeStyle = 'rgba(124,92,252,.10)'; ctx.lineWidth = 1;
+  [50, 100, 150].forEach(r => { ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke(); });
+  // your position (violet, slow pulse)
+  if (!state.reduceMotion) pulsePhase = (ts % 3000) / 3000;
+  const pr = state.reduceMotion ? 0.5 : (0.5 + 0.5 * Math.sin(pulsePhase * Math.PI * 2));
+  const grd = ctx.createRadialGradient(cx, cy, 2, cx, cy, 26 + pr * 10);
+  grd.addColorStop(0, 'rgba(155,135,255,.5)'); grd.addColorStop(1, 'rgba(155,135,255,0)');
+  ctx.fillStyle = grd; ctx.beginPath(); ctx.arc(cx, cy, 26 + pr * 10, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#9B87FF'; ctx.beginPath(); ctx.arc(cx, cy, 7, 0, Math.PI * 2); ctx.fill();
+  // other people's mood dots (only when radar active)
+  if (state.radarActive) {
+    dots.forEach(d => {
+      const x = d.x * w, y = d.y * h, col = MOOD_COLORS[d.mood];
+      // glow
+      const g = ctx.createRadialGradient(x, y, 1, x, y, 16);
+      g.addColorStop(0, MOOD_GLOW[d.mood]); g.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, 16, 0, Math.PI * 2); ctx.fill();
+      // super ready gets a subtle second ring
+      if (d.mood === 'SUPER_READY' && !state.reduceMotion) {
+        const rr = 8 + (pulsePhase * 10);
+        ctx.strokeStyle = `rgba(255,77,103,${0.4 * (1 - pulsePhase)})`;
+        ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, rr, 0, Math.PI * 2); ctx.stroke();
+      }
+      ctx.fillStyle = col; ctx.beginPath(); ctx.arc(x, y, 6.5, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 1.5; ctx.stroke();
+    });
+  }
+  // diffuse Signal wave (Refinement: omnidirectional, no straight targeting line)
+  if (signalWave) {
+    const age = (performance.now() - signalWave.t) / 900;
+    if (age >= 1) { signalWave = null; }
+    else {
+      const rad = 20 + age * 120, alpha = 0.35 * (1 - age);
+      ctx.strokeStyle = `rgba(124,92,252,${alpha})`; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(signalWave.x, signalWave.y, rad, 0, Math.PI * 2); ctx.stroke();
+    }
+  }
+  if (!state.reduceMotion || signalWave) rafId = requestAnimationFrame(drawRadar);
+}
+function roundRect(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+function startRadar() { cancelAnimationFrame(rafId); rafId = requestAnimationFrame(drawRadar); }
+
+// tap a dot -> open anonymous sheet
+let currentDot = null;
+canvas.addEventListener('click', e => {
+  if (!state.radarActive) { toast(state.lang === 'fr' ? 'Activez le Radar pour découvrir' : 'Go active to discover'); return; }
+  const rect = canvas.getBoundingClientRect();
+  const px = (e.clientX - rect.left) / rect.width, py = (e.clientY - rect.top) / rect.height;
+  let best = null, bd = 1;
+  dots.forEach(d => { const dist = Math.hypot(d.x - px, d.y - py); if (dist < 0.09 && dist < bd) { bd = dist; best = d; } });
+  if (best) openSheet(best);
+});
+function openSheet(d) {
+  currentDot = d;
+  $('#sheet-mood').textContent = '● ' + t('mood_' + (d.mood === 'SUPER_READY' ? 'ready' : d.mood === 'OPEN' ? 'open' : 'explore'));
+  $('#sheet-mood').style.color = MOOD_COLORS[d.mood];
+  $('#sheet-age').textContent = state.lang === 'fr' ? d.ageFr : d.age;
+  $('#sheet-bio').textContent = state.lang === 'fr' ? d.bioFr : d.bio;
+  $('#sheet-tags').innerHTML = d.tags.map(x => `<span>${x}</span>`).join('');
+  $('#dot-sheet').classList.add('open');
+}
+$('#close-sheet').addEventListener('click', () => $('#dot-sheet').classList.remove('open'));
+$('#send-signal-btn').addEventListener('click', () => {
+  if (state.signalsLeft <= 0) { toast(state.lang === 'fr' ? 'Plus de signaux aujourd\'hui' : 'No signals left today'); return; }
+  state.signalsLeft--; $('#stat-signals').textContent = state.signalsLeft;
+  // diffuse wave from centre
+  const w = canvas.clientWidth || 400; signalWave = { x: w / 2, y: 170, t: performance.now() };
+  startRadar(); haptic('signalSent');
+  $('#dot-sheet').classList.remove('open');
+  toast(t('t_signal_sent'));
+  setTimeout(() => show('v-signal'), 800);
+});
+
+/* ------------------------------------------------------- radar toggle/mood */
+$('#radar-toggle').addEventListener('click', () => {
+  state.radarActive = !state.radarActive;
+  const btn = $('#radar-toggle'), st = $('#radar-state');
+  btn.classList.toggle('off', !state.radarActive);
+  btn.setAttribute('aria-pressed', String(state.radarActive));
+  btn.textContent = state.radarActive ? t('radar_deactivate') : t('radar_activate');
+  st.textContent = state.radarActive ? t('radar_active') : t('radar_invisible');
+  st.classList.toggle('invisible', !state.radarActive);
+  haptic('selection'); startRadar();
+  toast(state.radarActive ? t('t_active') : t('t_invisible'));
+});
+$('#mood-select').addEventListener('click', e => {
+  const b = e.target.closest('.mood-btn'); if (!b) return;
+  $$('#mood-select .mood-btn').forEach(x => x.setAttribute('aria-pressed', 'false'));
+  b.setAttribute('aria-pressed', 'true'); state.mood = b.dataset.mood;
+  haptic('selection'); toast(t('t_mood'));
+});
+
+/* ------------------------------------------------- server-authoritative timers
+   A timer is defined by an absolute expiresAt from the (simulated) server.
+   The client renders remaining = expiresAt - serverNow(). Going offline does
+   NOT pause it. The 30s warning is derived locally from server time, so no
+   exact server event is needed. */
+function makeTimer({ durationSec, textEl, barEl, onWarn, onExpire }) {
+  const expiresAt = state.serverNow() + durationSec * 1000;
+  let warned = false, iv;
+  const tick = () => {
+    const remaining = Math.max(0, Math.round((expiresAt - state.serverNow()) / 1000));
+    const mm = Math.floor(remaining / 60), ss = String(remaining % 60).padStart(2, '0');
+    if (textEl) textEl.textContent = `${mm}:${ss}`;
+    if (barEl) {
+      const pct = (remaining / durationSec) * 100;
+      barEl.style.width = pct + '%';
+      barEl.style.background = remaining <= 30 ? '#FF4D67' : remaining <= 120 ? '#FFC857' : '#F4F5F7';
+    }
+    if (remaining <= 30 && !warned) { warned = true; haptic('timeWarning'); onWarn && onWarn(); }
+    if (remaining <= 0) { clearInterval(iv); onExpire && onExpire(); }
+  };
+  tick(); iv = setInterval(tick, 1000);
+  return () => clearInterval(iv);
+}
+
+/* -------------------------------------------------------------- per-screen */
+let stopSelfie, stopMM, sigStop;
+function onEnter(id) {
+  if (id === 'v-radar') { sizeCanvas(); startRadar(); }
+  if (id === 'v-signal') {
+    // Signal received countdown (10 min shown compressed as 7:00 demo)
+    if (sigStop) sigStop();
+    let s = 420; const el = $('#sig-timer');
+    const iv = setInterval(() => { s--; const m = Math.floor(s / 60), ss = String(s % 60).padStart(2, '0'); el.textContent = (state.lang === 'fr' ? 'Expire dans ' : 'Expires in ') + `${m}:${ss}`; if (s <= 0) clearInterval(iv); }, 1000);
+    sigStop = () => clearInterval(iv);
+  }
+  if (id === 'v-selfie') {
+    $('#selfie-validate').classList.add('hidden'); $('#selfie-send').classList.remove('hidden');
+    // live timestamp
+    const stamp = $('#selfie-stamp');
+    const now = new Date();
+    stamp.textContent = `2026-07-10 · ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+    if (stopSelfie) stopSelfie();
+    stopSelfie = makeTimer({ durationSec: 300, textEl: $('#selfie-timer'), barEl: $('#selfie-bar'),
+      onExpire: () => { toast(state.lang === 'fr' ? 'Expiré silencieusement' : 'Silently expired'); show('v-radar'); } });
+  }
+  if (id === 'v-confirmed') {
+    const stage = $('#confirm-stage'); stage.classList.remove('fused'); void stage.offsetWidth; stage.classList.add('fused');
+    haptic('connectionConfirmed');
+    setTimeout(() => show('v-ticket'), state.reduceMotion ? 600 : 1800);
+  }
+  if (id === 'v-mission-meet') {
+    if (stopMM) stopMM();
+    stopMM = makeTimer({ durationSec: 900, textEl: $('#mm-timer'), barEl: $('#mm-bar'),
+      onExpire: () => { toast(state.lang === 'fr' ? 'Chat expiré' : 'Chat expired'); show('v-outcome'); } });
+  }
+  if (id === 'v-cooldown') { /* number already set by outcome */ }
+}
+
+/* selfie send -> reveal approve/expire (quiet, no red X) */
+$('#selfie-send').addEventListener('click', () => {
+  $('#selfie-send').classList.add('hidden');
+  $('#selfie-validate').classList.remove('hidden');
+  toast(state.lang === 'fr' ? 'Selfie envoyé — en attente' : 'Selfie sent — waiting');
+});
+
+/* mission meet chat + anti-contact filter */
+const CONTACT_RE = /(\+?\d[\d\s().-]{6,}\d)|(@[A-Za-z0-9_.]{2,})|(\b\w+\.(com|net|io|fr|be|lu)\b)|(snap|insta|whatsapp|tiktok|telegram)/i;
+function sendChat() {
+  const f = $('#chat-field'), v = f.value.trim(); if (!v) return;
+  const log = $('#chat-log');
+  if (CONTACT_RE.test(v)) {
+    const b = document.createElement('div'); b.className = 'msg blocked'; b.textContent = t('t_blocked');
+    log.appendChild(b); haptic('error'); f.value = ''; log.scrollTop = log.scrollHeight; return;
+  }
+  const m = document.createElement('div'); m.className = 'msg me'; m.textContent = v;
+  log.appendChild(m); f.value = ''; log.scrollTop = log.scrollHeight;
+}
+$('#chat-send').addEventListener('click', sendChat);
+$('#chat-field').addEventListener('keydown', e => { if (e.key === 'Enter') sendChat(); });
+
+/* outcome sets cooldown length */
+$$('[data-outcome]').forEach(b => b.addEventListener('click', () => {
+  $('#cd-num').textContent = b.dataset.outcome === 'yes' ? '30' : '15';
+}));
+
+/* generic data-go + destiny card keyboard */
+document.addEventListener('click', e => {
+  const g = e.target.closest('[data-go]'); if (g) { show(g.dataset.go); }
+});
+$$('[data-go][role="button"]').forEach(el => el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); show(el.dataset.go); } }));
+
+/* switches (consent, settings) */
+document.addEventListener('click', e => {
+  const sw = e.target.closest('.switch[role="switch"]'); if (!sw || sw.getAttribute('aria-disabled') === 'true') return;
+  const on = sw.getAttribute('aria-checked') === 'true'; sw.setAttribute('aria-checked', String(!on)); haptic('selection');
+  if (sw.id === 'rm-switch') setReduceMotion(!on);
+});
+$$('.switch[role="switch"]').forEach(sw => sw.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sw.click(); } }));
+
+/* report entry (from mission meet note / settings could link) */
+$('#pw-cta') && $('#pw-cta').addEventListener('click', () => toast(state.lang === 'fr' ? 'Simulation — pas de paiement réel' : 'Simulation — no real payment'));
+
+/* language */
+$$('.chip.lang').forEach(b => b.addEventListener('click', () => {
+  state.lang = b.dataset.lang;
+  $$('.chip.lang').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  document.documentElement.lang = state.lang;
+  applyLang();
+}));
+
+/* reduce motion */
+function setReduceMotion(on) {
+  state.reduceMotion = on;
+  document.body.classList.toggle('reduce-motion', on);
+  $('#rm-toggle').setAttribute('aria-pressed', String(on));
+  const sw = $('#rm-switch'); if (sw) sw.setAttribute('aria-checked', String(on));
+  startRadar();
+}
+$('#rm-toggle').addEventListener('click', () => setReduceMotion(!state.reduceMotion));
+if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) setReduceMotion(true);
+
+/* offline simulation — timers keep running server-side */
+$('#offline-toggle').addEventListener('click', () => {
+  state.offline = !state.offline;
+  $('#offline-toggle').setAttribute('aria-pressed', String(state.offline));
+  $('#offline-banner').classList.toggle('hidden', !state.offline);
+});
+
+/* boot */
+window.addEventListener('resize', () => { sizeCanvas(); startRadar(); });
+applyLang();
+sizeCanvas();
+startRadar();

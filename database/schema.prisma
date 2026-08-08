@@ -1,0 +1,731 @@
+// =============================================================================
+// Wingman — Prisma Schema (Core Schema V4.1 — Foundation)
+// Target: PostgreSQL, single EU region, NestJS modular monolith.
+// Status: Reviewed. Addresses every correction from the V4.0 → V4.1 review.
+//
+// Notes on partial unique indexes:
+//   Prisma cannot yet express partial unique indexes (`WHERE isActive`) in the
+//   schema for all connectors. Where a partial index is required, the model
+//   carries a plain @@index and the true UNIQUE ... WHERE constraint is created
+//   in a hand-written migration (see database/MIGRATION_STRATEGY.md). Those
+//   spots are marked with `// PARTIAL-UNIQUE (migration)`.
+// =============================================================================
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ------------------------------------------------------------------ ENUMS ----
+
+enum Gender {
+  MALE
+  FEMALE
+  NON_BINARY
+}
+
+/// What a user is looking for. EVERYONE is NOT a gender, so it is modeled as a
+/// set of targets rather than reusing Gender.
+enum InterestTarget {
+  MEN
+  WOMEN
+  NON_BINARY_PEOPLE
+}
+
+enum Intention {
+  AVAILABLE_NOW
+  JUST_EXPLORING
+}
+
+enum MoodColor {
+  SUPER_READY
+  OPEN
+  EXPLORING
+}
+
+enum SignalSource {
+  RADAR
+  DESTINY
+  REMATCH
+}
+
+enum SignalStatus {
+  PENDING
+  OPENED
+  ACCEPTED
+  EXPIRED
+  CANCELLED
+  BLOCKED
+}
+
+/// Fine-grained protocol state. Deliberately more detailed than a single
+/// "SELFIE_EXCHANGE" bucket so diagnostics, metrics and recovery are precise.
+enum ConnectionState {
+  WAITING_FOR_INITIATOR_SELFIE
+  WAITING_FOR_RECIPIENT_SELFIE
+  WAITING_FOR_INITIATOR_APPROVAL
+  MUTUALLY_VALIDATED
+  TICKET_ACTIVE
+  WAITING_FOR_TICKET_CONFIRMATION
+  MISSION_MEET_ACTIVE
+  MISSION_CONFIRMED
+  OUTCOME_PENDING
+  COOLDOWN_ACTIVE
+  COMPLETED
+  EXPIRED
+  CANCELLED
+  BLOCKED
+  FAILED
+}
+
+enum MissionResponse {
+  PENDING
+  YES
+  NO
+  TIMEOUT
+}
+
+enum ConsentAction {
+  GRANTED
+  WITHDRAWN
+}
+
+enum ConsentPurpose {
+  CORE_MATCHING
+  COARSE_LOCATION
+  DESTINY_CONNECTION
+  PUSH_NOTIFICATIONS
+  PRODUCT_ANALYTICS
+}
+
+enum ConsentSource {
+  ONBOARDING
+  SETTINGS
+  RECONSENT_PROMPT
+  ADMIN
+}
+
+enum EntitlementType {
+  SIGNAL_DAILY_LIMIT
+  TICKET_MAX_DURATION_SEC
+  TICKET_MAX_ACTIVE
+  SELFIE_CACHE_ACCESS
+  PULSE_NOTIFICATIONS
+  MISSION_MEET_DURATION_SEC
+}
+
+enum EntitlementSource {
+  FREE_PLAN
+  SUBSCRIPTION
+  NIGHT_PASS
+  EVENT_PASS
+  ONE_TIME_PURCHASE
+  ADMIN_GRANT
+}
+
+enum VerificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  EXPIRED
+}
+
+enum ModerationStatus {
+  PENDING
+  UNDER_REVIEW
+  RESOLVED
+  ACTION_TAKEN
+  DISMISSED
+}
+
+enum ReportCategory {
+  HARASSMENT
+  THREAT
+  IMPERSONATION
+  SEXUAL_CONTENT
+  MINOR_SAFETY
+  SPAM
+  SCAM
+  OFF_PLATFORM_CONTACT
+  OTHER
+}
+
+enum PurchaseStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum PrivacyRequestType {
+  EXPORT
+  DELETION
+}
+
+enum PrivacyRequestStatus {
+  RECEIVED
+  IN_PROGRESS
+  COMPLETED
+  REJECTED
+}
+
+// ---------------------------------------------------- IDENTITY & AUTH --------
+
+model User {
+  id                String    @id @default(uuid())
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  isVerified        Boolean   @default(false)
+
+  // Phone protection.
+  // phoneLookupHash = HMAC-SHA256(server_pepper, E164)  -> deterministic, unique.
+  // phoneCiphertext = AES-256-GCM(E164) packaged with nonce + tag.
+  // phoneKeyVersion supports key rotation.
+  phoneLookupHash   String    @unique
+  phoneCiphertext   String
+  phoneKeyVersion   Int       @default(1)
+  phoneCountryCode  String
+  phoneVerifiedAt   DateTime?
+
+  // Public-ish profile (only ever exposed per Radar / match rules).
+  firstName         String?
+  birthDate         DateTime  @db.Date // age is derived; never stored as Int
+  gender            Gender
+  interestedIn      InterestTarget[]
+  heightCm          Int
+  dailyBio          String?   @db.VarChar(150)
+  dailyBioUpdatedAt DateTime?
+
+  // Real-time intent lives in the row only as last-known; presence/online is
+  // NOT stored here (Redis is the source of truth). lastSeenAt is advisory.
+  intention         Intention @default(JUST_EXPLORING)
+  currentMood       MoodColor @default(EXPLORING)
+  lastSeenAt        DateTime?
+
+  optOccupation     String?
+  optEducation      String?
+
+  // Relations
+  profileInterests  UserInterest[]
+  profileLanguages  UserLanguage[]
+  sessions          UserSession[]
+  devices           Device[]
+  otpChallenges     OtpChallenge[]
+  identityChecks    IdentityVerification[]
+  consentEvents     ConsentEvent[]
+  entitlements      Entitlement[]
+  usageCounters     UsageCounter[]
+  purchases         Purchase[]
+  subscriptions     Subscription[]
+  restrictions      AccountRestriction[]
+  privacyRequests   PrivacyRequest[]
+  destinyPreference DestinyPreference?
+
+  signalsSent       Signal[]  @relation("SignalsSent")
+  signalsReceived   Signal[]  @relation("SignalsReceived")
+
+  connectionsInit   Connection[] @relation("ConnectionInitiator")
+  connectionsRecv   Connection[] @relation("ConnectionRecipient")
+  activeLock        ActiveUserLock?
+
+  blocksSent        UserBlock[] @relation("BlocksSent")
+  blocksReceived    UserBlock[] @relation("BlocksReceived")
+  reportsSent       Report[]    @relation("ReportsSent")
+  reportsReceived   Report[]    @relation("ReportsReceived")
+
+  @@index([currentMood])
+  @@index([lastSeenAt])
+}
+
+model OtpChallenge {
+  id            String   @id @default(uuid())
+  userId        String?
+  user          User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  phoneLookup   String   // HMAC of the target phone, so we never store raw
+  codeHash      String   // hash of the 6-digit OTP, never the code itself
+  attempts      Int      @default(0)
+  maxAttempts   Int      @default(5)
+  createdAt     DateTime @default(now())
+  expiresAt     DateTime
+  consumedAt    DateTime?
+
+  @@index([phoneLookup, createdAt])
+  @@index([expiresAt])
+}
+
+model UserSession {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash    String   @unique
+  ipAddress    String?
+  userAgent    String?
+  createdAt    DateTime @default(now())
+  expiresAt    DateTime
+  revokedAt    DateTime?
+
+  @@index([userId, expiresAt])
+}
+
+model Device {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pushToken    String   @unique
+  platform     String   // "ios" | "android"
+  osVersion    String?
+  updatedAt    DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model IdentityVerification {
+  id                String             @id @default(uuid())
+  userId            String
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider          String             // "onfido" | "internal-liveness" | ...
+  providerReference String?
+  status            VerificationStatus @default(PENDING)
+  assuranceLevel    String?
+  verifiedAt        DateTime?
+  expiresAt         DateTime?
+  evidenceDeletedAt DateTime?          // when the raw selfie evidence was purged
+  createdAt         DateTime           @default(now())
+
+  @@index([userId, status])
+}
+
+// -------------------------------------------- PROFILE REFERENCE DATA ---------
+
+model Interest {
+  code   String         @id // stable code, e.g. "music", "travel"
+  users  UserInterest[]
+}
+
+model UserInterest {
+  userId       String
+  interestCode String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  interest     Interest @relation(fields: [interestCode], references: [code], onDelete: Cascade)
+
+  @@id([userId, interestCode])
+  @@index([interestCode])
+}
+
+model Language {
+  code  String         @id // ISO 639-1: "fr", "en", "de"
+  users UserLanguage[]
+}
+
+model UserLanguage {
+  userId       String
+  languageCode String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  language     Language @relation(fields: [languageCode], references: [code], onDelete: Cascade)
+
+  @@id([userId, languageCode])
+  @@index([languageCode])
+}
+
+// ---------------------------------------------------- PRIVACY / GDPR ---------
+
+model ConsentEvent {
+  id            String         @id @default(uuid())
+  userId        String
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  purpose       ConsentPurpose
+  action        ConsentAction
+  policyVersion String
+  policyHash    String
+  locale        String
+  source        ConsentSource
+  occurredAt    DateTime       @default(now())
+
+  @@index([userId, purpose, occurredAt])
+}
+
+model PrivacyRequest {
+  id          String               @id @default(uuid())
+  userId      String
+  user        User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        PrivacyRequestType
+  status      PrivacyRequestStatus @default(RECEIVED)
+  createdAt   DateTime             @default(now())
+  completedAt DateTime?
+  artifactKey String?              // storage key of an export bundle, if any
+
+  @@index([userId, type])
+  @@index([status])
+}
+
+// --------------------------------------------- MONETIZATION / BILLING --------
+
+model Product {
+  code        String     @id // "wingman_plus", "night_pass", ...
+  displayName String
+  priceCents  Int
+  currency    String     @default("EUR")
+  isActive    Boolean    @default(true)
+  purchases   Purchase[]
+}
+
+model Purchase {
+  id           String         @id @default(uuid())
+  userId       String
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productCode  String
+  product      Product        @relation(fields: [productCode], references: [code])
+  status       PurchaseStatus @default(PENDING)
+  idempotencyKey String       @unique // no financial effect without it
+  externalRef  String?        // store/PSP transaction id
+  createdAt    DateTime       @default(now())
+  completedAt  DateTime?
+  transactions PaymentTransaction[]
+
+  @@index([userId, status])
+}
+
+model PaymentTransaction {
+  id          String   @id @default(uuid())
+  purchaseId  String
+  purchase    Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  provider    String
+  providerRef String   @unique
+  amountCents Int
+  currency    String   @default("EUR")
+  succeeded   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@index([purchaseId])
+}
+
+model Subscription {
+  id         String    @id @default(uuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productCode String
+  startsAt   DateTime  @default(now())
+  currentPeriodEnd DateTime
+  cancelledAt DateTime?
+  isActive   Boolean   @default(true)
+
+  @@index([userId, isActive])
+}
+
+/// Entitlements describe what a user MAY do. They are derived from purchases /
+/// subscriptions but decoupled from accounting. Value is typed, not stringly.
+model Entitlement {
+  id           String            @id @default(uuid())
+  userId       String
+  user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type         EntitlementType
+  source       EntitlementSource
+  integerValue Int?
+  booleanValue Boolean?
+  durationSec  Int?
+  startsAt     DateTime          @default(now())
+  endsAt       DateTime?         // null = permanent
+  revokedAt    DateTime?
+  sourceRef    String?           // purchase/subscription id
+  createdAt    DateTime          @default(now())
+  // isActive is DERIVED: startsAt<=now AND (endsAt IS NULL OR endsAt>now) AND revokedAt IS NULL
+
+  @@index([userId, type, startsAt, endsAt])
+}
+
+/// Rolling counters (e.g. daily signals used). Reset by a worker or by window.
+model UsageCounter {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  metric     String   // "signals_sent"
+  windowKey  String   // "2026-07-10" (UTC day) or rolling window id
+  count      Int      @default(0)
+  updatedAt  DateTime @updatedAt
+
+  @@unique([userId, metric, windowKey])
+  @@index([userId, metric])
+}
+
+// -------------------------------------------- THE PROTOCOL (STATE) -----------
+
+/// A Signal is directional (sender -> receiver) but pair-scoped for uniqueness.
+/// Only one ACTIVE signal per pair; history is preserved by flipping isActive.
+model Signal {
+  id         String       @id @default(uuid())
+  pairKey    String       // normalized "lowId:highId"
+  senderId   String
+  receiverId String
+  sender     User         @relation("SignalsSent", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver   User         @relation("SignalsReceived", fields: [receiverId], references: [id], onDelete: Cascade)
+  source     SignalSource @default(RADAR)
+  status     SignalStatus @default(PENDING)
+  isActive   Boolean      @default(true)
+
+  createdAt  DateTime     @default(now())
+  openedAt   DateTime?
+  acceptedAt DateTime?
+  expiresAt  DateTime     // createdAt + 10 min (server-computed)
+  closedAt   DateTime?
+
+  // PARTIAL-UNIQUE (migration): UNIQUE(pairKey) WHERE isActive
+  @@index([pairKey])
+  @@index([receiverId, status, expiresAt])
+  @@index([senderId, createdAt])
+  @@index([expiresAt, isActive])
+}
+
+/// Root of the post-signal protocol. One row per attempted connection.
+/// Roles (initiator/recipient) are kept SEPARATELY from pair normalization.
+model Connection {
+  id            String          @id @default(uuid())
+
+  initiatorId   String
+  recipientId   String
+  initiator     User            @relation("ConnectionInitiator", fields: [initiatorId], references: [id], onDelete: Cascade)
+  recipient     User            @relation("ConnectionRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  pairLowId     String
+  pairHighId    String
+  pairKey       String
+
+  state         ConnectionState @default(WAITING_FOR_INITIATOR_SELFIE)
+  isActive      Boolean         @default(true)
+
+  startedAt     DateTime        @default(now())
+  expiresAt     DateTime
+  endedAt       DateTime?
+  failureReason String?         // "SELFIE_TIMEOUT" | "MUTUAL_DECLINE" | "CHAT_TIMEOUT" | "BLOCKED"
+
+  purgeAt       DateTime        // hard-delete after retention (distinct from endedAt)
+
+  selfieExchange SelfieExchange?
+  ticket         ConnectionTicket?
+  missionMeet    MissionMeet?
+  outcome        MissionOutcome?
+  cooldown       Cooldown?
+  lock           ActiveUserLock?
+
+  // PARTIAL-UNIQUE (migration): UNIQUE(pairKey) WHERE isActive
+  @@index([pairKey])
+  @@index([pairLowId, isActive])
+  @@index([pairHighId, isActive])
+  @@index([expiresAt, isActive])
+  @@index([purgeAt])
+}
+
+/// Guarantees ONE active connection per user. userId is the PK, so the database
+/// itself blocks a second concurrent lock. Inserted in the same tx as Connection.
+model ActiveUserLock {
+  userId       String     @id
+  connectionId String     @unique
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  connection   Connection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  acquiredAt   DateTime   @default(now())
+  expiresAt    DateTime
+
+  @@index([expiresAt])
+}
+
+/// Metadata ONLY. No image bytes, no URLs — media lives in private storage and
+/// is referenced by opaque ids resolved at request time.
+model SelfieExchange {
+  id                 String   @id @default(uuid())
+  connectionId       String   @unique
+  connection         Connection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  initiatorMediaId   String?  // opaque object id
+  recipientMediaId   String?
+  initiatorCapturedAt DateTime?
+  recipientCapturedAt DateTime?
+  initiatorExpiresAt DateTime?
+  recipientExpiresAt DateTime?
+  createdAt          DateTime @default(now())
+}
+
+model ConnectionTicket {
+  id           String   @id @default(uuid())
+  connectionId String   @unique
+  connection   Connection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+  expiresAt    DateTime // Free: +2h, Wingman+: +24h (entitlement-driven)
+  renewals     Int      @default(0)
+  isActive     Boolean  @default(true)
+
+  @@index([expiresAt, isActive])
+}
+
+model MissionMeet {
+  id           String   @id @default(uuid())
+  connectionId String   @unique
+  connection   Connection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  startedAt    DateTime @default(now())
+  expiresAt    DateTime // Free: +15 min, Wingman+: +20 min
+  closedAt     DateTime?
+  // No message content is ever persisted here (Redis stream only).
+}
+
+model MissionOutcome {
+  id             String          @id @default(uuid())
+  connectionId   String          @unique
+  connection     Connection      @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  initiatorResponse MissionResponse @default(PENDING)
+  recipientResponse MissionResponse @default(PENDING)
+  metConfirmed   Boolean         @default(false) // derived: both == YES
+  recordedAt     DateTime        @default(now())
+  purgeAt        DateTime        // delete after 30 days
+
+  @@index([purgeAt])
+}
+
+model Cooldown {
+  id           String   @id @default(uuid())
+  connectionId String   @unique
+  connection   Connection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  startedAt    DateTime @default(now())
+  expiresAt    DateTime // 30 or 15 min per outcome
+  skipped      Boolean  @default(false)
+
+  @@index([expiresAt])
+}
+
+/// Minimal record kept to allow Rematch. No content.
+model ExpiredConnection {
+  id          String   @id @default(uuid())
+  pairKey     String
+  initiatorId String
+  recipientId String
+  expiredAt   DateTime @default(now())
+  rematchUsed Boolean  @default(false)
+  purgeAt     DateTime // delete after 30 days
+
+  @@index([pairKey])
+  @@index([purgeAt])
+}
+
+// -------------------------------------------- SAFETY & MODERATION ------------
+
+model UserBlock {
+  id        String   @id @default(uuid())
+  blockerId String
+  blockedId String
+  blocker   User     @relation("BlocksSent", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked   User     @relation("BlocksReceived", fields: [blockedId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  // CHECK (blockerId <> blockedId) enforced in migration
+  @@unique([blockerId, blockedId])
+  @@index([blockedId])
+}
+
+model Report {
+  id               String          @id @default(uuid())
+  reporterId       String
+  reportedId       String
+  reporter         User            @relation("ReportsSent", fields: [reporterId], references: [id], onDelete: Cascade)
+  reported         User            @relation("ReportsReceived", fields: [reportedId], references: [id], onDelete: Cascade)
+  category         ReportCategory
+  description      String?         @db.VarChar(500)
+  createdAt        DateTime        @default(now())
+
+  moderationCaseId String?
+  moderationCase   ModerationCase? @relation(fields: [moderationCaseId], references: [id], onDelete: SetNull)
+
+  @@index([reportedId, createdAt])
+  @@index([moderationCaseId])
+}
+
+model ModerationCase {
+  id         String           @id @default(uuid())
+  status     ModerationStatus @default(PENDING)
+  assignedTo String?
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  reports    Report[]
+  evidence   ModerationEvidence[]
+  actions    ModerationAction[]
+  auditLogs  ModerationAuditLog[]
+
+  @@index([status])
+}
+
+/// Encrypted evidence is stored OUTSIDE Postgres. This row only references it.
+model ModerationEvidence {
+  id                String         @id @default(uuid())
+  moderationCaseId  String
+  moderationCase    ModerationCase @relation(fields: [moderationCaseId], references: [id], onDelete: Cascade)
+  storageObjectKey  String
+  encryptionKeyRef  String
+  encryptionVersion Int            @default(1)
+  contentHash       String
+  capturedAt        DateTime
+  purgeAt           DateTime
+  createdByService  String
+
+  @@index([moderationCaseId])
+  @@index([purgeAt])
+}
+
+model ModerationAction {
+  id               String         @id @default(uuid())
+  moderationCaseId String
+  moderationCase   ModerationCase @relation(fields: [moderationCaseId], references: [id], onDelete: Cascade)
+  actorId          String
+  action           String         // "SUSPEND" | "BAN" | "WARN" | "DISMISS"
+  reason           String?
+  createdAt        DateTime       @default(now())
+
+  @@index([moderationCaseId])
+}
+
+/// Every read/decrypt of evidence is logged: who, why, when.
+model ModerationAuditLog {
+  id               String         @id @default(uuid())
+  moderationCaseId String
+  moderationCase   ModerationCase @relation(fields: [moderationCaseId], references: [id], onDelete: Cascade)
+  actorId          String
+  action           String         // "VIEW_EVIDENCE" | "DECRYPT" | "ASSIGN" ...
+  reason           String?
+  createdAt        DateTime       @default(now())
+
+  @@index([moderationCaseId, createdAt])
+}
+
+model AccountRestriction {
+  id             String    @id @default(uuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  isBanned       Boolean   @default(false)
+  suspendedUntil DateTime?
+  reason         String
+  createdAt      DateTime  @default(now())
+
+  @@index([userId])
+}
+
+// ---------------------------------------------------- DESTINY ----------------
+
+model DestinyPreference {
+  userId    String   @id
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  enabled   Boolean  @default(false) // OFF by default; separate opt-in
+  updatedAt DateTime @updatedAt
+}
+
+/// Pseudonymized co-presence candidate. Short TTL; raw proximity events are
+/// aggregated then discarded and are never stored here.
+model DestinyCandidate {
+  id            String   @id @default(uuid())
+  pairKey       String   @unique
+  lowId         String
+  highId        String
+  coPresence    Int      @default(0) // coarse count across distinct days
+  lastCountedAt DateTime @default(now())
+  purgeAt       DateTime // short TTL, e.g. 48h sliding
+
+  @@index([purgeAt])
+}

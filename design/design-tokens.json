@@ -1,0 +1,103 @@
+{
+  "$meta": {
+    "name": "Wingman Design Tokens",
+    "version": "4.0",
+    "status": "Frozen (Design Engineering Spec V4.0)",
+    "notes": "Night / electric-violet identity. Emotion appears only when interest is mutual."
+  },
+  "theme": {
+    "colors": {
+      "background": {
+        "primary": "#0B1020",
+        "secondary": "#12182B",
+        "radar": "#080D1A",
+        "overlay": "rgba(4, 7, 15, 0.72)"
+      },
+      "surface": {
+        "card": "#171F35",
+        "elevated": "#1D2740",
+        "mapElement": "#161E31",
+        "mapBorder": "#202A40",
+        "border": "#27304A"
+      },
+      "brand": {
+        "night": "#0B1020",
+        "wingman": "#7C5CFC",
+        "air": "#B9A7FF",
+        "love": "#FF7DAE"
+      },
+      "text": {
+        "primary": "#F7F8FC",
+        "secondary": "#AAB2C8",
+        "muted": "#7D879F",
+        "disabled": "#596176",
+        "inverse": "#0B1020"
+      },
+      "feedback": {
+        "success": "#40D39C",
+        "warning": "#FFBF69",
+        "error": "#FF5C72",
+        "info": "#7C9CFF"
+      },
+      "moods": {
+        "superReady": "#FF4D67",
+        "open": "#FFC857",
+        "exploring": "#F4F5F7"
+      }
+    },
+    "borderRadius": {
+      "small": 10,
+      "badge": 12,
+      "button": 18,
+      "card": 24,
+      "modal": 28,
+      "full": 999
+    },
+    "spacing": { "xs": 4, "sm": 8, "md": 16, "lg": 24, "xl": 32, "xxl": 48 },
+    "fonts": {
+      "interface": "Manrope",
+      "display": "Sora",
+      "mono": "JetBrains Mono"
+    },
+    "typography": {
+      "displayLarge": { "fontFamily": "Sora", "fontWeight": "700", "fontSize": 36, "letterSpacing": -0.5 },
+      "heading": { "fontFamily": "Manrope", "fontWeight": "700", "fontSize": 24, "letterSpacing": 0 },
+      "body": { "fontFamily": "Manrope", "fontWeight": "400", "fontSize": 16, "letterSpacing": 0 },
+      "label": { "fontFamily": "Manrope", "fontWeight": "600", "fontSize": 14, "letterSpacing": 0.5 }
+    },
+    "opacity": { "disabled": 0.4, "muted": 0.64, "overlay": 0.72, "subtle": 0.12 },
+    "glow": {
+      "signal": "rgba(124, 92, 252, 0.30)",
+      "love": "rgba(255, 125, 174, 0.24)",
+      "superReady": "rgba(255, 77, 103, 0.34)",
+      "open": "rgba(255, 200, 87, 0.30)",
+      "exploring": "rgba(244, 245, 247, 0.20)"
+    },
+    "motion": {
+      "durationInstant": 120,
+      "durationFast": 180,
+      "durationNormal": 280,
+      "durationSlow": 500,
+      "durationEmotional": 900,
+      "radarPulse": 3000,
+      "easing": {
+        "standard": "cubic-bezier(0.2, 0, 0, 1)",
+        "enter": "cubic-bezier(0, 0, 0.2, 1)",
+        "exit": "cubic-bezier(0.4, 0, 1, 1)"
+      }
+    },
+    "haptics": {
+      "selection": "light",
+      "signalSent": "soft",
+      "connectionConfirmed": "doubleSoft",
+      "timeWarning": "warningShort",
+      "error": "rigid",
+      "enabledByDefault": true,
+      "rules": [
+        "Respect system and Wingman haptic preferences.",
+        "Never vibrate repeatedly during a countdown.",
+        "doubleSoft is reserved exclusively for Connection Confirmed (sensory signature)."
+      ]
+    }
+  }
+}
