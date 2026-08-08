@@ -1,0 +1,3 @@
+export const EPHEMERAL_STORE = Symbol("EPHEMERAL_STORE");
+export const NOTIFICATION_ORCH = Symbol("NOTIFICATION_ORCH");
+export const AUTH_SERVICE_TOKEN = Symbol("AUTH_SERVICE_TOKEN");

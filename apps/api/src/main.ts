@@ -1,14 +1,24 @@
-import { FakeClock, WingmanEngine } from "@wingman/domain";
-import { createApp } from "./app.js";
+import "reflect-metadata";
+import { NestFactory } from "@nestjs/core";
+import { AppModule } from "./app.module.js";
 
-const destinyEnabled = process.env.DESTINY_ENABLED === "true";
-const clock = process.env.FAKE_CLOCK === "true" ? new FakeClock(new Date()) : undefined;
-export const engine = new WingmanEngine({ clock, destinyEnabled });
-export const app = createApp({ engine });
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule.register({ useDevAuth: true }));
+  const port = Number(process.env.PORT ?? 3000);
+  await app.listen(port);
+  console.log(
+    JSON.stringify({
+      msg: "Wingman Nest API listening",
+      port,
+      utc: new Date().toISOString(),
+      destiny: process.env.DESTINY_ENABLED === "true",
+    }),
+  );
+}
 
-const port = Number(process.env.PORT ?? 3000);
 if (process.env.NODE_ENV !== "test") {
-  app.listen(port, () => {
-    console.log(`Wingman API listening on :${port} utc=${new Date().toISOString()} destiny=${destinyEnabled}`);
+  bootstrap().catch((e) => {
+    console.error(e);
+    process.exit(1);
   });
 }
