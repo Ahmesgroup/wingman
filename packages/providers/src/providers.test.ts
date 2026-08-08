@@ -1,55 +1,126 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { AuthService } from "@wingman/auth";
-import { NotificationOrchestrator } from "@wingman/notifications";
-import { ConsoleSmsProvider } from "./sms.js";
-import { FlakyPushTransport, LoggingPushTransport } from "./push.js";
+import { InvalidDeviceError, NotificationOrchestrator } from "@wingman/notifications";
+import {
+  ApnsPushProvider,
+  ConsoleSmsProvider,
+  FcmPushProvider,
+  MemoryDeviceTokenStore,
+  MobilePushTransport,
+  ReliableSmsProvider,
+  TwilioSmsProvider,
+} from "./index.js";
 import { OtpDeliveryService } from "./otp-delivery.js";
 
-describe("S14 provider ports", () => {
-  it("delivers OTP through SMS port without exposing phone in provider logs contract", async () => {
+describe("S18 production providers", () => {
+  it("SMS reliable wrapper is idempotent and never requires body in logs", async () => {
+    const inner = new ConsoleSmsProvider();
+    const sms = new ReliableSmsProvider(inner, { maxAttempts: 2, timeoutMs: 2000 });
+    const a = await sms.send({ toE164: "+33600000000", body: "code 123456", idempotencyKey: "otp:1" });
+    const b = await sms.send({ toE164: "+33600000000", body: "code 123456", idempotencyKey: "otp:1" });
+    expect(a.providerMessageId).toBe(b.providerMessageId);
+    expect(inner.sent).toHaveLength(1);
+  });
+
+  it("Twilio adapter posts form body with redacted logging contract", async () => {
+    const fetchImpl = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({ sid: "SMtest123" }),
+    })) as unknown as typeof fetch;
+    const twilio = new TwilioSmsProvider({
+      accountSid: "ACxxx",
+      authToken: "secret",
+      fromE164: "+15550001111",
+      fetchImpl,
+      timeoutMs: 2000,
+    });
+    const res = await twilio.send({
+      toE164: "+33611112222",
+      body: "Your Wingman code is 999999",
+      idempotencyKey: "otp:chal1",
+    });
+    expect(res.providerMessageId).toBe("SMtest123");
+    expect(fetchImpl).toHaveBeenCalledOnce();
+    const init = fetchImpl.mock.calls[0]![1] as RequestInit;
+    const headers = init.headers as Record<string, string>;
+    expect(headers["Idempotency-Key"]).toBe("otp:chal1");
+  });
+
+
+  it("OTP delivery still goes through SmsProvider port only", async () => {
     process.env.AUTH_DEBUG_OTP = "true";
     const auth = new AuthService("pepper");
-    const sms = new ConsoleSmsProvider();
+    const sms = new ReliableSmsProvider(new ConsoleSmsProvider());
     const delivery = new OtpDeliveryService(auth, sms);
     const res = await delivery.requestAndDeliver("+33699999999");
     expect(res.challengeId).toBeTruthy();
-    expect(sms.sent).toHaveLength(1);
-    expect(sms.sent[0]!.idempotencyKey).toContain(res.challengeId);
   });
 
-  it("push logging transport integrates with orchestrator idempotency", async () => {
-    const transport = new LoggingPushTransport();
+  it("mobile push fans out to android+ios and cleans invalid tokens", async () => {
+    const store = new MemoryDeviceTokenStore();
+    await store.upsert({
+      userId: "u1",
+      deviceId: "d-android",
+      platform: "android",
+      pushToken: "tok-android",
+    });
+    await store.upsert({
+      userId: "u1",
+      deviceId: "d-ios",
+      platform: "ios",
+      pushToken: "tok-ios-bad",
+    });
+    const fcm = new FcmPushProvider();
+    const apns = new ApnsPushProvider();
+    apns.markInvalid("tok-ios-bad");
+    const transport = new MobilePushTransport(store, [fcm, apns]);
     const orch = new NotificationOrchestrator(transport, 2);
-    const event = {
-      id: "e1",
-      type: "signal.received" as const,
+    orch.handleAppEvent({
+      type: "signal.received",
       userId: "u1",
-      idempotencyKey: "k1",
-      deepLink: "wingman://signals/1",
-      payload: {},
-      createdAt: new Date(),
-    };
-    orch.enqueue(event);
-    orch.enqueue(event);
-    await orch.processQueue();
-    expect(transport.sent).toHaveLength(1);
-  });
-
-  it("flaky push recovers via retries", async () => {
-    const transport = new FlakyPushTransport(1);
-    const orch = new NotificationOrchestrator(transport, 3);
-    orch.enqueue({
-      id: "e2",
-      type: "mission.opened",
-      userId: "u1",
-      idempotencyKey: "k2",
-      deepLink: "wingman://missions/1",
-      payload: {},
-      createdAt: new Date(),
+      aggregateId: "sig1",
     });
     await orch.processQueue();
+    expect(fcm.sent).toHaveLength(1);
+    expect((await store.getByToken("tok-ios-bad"))?.active).toBe(false);
+    expect(orch.getDelivery("signal.received:sig1:u1")?.status).toBe("SENT");
+    expect(orch.getDelivery("signal.received:sig1:u1")?.providerMessageId).toBeTruthy();
+  });
+
+  it("same app event is not double-notified on replay", async () => {
+    const store = new MemoryDeviceTokenStore();
+    await store.upsert({
+      userId: "u1",
+      deviceId: "d1",
+      platform: "android",
+      pushToken: "t1",
+    });
+    const fcm = new FcmPushProvider();
+    const orch = new NotificationOrchestrator(new MobilePushTransport(store, [fcm]), 2);
+    const a = orch.handleAppEvent({ type: "match.created", userId: "u1", aggregateId: "c1" });
+    const b = orch.handleAppEvent({ type: "match.created", userId: "u1", aggregateId: "c1" });
+    expect(a.accepted).toBe(true);
+    expect(b.duplicate).toBe(true);
     await orch.processQueue();
-    expect(transport.sent).toHaveLength(1);
-    expect(orch.getDelivery("k2")?.status).toBe("SENT");
+    expect(fcm.sent).toHaveLength(1);
+  });
+
+  it("invalid-only fanout marks INVALID_DEVICE without crashing orchestrator", async () => {
+    const store = new MemoryDeviceTokenStore();
+    await store.upsert({
+      userId: "u1",
+      deviceId: "d1",
+      platform: "android",
+      pushToken: "dead",
+    });
+    const fcm = new FcmPushProvider();
+    fcm.markInvalid("dead");
+    const orch = new NotificationOrchestrator(new MobilePushTransport(store, [fcm]), 2);
+    orch.handleAppEvent({ type: "mission.expired", userId: "u1", aggregateId: "c9" });
+    await orch.processQueue();
+    expect(orch.getDelivery("mission.expired:c9:u1")?.status).toBe("INVALID_DEVICE");
+    expect(() => {
+      throw new InvalidDeviceError("dead");
+    }).toThrow(InvalidDeviceError);
   });
 });

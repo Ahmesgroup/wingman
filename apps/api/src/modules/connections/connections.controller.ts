@@ -9,6 +9,10 @@ import { WINGMAN_ENGINE } from "../../engine/engine.tokens.js";
 import { NOTIFICATION_ORCH, PROTOCOL_MIRROR } from "../infra/infra.tokens.js";
 import { RealtimeAppService } from "../realtime/realtime-app.service.js";
 
+function safeNotify(orch: NotificationOrchestrator): void {
+  void orch.processQueue().catch(() => {});
+}
+
 @Injectable()
 export class ConnectionsService {
   constructor(
@@ -51,16 +55,13 @@ export class ConnectionsService {
   async approve(id: string, userId: string) {
     const connection = this.engine.applyConnection(id, "initiator_approve", userId);
     await this.mirror.mirrorConnection(id);
-    this.notifications.enqueue({
-      id: `push_mv_${connection.id}`,
+    this.notifications.handleAppEvent({
       type: "connection.confirmed",
       userId: connection.recipientId,
-      idempotencyKey: `connection.validated:${connection.id}`,
-      deepLink: this.notifications.deepLinkFor("connection.confirmed", connection.id),
+      aggregateId: connection.id,
       payload: { connectionId: connection.id, state: connection.state },
-      createdAt: new Date(),
     });
-    void this.notifications.processQueue();
+    safeNotify(this.notifications);
     await this.publishConnection(connection, "validation.updated");
     return connection;
   }
@@ -68,16 +69,15 @@ export class ConnectionsService {
   async meetNow(id: string, userId: string) {
     const connection = this.engine.applyConnection(id, "meet_now", userId);
     await this.mirror.mirrorConnection(id);
-    this.notifications.enqueue({
-      id: `push_mission_${connection.id}`,
-      type: "mission.opened",
-      userId: connection.recipientId,
-      idempotencyKey: `mission.opened:${connection.id}`,
-      deepLink: this.notifications.deepLinkFor("mission.opened", connection.id),
-      payload: { connectionId: connection.id },
-      createdAt: new Date(),
-    });
-    void this.notifications.processQueue();
+    for (const uid of [connection.initiatorId, connection.recipientId]) {
+      this.notifications.handleAppEvent({
+        type: "mission.updated",
+        userId: uid,
+        aggregateId: connection.id,
+        payload: { connectionId: connection.id, state: connection.state },
+      });
+    }
+    safeNotify(this.notifications);
     await this.publishConnection(connection, "mission.updated");
     return connection;
   }
@@ -86,6 +86,17 @@ export class ConnectionsService {
     const connection = this.engine.applyConnection(id, event, userId);
     await this.mirror.mirrorConnection(id);
     const closed = ["EXPIRED", "CANCELLED", "BLOCKED", "COMPLETED", "FAILED"].includes(connection.state);
+    if (!closed) {
+      for (const uid of [connection.initiatorId, connection.recipientId]) {
+        this.notifications.handleAppEvent({
+          type: "mission.updated",
+          userId: uid,
+          aggregateId: connection.id,
+          payload: { connectionId: connection.id, state: connection.state },
+        });
+      }
+      safeNotify(this.notifications);
+    }
     await this.publishConnection(connection, closed ? "connection.closed" : "mission.updated");
     return connection;
   }
@@ -97,6 +108,15 @@ export class ConnectionsService {
   async outcome(id: string, userId: string, outcome: "YES" | "NO") {
     const connection = this.engine.recordOutcome(id, userId, outcome);
     await this.mirror.mirrorConnection(id);
+    for (const uid of [connection.initiatorId, connection.recipientId]) {
+      this.notifications.handleAppEvent({
+        type: "mission.updated",
+        userId: uid,
+        aggregateId: connection.id,
+        payload: { connectionId: connection.id, state: connection.state },
+      });
+    }
+    safeNotify(this.notifications);
     await this.publishConnection(connection, "mission.updated");
     return connection;
   }

@@ -11,6 +11,7 @@ import { WINGMAN_ENGINE } from "./engine/engine.tokens.js";
 import { AuthModule } from "./modules/auth/auth.module.js";
 import { ConnectionsModule } from "./modules/connections/connections.module.js";
 import { DestinyModule } from "./modules/destiny/destiny.module.js";
+import { DevicesModule } from "./modules/devices/devices.module.js";
 import { DevModule } from "./modules/dev/dev.module.js";
 import { HealthModule } from "./modules/health/health.module.js";
 import { InfraModule, setInfraOverrides, type InfraOptions } from "./modules/infra/infra.module.js";
@@ -61,6 +62,7 @@ export class AppModule {
         HealthModule,
         DevModule,
         AuthModule,
+        DevicesModule,
         RadarModule,
         SignalsModule,
         ConnectionsModule,

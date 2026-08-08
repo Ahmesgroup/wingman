@@ -42,3 +42,20 @@ describe("S17 architecture: WS gateway stays transport-only", () => {
     }
   });
 });
+
+describe("S18 architecture: no vendor SDKs in protocol modules", () => {
+  it("signals/connections/safety/destiny do not import Twilio/FCM/APNs SDKs or providers package", () => {
+    const root = join(__dirname, "modules");
+    const files = walk(
+      root,
+      (p) =>
+        /[\\/](signals|connections|safety|destiny)[\\/].*\.ts$/.test(p) && !p.endsWith(".test.ts"),
+    );
+    expect(files.length).toBeGreaterThan(3);
+    for (const file of files) {
+      const src = readFileSync(file, "utf8");
+      expect(src).not.toMatch(/twilio|firebase-admin|@parse\/node-apn|node-apn|fcm-push/i);
+      expect(src).not.toMatch(/from\s+["']@wingman\/providers["']/);
+    }
+  });
+});

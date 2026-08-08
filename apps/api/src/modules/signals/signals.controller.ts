@@ -2,13 +2,19 @@ import { Body, Controller, Inject, Injectable, Param, Post } from "@nestjs/commo
 import { CreateSignalSchema } from "@wingman/contracts";
 import type { WingmanEngine } from "@wingman/domain";
 import type { EphemeralStore } from "@wingman/ephemeral";
-import { NotificationOrchestrator, type PushEvent } from "@wingman/notifications";
+import type { NotificationOrchestrator } from "@wingman/notifications";
 import type { ProtocolPersistenceMirror } from "@wingman/persistence";
 import { CurrentUser, IdempotencyKey } from "../../common/auth.js";
 import { ZodValidationPipe } from "../../common/zod-validation.pipe.js";
 import { WINGMAN_ENGINE } from "../../engine/engine.tokens.js";
 import { EPHEMERAL_STORE, NOTIFICATION_ORCH, PROTOCOL_MIRROR } from "../infra/infra.tokens.js";
 import { RealtimeAppService } from "../realtime/realtime-app.service.js";
+
+function safeNotify(orch: NotificationOrchestrator): void {
+  void orch.processQueue().catch(() => {
+    /* provider outage must never fail protocol mutations */
+  });
+}
 
 @Injectable()
 export class SignalsService {
@@ -28,17 +34,13 @@ export class SignalsService {
     const signal = this.engine.sendSignal(userId, body.receiverId, idem, body.source);
     await this.mirror.mirrorSignal(signal.id);
     await this.mirror.mirrorSignalUsage(userId);
-    const event: PushEvent = {
-      id: `push_${signal.id}`,
+    this.notifications.handleAppEvent({
       type: "signal.received",
       userId: body.receiverId,
-      idempotencyKey: `signal.received:${signal.id}`,
-      deepLink: this.notifications.deepLinkFor("signal.received", signal.id),
-      payload: { signalId: signal.id },
-      createdAt: new Date(),
-    };
-    this.notifications.enqueue(event);
-    void this.notifications.processQueue();
+      aggregateId: signal.id,
+      payload: { signalId: signal.id, senderId: userId },
+    });
+    safeNotify(this.notifications);
     await this.realtime.publish({
       type: "signal.received",
       aggregateId: signal.id,
@@ -96,16 +98,19 @@ export class SignalsService {
     try {
       const connection = this.engine.acceptSignal(id, userId);
       await this.mirror.mirrorAccept(id, connection.id);
-      this.notifications.enqueue({
-        id: `push_conn_${connection.id}`,
-        type: "connection.confirmed",
+      this.notifications.handleAppEvent({
+        type: "match.created",
         userId: connection.initiatorId,
-        idempotencyKey: `connection.created:${connection.id}`,
-        deepLink: this.notifications.deepLinkFor("connection.confirmed", connection.id),
-        payload: { connectionId: connection.id },
-        createdAt: new Date(),
+        aggregateId: connection.id,
+        payload: { connectionId: connection.id, state: connection.state },
       });
-      void this.notifications.processQueue();
+      this.notifications.handleAppEvent({
+        type: "match.created",
+        userId: connection.recipientId,
+        aggregateId: connection.id,
+        payload: { connectionId: connection.id, state: connection.state },
+      });
+      safeNotify(this.notifications);
       await this.realtime.publish({
         type: "match.created",
         aggregateId: connection.id,

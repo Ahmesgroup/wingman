@@ -1,11 +1,11 @@
-# Production readiness (S12–S17)
+# Production readiness (S12–S18)
 
-**Status:** Measured against the S8–S17 envelope (domain S0–S7 frozen).  
+**Status:** Measured against the S8–S18 envelope (domain S0–S7 frozen).  
 **Full build narrative:** [`implementation/BACKEND_IMPLEMENTATION_STATUS.md`](../implementation/BACKEND_IMPLEMENTATION_STATUS.md)
 
 ## Purpose
 
-This checklist proves the backend is operable as a production-shaped service envelope around the frozen protocol engine. S16–S17 add durable hydrate + WebSocket transport. SMS/push remain stub providers until S18.
+This checklist proves the backend is operable as a production-shaped service envelope around the frozen protocol engine. S16–S18 cover durable hydrate, WebSocket transport, and production-shaped SMS/push provider ports.
 
 ## Checks
 
@@ -21,7 +21,9 @@ This checklist proves the backend is operable as a production-shaped service env
 | Boot hydrate / restart | `hydrate.test.ts` + `restart.e2e.test.ts` | Durable state restored; presence not revived |
 | WebSocket transport | `ws.e2e.test.ts` + realtime package tests | Signal/match live; unauth rejected; block forbids rooms; dual-device sync |
 | WS architecture | `architecture.test.ts` | Gateway does not import `@wingman/domain` |
-| OTP SMS port | `providers` + auth OTP path | SMS queued via port; phone redacted in provider logs |
+| Provider ports | `packages/providers` + S18 architecture gate | Twilio/FCM/APNs behind ports; no vendors in protocol modules |
+| OTP SMS port | `providers` + auth OTP path | SMS queued via port; phone/OTP body redacted in logs |
+| Push reliability | orchestrator + mobile transport tests | Idempotent; invalid tokens deactivated; outage ≠ protocol failure |
 | Readiness endpoint | `GET /internal/ready` | `ready: true` with domain + ephemeral + persistence (+ database when configured) |
 | Structured logs | `packages/observability` tests | Sensitive fields redacted |
 | Metrics | `GET /internal/metrics` includes `http` + `persistence` | Counters present |
@@ -57,7 +59,7 @@ curl -s localhost:3000/internal/metrics
 
 ## Explicit gaps before “full prod”
 
-- S18 real SMS OTP vendor / APNs / FCM
+- Staging credentials for Twilio + FCM HTTP v1 + APNs JWT (adapters ready)
 - S19 Stripe entitlements
 - S20 multi-instance / outage certification
 - Multi-region, autoscaling runbooks beyond compose

@@ -8,7 +8,8 @@ import type { ProtocolPersistenceMirror } from "@wingman/persistence";
 import { METRICS } from "../../common/observability.interceptor.js";
 import { Public } from "../../common/public.decorator.js";
 import { WINGMAN_ENGINE } from "../../engine/engine.tokens.js";
-import { EPHEMERAL_STORE, PRISMA_CLIENT, PROTOCOL_MIRROR } from "../infra/infra.tokens.js";
+import type { NotificationOrchestrator } from "@wingman/notifications";
+import { EPHEMERAL_STORE, NOTIFICATION_ORCH, PRISMA_CLIENT, PROTOCOL_MIRROR } from "../infra/infra.tokens.js";
 import { RealtimeAppService } from "../realtime/realtime-app.service.js";
 
 @Injectable()
@@ -20,6 +21,7 @@ export class InternalService {
     @Inject(PROTOCOL_MIRROR) private readonly mirror: ProtocolPersistenceMirror,
     @Inject(PRISMA_CLIENT) private readonly prisma: PrismaClient | null,
     private readonly realtime: RealtimeAppService,
+    @Inject(NOTIFICATION_ORCH) private readonly notifications: NotificationOrchestrator,
   ) {}
 
   async reconcile() {
@@ -40,6 +42,17 @@ export class InternalService {
           ],
           payload: { connectionId: id, state: c.state },
         });
+        if (c.state === "EXPIRED") {
+          for (const uid of [c.initiatorId, c.recipientId]) {
+            this.notifications.handleAppEvent({
+              type: "mission.expired",
+              userId: uid,
+              aggregateId: id,
+              payload: { connectionId: id, state: c.state },
+            });
+          }
+          void this.notifications.processQueue().catch(() => {});
+        }
       }
       if (["EXPIRED", "CANCELLED", "BLOCKED", "COMPLETED", "FAILED"].includes(c.state)) {
         await this.realtime.publish({

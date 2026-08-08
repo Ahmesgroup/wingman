@@ -1,7 +1,7 @@
-# Backend Implementation Status (S0–S17)
+# Backend Implementation Status (S0–S18)
 
 **Status:** Implemented in this repository · **Language:** English (source of truth for what was built)  
-**Related:** [`apps/BACKEND_README.md`](../apps/BACKEND_README.md), [`operations/PRODUCTION_READINESS.md`](../operations/PRODUCTION_READINESS.md), [`operations/S16_PERSISTENCE_LIVE.md`](../operations/S16_PERSISTENCE_LIVE.md), [`operations/S17_WEBSOCKET.md`](../operations/S17_WEBSOCKET.md), [`architecture/STATE_MACHINES.md`](../architecture/STATE_MACHINES.md)
+**Related:** [`apps/BACKEND_README.md`](../apps/BACKEND_README.md), [`operations/PRODUCTION_READINESS.md`](../operations/PRODUCTION_READINESS.md), [`operations/S16_PERSISTENCE_LIVE.md`](../operations/S16_PERSISTENCE_LIVE.md), [`operations/S17_WEBSOCKET.md`](../operations/S17_WEBSOCKET.md), [`operations/S18_PROVIDERS.md`](../operations/S18_PROVIDERS.md), [`architecture/STATE_MACHINES.md`](../architecture/STATE_MACHINES.md)
 
 This document describes the **executable backend** that was built from the V4.1 product & engineering specification. It covers:
 
@@ -10,6 +10,7 @@ This document describes the **executable backend** that was built from the V4.1 
 3. **S13–S15 — Persistence write-behind + provider ports** (domain still frozen; Nest mirrors outcomes)
 4. **S16 — Live Prisma + deterministic boot hydration** (PostgreSQL durable; Redis ephemeral-only)
 5. **S17 — WebSocket realtime transport** (same application services as HTTP; no parallel domain)
+6. **S18 — Production SMS/Push providers + channel orchestrator** (no vendor imports in protocol modules)
 
 The original product specs under `docs/`, `architecture/`, `api/` remain authoritative for product rules. This file is authoritative for **what code exists today** and how to operate it.
 
@@ -338,6 +339,7 @@ Approximate commit trail on `master`:
 | `S13` … `S15` | Persistence write-behind + SMS/push provider ports + Nest wiring |
 | `S16` | Live Prisma durable tables + deterministic boot hydration |
 | `S17` | WebSocket transport + multi-client realtime gates |
+| `S18` | Production SMS/Push providers + device tokens |
 
 Always re-verify with `pnpm -r test` after pulls.
 
@@ -416,25 +418,34 @@ See [`operations/S17_WEBSOCKET.md`](../operations/S17_WEBSOCKET.md).
 
 ---
 
-## 18. What is intentionally not done yet
+## 18. Sprint delivery — S18 (production providers)
 
-- S18 real SMS / APNs / FCM behind `@wingman/providers`
+| Sprint | Objective | What was built | Exit gate |
+|--------|-----------|----------------|-----------|
+| **S18** | Real SMS + mobile push behind ports | Twilio HTTP SMS + ReliableSms; FCM/APNs mobile transport; device token registry; orchestrator statuses `PENDING/SENT/INVALID_DEVICE/DEAD`; `POST /devices/push-token` | Provider tests + architecture: no vendors in signals/connections |
+
+See [`operations/S18_PROVIDERS.md`](../operations/S18_PROVIDERS.md).
+
+---
+
+## 19. What is intentionally not done yet
+
 - S19 Stripe + Wingman+ entitlements (backend authority, not client `isPremium`)
 - S20 multi-instance / failure certification go/no-go
+- Live APNs JWT / FCM HTTP v1 credentials wiring in staging (ports + simulators ready)
 - Destiny V2, ranking radar, behavioral anti-abuse, geo optimization
 - Mobile / web / admin application UIs
 
 ---
 
-## 19. Where to go next (S18–S20)
+## 20. Where to go next (S19–S20)
 
-1. **S18** Production providers — SMS + APNs/FCM via existing ports (same events as WS)
-2. **S19** Payments — Stripe webhooks → entitlements
-3. **S20** Production certification — multi-instance, outages, load/race, final observability
+1. **S19** Payments — Stripe webhooks → entitlements
+2. **S20** Production certification — multi-instance, outages, load/race, final observability
 
 ---
 
-## 20. Quick reference — key files
+## 21. Quick reference — key files
 
 | Concern | File |
 |---------|------|
@@ -454,4 +465,5 @@ See [`operations/S17_WEBSOCKET.md`](../operations/S17_WEBSOCKET.md).
 | Architecture gates | [`apps/api/src/architecture.test.ts`](../apps/api/src/architecture.test.ts) |
 | S16 runbook | [`operations/S16_PERSISTENCE_LIVE.md`](../operations/S16_PERSISTENCE_LIVE.md) |
 | S17 runbook | [`operations/S17_WEBSOCKET.md`](../operations/S17_WEBSOCKET.md) |
+| S18 runbook | [`operations/S18_PROVIDERS.md`](../operations/S18_PROVIDERS.md) |
 | Production checklist | [`operations/PRODUCTION_READINESS.md`](../operations/PRODUCTION_READINESS.md) |

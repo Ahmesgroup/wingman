@@ -19,6 +19,8 @@ describe("NotificationOrchestrator", () => {
     await orch.processQueue();
     expect(transport.sent).toHaveLength(1);
     expect(orch.getDelivery("sig:abc")?.status).toBe("SENT");
+    expect(orch.getDelivery("sig:abc")?.notificationId).toBeTruthy();
+    expect(orch.getDelivery("sig:abc")?.providerMessageId).toBeTruthy();
 
     transport.failNext = true;
     const e2 = { ...event, id: "e2", idempotencyKey: "sig:fail" };

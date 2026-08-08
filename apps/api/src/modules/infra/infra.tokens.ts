@@ -6,3 +6,4 @@ export const PROTOCOL_MIRROR = Symbol("PROTOCOL_MIRROR");
 export const PRISMA_CLIENT = Symbol("PRISMA_CLIENT");
 export const SMS_PROVIDER = Symbol("SMS_PROVIDER");
 export const OTP_DELIVERY = Symbol("OTP_DELIVERY");
+export const DEVICE_TOKEN_STORE = Symbol("DEVICE_TOKEN_STORE");

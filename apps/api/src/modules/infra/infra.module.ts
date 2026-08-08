@@ -11,10 +11,15 @@ import {
   type ProtocolRepository,
 } from "@wingman/persistence";
 import {
+  ApnsPushProvider,
   ConsoleSmsProvider,
+  createSmsProviderFromEnv,
+  FcmPushProvider,
   LoggingPushTransport,
-  NoopSmsProvider,
+  MemoryDeviceTokenStore,
+  MobilePushTransport,
   OtpDeliveryService,
+  type DeviceTokenStore,
   type SmsProvider,
 } from "@wingman/providers";
 import type { WingmanEngine } from "@wingman/domain";
@@ -24,6 +29,7 @@ import { setSkipProtocolHydrate } from "./infra-flags.js";
 import { ProtocolBootService } from "./protocol-boot.service.js";
 import {
   AUTH_SERVICE_TOKEN,
+  DEVICE_TOKEN_STORE,
   EPHEMERAL_STORE,
   NOTIFICATION_ORCH,
   OTP_DELIVERY,
@@ -42,16 +48,19 @@ export type InfraOptions = {
   protocolRepo?: ProtocolRepository;
   prisma?: PrismaClient;
   sms?: SmsProvider;
+  deviceTokens?: DeviceTokenStore;
   /** When true, skip OnModuleInit hydrate (tests that inject pre-seeded engines). */
   skipHydrate?: boolean;
 };
 
 let sharedInfra: InfraOptions = {};
 let protocolBootstrap: Promise<{ repo: ProtocolRepository; prisma: PrismaClient | null }> | null = null;
+let sharedDeviceStore: DeviceTokenStore | null = null;
 
 export function setInfraOverrides(opts: InfraOptions): void {
   sharedInfra = opts;
   protocolBootstrap = null;
+  sharedDeviceStore = opts.deviceTokens ?? null;
   setSkipProtocolHydrate(opts.skipHydrate === true);
 }
 
@@ -72,15 +81,35 @@ async function buildEphemeral(): Promise<EphemeralStore> {
 
 function buildSms(): SmsProvider {
   if (sharedInfra.sms) return sharedInfra.sms;
-  if (process.env.SMS_PROVIDER === "noop") return new NoopSmsProvider();
-  return new ConsoleSmsProvider();
+  try {
+    return createSmsProviderFromEnv();
+  } catch (e) {
+    console.error(
+      JSON.stringify({
+        level: "error",
+        msg: "sms.provider_config_fallback_console",
+        error: e instanceof Error ? e.message : String(e),
+      }),
+    );
+    return new ConsoleSmsProvider();
+  }
+}
+
+function deviceStore(): DeviceTokenStore {
+  if (!sharedDeviceStore) sharedDeviceStore = sharedInfra.deviceTokens ?? new MemoryDeviceTokenStore();
+  return sharedDeviceStore;
 }
 
 function buildNotifications(): NotificationOrchestrator {
   if (sharedInfra.notifications) return sharedInfra.notifications;
-  const transport =
-    process.env.PUSH_PROVIDER === "logging" ? new LoggingPushTransport() : new InMemoryPushTransport();
-  return new NotificationOrchestrator(transport);
+  const mode = process.env.PUSH_PROVIDER ?? "memory";
+  if (mode === "logging") return new NotificationOrchestrator(new LoggingPushTransport());
+  if (mode === "mobile" || mode === "fcm" || mode === "apns") {
+    return new NotificationOrchestrator(
+      new MobilePushTransport(deviceStore(), [new FcmPushProvider(), new ApnsPushProvider()]),
+    );
+  }
+  return new NotificationOrchestrator(new InMemoryPushTransport());
 }
 
 function buildProtocolRepo(): Promise<{ repo: ProtocolRepository; prisma: PrismaClient | null }> {
@@ -124,6 +153,10 @@ function buildProtocolRepo(): Promise<{ repo: ProtocolRepository; prisma: Prisma
         sharedInfra.auth ?? new AuthService(process.env.AUTH_PEPPER ?? "dev-pepper-change-me"),
     },
     {
+      provide: DEVICE_TOKEN_STORE,
+      useFactory: () => deviceStore(),
+    },
+    {
       provide: SMS_PROVIDER,
       useFactory: () => buildSms(),
     },
@@ -163,6 +196,7 @@ function buildProtocolRepo(): Promise<{ repo: ProtocolRepository; prisma: Prisma
   exports: [
     EPHEMERAL_STORE,
     AUTH_SERVICE_TOKEN,
+    DEVICE_TOKEN_STORE,
     SMS_PROVIDER,
     OTP_DELIVERY,
     NOTIFICATION_ORCH,

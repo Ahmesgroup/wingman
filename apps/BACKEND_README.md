@@ -53,7 +53,9 @@ Optional:
 - `SMS_PROVIDER=noop` — disable console SMS
 - `PUSH_PROVIDER=logging` — log push deliveries
 
-S16: [`operations/S16_PERSISTENCE_LIVE.md`](../operations/S16_PERSISTENCE_LIVE.md) · S17 WS path `/ws`: [`operations/S17_WEBSOCKET.md`](../operations/S17_WEBSOCKET.md).
+S16: [`operations/S16_PERSISTENCE_LIVE.md`](../operations/S16_PERSISTENCE_LIVE.md) · S17 `/ws`: [`operations/S17_WEBSOCKET.md`](../operations/S17_WEBSOCKET.md) · S18 providers: [`operations/S18_PROVIDERS.md`](../operations/S18_PROVIDERS.md).
+
+`POST /devices/push-token` registers FCM/APNs tokens for the authenticated user.
 
 ## Auth modes
 
