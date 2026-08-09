@@ -1,4 +1,4 @@
-import { Body, Controller, Inject, Injectable, Post } from "@nestjs/common";
+import { Body, Controller, Inject, Injectable, Optional, Post, forwardRef } from "@nestjs/common";
 import { BlockSchema, ReportSchema } from "@wingman/contracts";
 import type { WingmanEngine } from "@wingman/domain";
 import type { ProtocolPersistenceMirror } from "@wingman/persistence";
@@ -7,6 +7,7 @@ import { ZodValidationPipe } from "../../common/zod-validation.pipe.js";
 import { WINGMAN_ENGINE } from "../../engine/engine.tokens.js";
 import { PROTOCOL_MIRROR } from "../infra/infra.tokens.js";
 import { RealtimeAppService } from "../realtime/realtime-app.service.js";
+import { DestinyService } from "../destiny/destiny.controller.js";
 
 @Injectable()
 export class SafetyService {
@@ -14,10 +15,14 @@ export class SafetyService {
     @Inject(WINGMAN_ENGINE) private readonly engine: WingmanEngine,
     @Inject(PROTOCOL_MIRROR) private readonly mirror: ProtocolPersistenceMirror,
     private readonly realtime: RealtimeAppService,
+    @Optional()
+    @Inject(forwardRef(() => DestinyService))
+    private readonly destiny?: DestinyService,
   ) {}
 
   async block(actorId: string, targetId: string) {
     const block = this.engine.blockUser(actorId, targetId);
+    this.destiny?.invalidateForBlock(actorId, targetId);
     await this.mirror.mirrorLatestBlock();
     await this.mirror.mirrorAll();
     for (const c of this.engine.connections.values()) {

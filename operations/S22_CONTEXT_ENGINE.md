@@ -94,4 +94,4 @@ pnpm --filter @wingman/api test -- src/s22.context-engine.test.ts
 
 ## Next
 
-**S23 Destiny V2** consumes the same normalized context instead of re-reading languages/time/mobility from multiple sources.
+**S23 Destiny V2** consumes the same normalized context instead of re-reading languages/time/mobility from multiple sources. See [`S23_DESTINY_V2.md`](./S23_DESTINY_V2.md).

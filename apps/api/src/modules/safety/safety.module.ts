@@ -1,5 +1,10 @@
-import { Module } from "@nestjs/common";
+import { Module, forwardRef } from "@nestjs/common";
+import { DestinyModule } from "../destiny/destiny.module.js";
 import { SafetyController, SafetyService } from "./safety.controller.js";
 
-@Module({ controllers: [SafetyController], providers: [SafetyService] })
+@Module({
+  imports: [forwardRef(() => DestinyModule)],
+  controllers: [SafetyController],
+  providers: [SafetyService],
+})
 export class SafetyModule {}
