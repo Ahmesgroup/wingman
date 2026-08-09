@@ -26,6 +26,7 @@ import { WINGMAN_ENGINE } from "../../engine/engine.tokens.js";
 import { EPHEMERAL_STORE } from "../infra/infra.tokens.js";
 import { RADAR_CONTEXT_PORT } from "../context/context.tokens.js";
 import { SignalsService } from "../signals/signals.controller.js";
+import { AntiAbuseGate } from "../anti-abuse/anti-abuse.module.js";
 import { DESTINY_V2_ENGINE } from "./destiny.tokens.js";
 
 function asDestinyContextPort(port?: RadarContextPort): DestinyContextPort | undefined {
@@ -45,6 +46,7 @@ export class DestinyService {
     private readonly signals: SignalsService,
     @Optional() @Inject(DESTINY_V2_ENGINE) private readonly destinyV2?: DestinyV2Engine,
     @Optional() @Inject(RADAR_CONTEXT_PORT) private readonly radarContext?: RadarContextPort,
+    @Optional() private readonly antiAbuse?: AntiAbuseGate,
   ) {}
 
   /** V1 eligibility: mutual interest + both radar-visible + not blocked (via getCandidates). */
@@ -74,8 +76,13 @@ export class DestinyService {
   }
 
   copresence(userId: string, otherUserId: string) {
+    this.antiAbuse?.assertAllowed(userId, "DESTINY_ACTION");
     // Always record copresence fact in V1 store (DPIA / hydrate)
     const copresence = this.engine.noteCopresence(userId, otherUserId);
+    this.antiAbuse?.note("destiny.copresence", userId, {
+      subjectId: otherUserId,
+      evaluate: true,
+    });
 
     if (!isDestinyV2Enabled() || !this.destinyV2) {
       const emitted = this.engine.tryDestinyPrompt(userId, otherUserId);
@@ -126,6 +133,7 @@ export class DestinyService {
     if (!isDestinyV2Enabled() || !isDestinyV2ProposalsEnabled() || !this.destinyV2) {
       throw new UnauthorizedException({ error: { code: "DESTINY_V2_OFF", message: "Destiny V2 proposals disabled" } });
     }
+    this.antiAbuse?.assertAllowed(userId, "DESTINY_ACTION");
     const now = this.engine.clock.now();
     const lockKey = `destiny-accept:${proposalId}`;
     const owner = `api:${process.pid}:${userId}`;
@@ -135,6 +143,10 @@ export class DestinyService {
       if (!result.ok) {
         return { ok: false, error: result.error };
       }
+      this.antiAbuse?.note("destiny.accept", userId, {
+        eventId: `destiny-accept:${proposalId}:${userId}`,
+        evaluate: true,
+      });
       const publicView = {
         proposalId: result.proposal.id,
         status: result.proposal.status,
@@ -171,8 +183,13 @@ export class DestinyService {
     if (!isDestinyV2Enabled() || !isDestinyV2ProposalsEnabled() || !this.destinyV2) {
       throw new UnauthorizedException({ error: { code: "DESTINY_V2_OFF", message: "Destiny V2 proposals disabled" } });
     }
+    this.antiAbuse?.assertAllowed(userId, "DESTINY_ACTION");
     const result = this.destinyV2.decline(proposalId, userId, this.engine.clock.now());
     if (!result.ok) return { ok: false, error: result.error };
+    this.antiAbuse?.note("destiny.decline", userId, {
+      eventId: `destiny-decline:${proposalId}:${userId}`,
+      evaluate: true,
+    });
     return {
       ok: true,
       proposal: {

@@ -110,4 +110,4 @@ Verified by `packages/destiny-v2` unit tests and `apps/api/src/s23.destiny-v2.te
 
 ## Next
 
-**S24 Anti-Abuse Engine** — observe Radar / Signal / Destiny abuse cross-cutting without polluting their business rules.
+**S24 Anti-Abuse Engine** — observe Radar / Signal / Destiny abuse cross-cutting without polluting their business rules. See [`S24_ANTI_ABUSE.md`](./S24_ANTI_ABUSE.md).

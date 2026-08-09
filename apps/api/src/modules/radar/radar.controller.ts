@@ -19,6 +19,7 @@ import { WINGMAN_ENGINE } from "../../engine/engine.tokens.js";
 import { EPHEMERAL_STORE, PROTOCOL_MIRROR } from "../infra/infra.tokens.js";
 import { RealtimeAppService } from "../realtime/realtime-app.service.js";
 import { RADAR_CONTEXT_PORT } from "../context/context.tokens.js";
+import { AntiAbuseGate } from "../anti-abuse/anti-abuse.module.js";
 import { RADAR_EXPOSURE_STORE, RADAR_LANGUAGE_HINTS } from "./radar.tokens.js";
 
 /** Legacy S21 language hints when Context Engine flag is off. */
@@ -36,6 +37,7 @@ export class RadarService {
     @Optional() @Inject(RADAR_EXPOSURE_STORE) private readonly exposure?: ExposureStore,
     @Optional() @Inject(RADAR_LANGUAGE_HINTS) private readonly languageHints?: LanguageHints,
     @Optional() @Inject(RADAR_CONTEXT_PORT) private readonly contextPort?: RadarContextPort,
+    @Optional() private readonly antiAbuse?: AntiAbuseGate,
   ) {}
 
   getLastRankingAudit(): RankingAuditRecord | undefined {
@@ -73,6 +75,7 @@ export class RadarService {
   }
 
   async heartbeat(userId: string, body: { lat?: number; lng?: number }) {
+    const prev = this.engine.locations.get(userId);
     const location =
       body.lat !== undefined && body.lng !== undefined ? { lat: body.lat, lng: body.lng } : undefined;
     const presence = this.engine.heartbeat(userId, location);
@@ -80,10 +83,23 @@ export class RadarService {
     await this.mirror.mirrorPresence(userId);
     const loc = location ?? this.engine.locations.get(userId);
     if (loc) await this.realtime.noteRadarPresence(userId, loc.lat, loc.lng, true);
+    if (location && prev && this.antiAbuse) {
+      // Coarse delta only — never store exact lat/lng in abuse events
+      const dlat = location.lat - prev.lat;
+      const dlng = location.lng - prev.lng;
+      const approxM = Math.round(Math.sqrt(dlat * dlat + dlng * dlng) * 111_000);
+      this.antiAbuse.note("geo.heartbeat", userId, {
+        meta: { approxDistanceDeltaM: approxM },
+        evaluate: true,
+      });
+    }
     return presence;
   }
 
   candidates(userId: string, near: number, around: number) {
+    this.antiAbuse?.assertAllowed(userId, "RADAR_CANDIDATES");
+    this.antiAbuse?.note("radar.candidates", userId, { evaluate: true });
+
     const now = this.engine.clock.now();
     const v1 = this.engine.getCandidates(userId, near, around);
 

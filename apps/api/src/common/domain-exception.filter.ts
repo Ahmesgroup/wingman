@@ -8,6 +8,7 @@ import {
 import { DomainError } from "@wingman/domain";
 import { ERROR_CATALOG } from "@wingman/contracts";
 import { AuthError } from "@wingman/auth";
+import { AntiAbuseError, httpStatusForAbuse } from "@wingman/anti-abuse";
 import type { Response } from "express";
 import { ZodError } from "zod";
 
@@ -20,6 +21,22 @@ export class DomainExceptionFilter implements ExceptionFilter {
       const status = (ERROR_CATALOG as Record<string, number>)[exception.code] ?? 400;
       res.status(status).json({
         error: { code: exception.code, message: exception.message, details: exception.details },
+      });
+      return;
+    }
+
+    if (exception instanceof AntiAbuseError) {
+      const status = httpStatusForAbuse(exception.code);
+      // Public body: action + expiry only — strip internal reason lists if present
+      const details = exception.details
+        ? {
+            action: exception.details.action,
+            expiresAt: exception.details.expiresAt,
+            policyVersion: exception.details.policyVersion,
+          }
+        : undefined;
+      res.status(status).json({
+        error: { code: exception.code, message: exception.message, details },
       });
       return;
     }

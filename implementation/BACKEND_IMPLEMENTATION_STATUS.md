@@ -471,7 +471,7 @@ See [`operations/S20_PRODUCTION_CERTIFICATION.md`](../operations/S20_PRODUCTION_
 ## 21. What is intentionally not in Backend V1
 
 - Live staging credentials for Twilio / FCM HTTP v1 / APNs JWT / Stripe (adapters ready; ops wiring)
-- Behavioral anti-abuse, geo optimization (S24–S25); live staging provider credentials
+- Behavioral anti-abuse ~~(S24)~~ done as V1.1 flagged engine; geo optimization (S25); live staging provider credentials
 - Multi-region product features beyond single-EU compose envelope
 - Mobile / web / admin application UIs
 
@@ -486,11 +486,13 @@ Backend V1 is frozen. Advanced engines are feature-flagged and must not change V
 | **S21** Radar Intelligence | [`operations/S21_RADAR_INTELLIGENCE.md`](../operations/S21_RADAR_INTELLIGENCE.md) — **done** |
 | **S22** Context Engine | [`operations/S22_CONTEXT_ENGINE.md`](../operations/S22_CONTEXT_ENGINE.md) — **done** |
 | **S23** Destiny V2 | [`operations/S23_DESTINY_V2.md`](../operations/S23_DESTINY_V2.md) — **done** |
-| S24–S26 roadmap | [`operations/V1.1_ADVANCED_ENGINE.md`](../operations/V1.1_ADVANCED_ENGINE.md) |
+| **S24** Anti-Abuse | [`operations/S24_ANTI_ABUSE.md`](../operations/S24_ANTI_ABUSE.md) — **done** |
+| S25–S26 roadmap | [`operations/V1.1_ADVANCED_ENGINE.md`](../operations/V1.1_ADVANCED_ENGINE.md) |
 
-1. **S24** Anti-Abuse Engine — cross-cutting observation of Radar / Signal / Destiny
-2. Geo, Measurement (S25–S26)
+1. **S25** Geo Intelligence — proximity without exact location exposure
+2. Measurement (S26)
 3. Staging credential & load-test campaign in real Redis/Postgres
+4. Optional **S24.1** Destiny proposal persistence (not mixed into anti-abuse)
 
 ---
 

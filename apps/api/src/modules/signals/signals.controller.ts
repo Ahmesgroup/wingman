@@ -1,4 +1,4 @@
-import { Body, Controller, Inject, Injectable, Param, Post } from "@nestjs/common";
+import { Body, Controller, Inject, Injectable, Optional, Param, Post } from "@nestjs/common";
 import { CreateSignalSchema } from "@wingman/contracts";
 import type { WingmanEngine } from "@wingman/domain";
 import type { EphemeralStore } from "@wingman/ephemeral";
@@ -9,6 +9,7 @@ import { ZodValidationPipe } from "../../common/zod-validation.pipe.js";
 import { WINGMAN_ENGINE } from "../../engine/engine.tokens.js";
 import { EPHEMERAL_STORE, NOTIFICATION_ORCH, PROTOCOL_MIRROR } from "../infra/infra.tokens.js";
 import { RealtimeAppService } from "../realtime/realtime-app.service.js";
+import { AntiAbuseGate } from "../anti-abuse/anti-abuse.module.js";
 
 function safeNotify(orch: NotificationOrchestrator): void {
   void orch.processQueue().catch(() => {
@@ -24,6 +25,7 @@ export class SignalsService {
     @Inject(NOTIFICATION_ORCH) private readonly notifications: NotificationOrchestrator,
     @Inject(PROTOCOL_MIRROR) private readonly mirror: ProtocolPersistenceMirror,
     private readonly realtime: RealtimeAppService,
+    @Optional() private readonly antiAbuse?: AntiAbuseGate,
   ) {}
 
   async create(
@@ -31,7 +33,13 @@ export class SignalsService {
     body: { receiverId: string; source: "RADAR" | "DESTINY" | "REMATCH" },
     idem?: string,
   ) {
+    this.antiAbuse?.assertAllowed(userId, "SIGNAL_CREATE");
     const signal = this.engine.sendSignal(userId, body.receiverId, idem, body.source);
+    this.antiAbuse?.note("signal.sent", userId, {
+      subjectId: body.receiverId,
+      eventId: idem ? `signal-idem:${userId}:${idem}` : undefined,
+      evaluate: true,
+    });
     await this.mirror.mirrorSignal(signal.id);
     await this.mirror.mirrorSignalUsage(userId);
     this.notifications.handleAppEvent({
@@ -64,6 +72,12 @@ export class SignalsService {
 
   async refuse(id: string, userId: string) {
     const signal = this.engine.refuseSignal(id, userId);
+    // Attribute refuse pattern to the original sender (subject = receiver who refused)
+    this.antiAbuse?.note("signal.refused_by_target", signal.senderId, {
+      subjectId: userId,
+      eventId: `refuse:${id}`,
+      evaluate: true,
+    });
     await this.mirror.mirrorSignal(id);
     await this.realtime.publish({
       type: "signal.updated",

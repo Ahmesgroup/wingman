@@ -9,6 +9,7 @@ import { LOGGER, METRICS, ObservabilityInterceptor } from "./common/observabilit
 import { createEngine, EngineModule } from "./engine/engine.module.js";
 import { WINGMAN_ENGINE } from "./engine/engine.tokens.js";
 import { AuthModule } from "./modules/auth/auth.module.js";
+import { AntiAbuseModule } from "./modules/anti-abuse/anti-abuse.module.js";
 import { BillingModule, setBillingOverrides, type BillingOverrides } from "./modules/billing/billing.module.js";
 import { ContextModule } from "./modules/context/context.module.js";
 import { ConnectionsModule } from "./modules/connections/connections.module.js";
@@ -64,6 +65,7 @@ export class AppModule {
         EngineModule,
         InfraModule,
         BillingModule,
+        AntiAbuseModule,
         ContextModule,
         HealthModule,
         DevModule,

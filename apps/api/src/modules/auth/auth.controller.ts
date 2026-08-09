@@ -1,10 +1,11 @@
-import { Body, Controller, Headers, Inject, Injectable, Post } from "@nestjs/common";
+import { Body, Controller, Headers, Inject, Injectable, Optional, Post } from "@nestjs/common";
 import { AuthService } from "@wingman/auth";
 import type { OtpDeliveryService } from "@wingman/providers";
 import { z } from "zod";
 import { Public } from "../../common/public.decorator.js";
 import { ZodValidationPipe } from "../../common/zod-validation.pipe.js";
 import { AUTH_SERVICE_TOKEN, OTP_DELIVERY } from "../infra/infra.tokens.js";
+import { AntiAbuseGate } from "../anti-abuse/anti-abuse.module.js";
 
 const RequestOtpSchema = z.object({
   phoneE164: z.string().min(8),
@@ -26,10 +27,19 @@ export class AuthApiService {
   constructor(
     @Inject(AUTH_SERVICE_TOKEN) private readonly auth: AuthService,
     @Inject(OTP_DELIVERY) private readonly otpDelivery: OtpDeliveryService,
+    @Optional() private readonly antiAbuse?: AntiAbuseGate,
   ) {}
 
   requestOtp(phoneE164: string) {
-    return this.otpDelivery.requestAndDeliver(phoneE164);
+    // Hash-stable actor key without logging the phone
+    const actorKey = `otp:${simpleHash(phoneE164)}`;
+    this.antiAbuse?.assertAllowed(actorKey, "OTP_REQUEST");
+    const result = this.otpDelivery.requestAndDeliver(phoneE164);
+    this.antiAbuse?.note("auth.otp_request", actorKey, {
+      evaluate: true,
+      eventId: `otp:${actorKey}:${Date.now()}`,
+    });
+    return result;
   }
 
   verify(body: { phoneE164: string; code: string; deviceId: string }) {
@@ -46,6 +56,12 @@ export class AuthApiService {
     }
     return { ok: true };
   }
+}
+
+function simpleHash(s: string): string {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return h.toString(16);
 }
 
 @Public()

@@ -187,6 +187,7 @@ Start with `README.md`, then `docs/PRD.md`, `architecture/STATE_MACHINES.md`, `d
 - [`operations/S21_RADAR_INTELLIGENCE.md`](operations/S21_RADAR_INTELLIGENCE.md) — Radar Intelligence (flagged ranking)
 - [`operations/S22_CONTEXT_ENGINE.md`](operations/S22_CONTEXT_ENGINE.md) — Context Engine (normalized ephemeral context)
 - [`operations/S23_DESTINY_V2.md`](operations/S23_DESTINY_V2.md) — Destiny V2 (rare proposals + mutual consent)
+- [`operations/S24_ANTI_ABUSE.md`](operations/S24_ANTI_ABUSE.md) — Anti-Abuse Engine (observe → graduated policy)
 - [`apps/BACKEND_README.md`](apps/BACKEND_README.md) — developer quick start for the executable API
 - [`operations/PRODUCTION_READINESS.md`](operations/PRODUCTION_READINESS.md) — S12–S20 readiness gates
 - [`implementation/AI_CODING_RULES.md`](implementation/AI_CODING_RULES.md)

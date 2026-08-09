@@ -20,6 +20,7 @@
     "@wingman/contracts": "workspace:*",
     "@wingman/database": "workspace:*",
     "@wingman/destiny-v2": "workspace:*",
+    "@wingman/anti-abuse": "workspace:*",
     "@wingman/domain": "workspace:*",
     "@wingman/ephemeral": "workspace:*",
     "@wingman/notifications": "workspace:*",
