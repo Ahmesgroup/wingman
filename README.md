@@ -28,15 +28,15 @@ Start here, then follow the links:
 1. `DOCUMENTATION_INDEX.md` — the full map of every document.
 2. `implementation/BACKEND_IMPLEMENTATION_STATUS.md` — what was built for the backend (S0–S20).
 3. `operations/S20_PRODUCTION_CERTIFICATION.md` — Backend V1 go/no-go certificate.
-3. `apps/BACKEND_README.md` — run/test the NestJS API.
-4. `docs/PRD.md` — the product requirements.
-5. `docs/FR_EXECUTIVE_SUMMARY.md` — résumé exécutif en français.
-6. `architecture/SYSTEM_ARCHITECTURE.md` — how the system is built and why.
-7. `architecture/STATE_MACHINES.md` — the heart of the product: the connection protocol.
-8. `database/schema.prisma` + `database/DATABASE_INVARIANTS.md` — the data model and its guarantees.
-9. `design/DESIGN_SYSTEM.md` + `design/design-tokens.json` — the visual language.
-10. `prototype/index.html` — the interactive prototype (see below).
-11. `implementation/REPOSITORY_BOOTSTRAP_PROMPT.md` — original bootstrap prompt for greenfield coding agents.
+4. `apps/BACKEND_README.md` — run/test the NestJS API.
+5. `docs/PRD.md` — the product requirements.
+6. `docs/FR_EXECUTIVE_SUMMARY.md` — résumé exécutif en français.
+7. `architecture/SYSTEM_ARCHITECTURE.md` — how the system is built and why.
+8. `architecture/STATE_MACHINES.md` — the heart of the product: the connection protocol.
+9. `database/schema.prisma` + `database/DATABASE_INVARIANTS.md` — the data model and its guarantees.
+10. `design/DESIGN_SYSTEM.md` + `design/design-tokens.json` — the visual language.
+11. `prototype/index.html` — the interactive prototype (see below).
+12. `implementation/REPOSITORY_BOOTSTRAP_PROMPT.md` — original bootstrap prompt for greenfield coding agents.
 
 ## Reading order by role
 
