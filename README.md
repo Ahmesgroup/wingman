@@ -3,7 +3,7 @@
 > **Make the first acquaintance easy.** · *Love is in the air.*
 > Category: **social interaction facilitation technology** — not a traditional dating app.
 
-**Status:** Foundation spec **plus executable backend (S0–S20)** — **Backend V1 certified GO**.
+**Status:** Foundation spec **plus executable backend (S0–S20)** — **Backend V1 certified GO** · **V1.1** starts at S21 (Radar Intelligence, feature-flagged).
 **Version:** 4.1 · **Region:** Single EU · **Owner:** Igor Chernikov · **Prepared by:** AHMES GROUP
 
 This repository is the complete design-and-engineering dossier for Wingman **and** the working

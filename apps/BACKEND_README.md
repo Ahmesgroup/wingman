@@ -28,6 +28,7 @@ Executable backend for the Wingman protocol loop:
 | `@wingman/persistence` | Protocol write-behind (`ProtocolPersistenceMirror`) |
 | `@wingman/providers` | SMS OTP + push transport ports (stubs) |
 | `@wingman/billing` | Stripe port → billing state → entitlements |
+| `@wingman/radar-intelligence` | V1.1 S21 contextual radar ranking (flagged) |
 | `@wingman/realtime` | WS envelope, rooms, hub, replay buffer |
 | `@wingman/api` | NestJS modular HTTP + WebSocket API |
 | `@wingman/workers` | Expiration reconciler |
@@ -54,11 +55,12 @@ Optional:
 - `SMS_PROVIDER=noop` — disable console SMS
 - `PUSH_PROVIDER=logging` — log push deliveries
 
-S16: [`operations/S16_PERSISTENCE_LIVE.md`](../operations/S16_PERSISTENCE_LIVE.md) · S17 `/ws`: [`operations/S17_WEBSOCKET.md`](../operations/S17_WEBSOCKET.md) · S18 providers: [`operations/S18_PROVIDERS.md`](../operations/S18_PROVIDERS.md) · S19 billing: [`operations/S19_BILLING_ENTITLEMENTS.md`](../operations/S19_BILLING_ENTITLEMENTS.md) · S20: [`operations/S20_PRODUCTION_CERTIFICATION.md`](../operations/S20_PRODUCTION_CERTIFICATION.md) (**Backend V1 GO**).
+S16: [`operations/S16_PERSISTENCE_LIVE.md`](../operations/S16_PERSISTENCE_LIVE.md) · S17 `/ws`: [`operations/S17_WEBSOCKET.md`](../operations/S17_WEBSOCKET.md) · S18 providers: [`operations/S18_PROVIDERS.md`](../operations/S18_PROVIDERS.md) · S19 billing: [`operations/S19_BILLING_ENTITLEMENTS.md`](../operations/S19_BILLING_ENTITLEMENTS.md) · S20: [`operations/S20_PRODUCTION_CERTIFICATION.md`](../operations/S20_PRODUCTION_CERTIFICATION.md) (**Backend V1 GO**) · S21: [`operations/S21_RADAR_INTELLIGENCE.md`](../operations/S21_RADAR_INTELLIGENCE.md) (`RADAR_INTELLIGENCE_ENABLED`).
 
 `POST /devices/push-token` registers FCM/APNs tokens for the authenticated user.  
 `GET /billing/entitlements` returns effective plan capabilities (never trust client `isPremium`).  
-`GET /internal/live` · `GET /internal/ready` · `GET /internal/metrics` for orchestration and ops.
+`GET /internal/live` · `GET /internal/ready` · `GET /internal/metrics` for orchestration and ops.  
+`GET /radar/candidates` — V1 eligibility; optional S21 reorder when `RADAR_INTELLIGENCE_ENABLED=true` (scores never in response).
 
 ## Auth modes
 
@@ -107,6 +109,7 @@ pnpm --filter @wingman/api test -- src/s20.certification.test.ts
 pnpm --filter @wingman/persistence test
 pnpm --filter @wingman/providers test
 pnpm --filter @wingman/billing test
+pnpm --filter @wingman/radar-intelligence test
 pnpm -r test                                 # everything
 ```
 

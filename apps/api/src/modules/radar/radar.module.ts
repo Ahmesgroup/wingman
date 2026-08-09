@@ -1,9 +1,34 @@
-import { Module } from "@nestjs/common";
-import { RadarController, RadarService } from "./radar.controller.js";
+import { Global, Module } from "@nestjs/common";
+import { ExposureStore } from "@wingman/radar-intelligence";
+import { RadarController, RadarService, type LanguageHints } from "./radar.controller.js";
+import { RADAR_EXPOSURE_STORE, RADAR_LANGUAGE_HINTS } from "./radar.tokens.js";
 
+let languageHintsOverride: LanguageHints | undefined;
+let exposureOverride: ExposureStore | undefined;
+
+/** Test hooks — production uses defaults. */
+export function setRadarIntelligenceOverrides(opts: {
+  languageHints?: LanguageHints;
+  exposure?: ExposureStore;
+}): void {
+  languageHintsOverride = opts.languageHints;
+  exposureOverride = opts.exposure;
+}
+
+@Global()
 @Module({
   controllers: [RadarController],
-  providers: [RadarService],
-  exports: [RadarService],
+  providers: [
+    RadarService,
+    {
+      provide: RADAR_EXPOSURE_STORE,
+      useFactory: () => exposureOverride ?? new ExposureStore(),
+    },
+    {
+      provide: RADAR_LANGUAGE_HINTS,
+      useFactory: () => languageHintsOverride ?? new Map<string, string[]>(),
+    },
+  ],
+  exports: [RadarService, RADAR_EXPOSURE_STORE, RADAR_LANGUAGE_HINTS],
 })
 export class RadarModule {}

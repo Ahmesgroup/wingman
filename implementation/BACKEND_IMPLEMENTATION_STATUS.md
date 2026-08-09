@@ -13,6 +13,7 @@ This document describes the **executable backend** that was built from the V4.1 
 6. **S18 — Production SMS/Push providers + channel orchestrator** (no vendor imports in protocol modules)
 7. **S19 — Billing → Entitlements** (Stripe as external billing facts; backend-owned rights)
 8. **S20 — Production certification** (multi-instance, chaos, load/races, observability, go/no-go) — **Backend V1 GO**
+9. **V1.1 S21 — Radar Intelligence** (feature-flagged ordering above immutable V1 eligibility)
 
 The original product specs under `docs/`, `architecture/`, `api/` remain authoritative for product rules. This file is authoritative for **what code exists today** and how to operate it.
 
@@ -477,13 +478,16 @@ See [`operations/S20_PRODUCTION_CERTIFICATION.md`](../operations/S20_PRODUCTION_
 
 ## 22. Where to go next (V1.1+)
 
-After Backend V1 freeze, open separate tracks (not mixed into V1 core):
+Backend V1 is frozen. Advanced engines are feature-flagged and must not change V1 eligibility rules.
 
-1. Radar ranking / scoring / context
-2. Destiny V2
-3. Advanced anti-abuse + analytics
-4. Geographic optimization
-5. Staging credential & load-test campaign in real Redis/Postgres
+| Sprint | Doc |
+|--------|-----|
+| **S21** Radar Intelligence | [`operations/S21_RADAR_INTELLIGENCE.md`](../operations/S21_RADAR_INTELLIGENCE.md) — **done** |
+| S22–S26 roadmap | [`operations/V1.1_ADVANCED_ENGINE.md`](../operations/V1.1_ADVANCED_ENGINE.md) |
+
+1. **S22** Context Engine — normalize time/place/availability/language for Radar/Destiny
+2. Destiny V2, Anti-Abuse, Geo, Measurement (S23–S26)
+3. Staging credential & load-test campaign in real Redis/Postgres
 
 ---
 
@@ -513,4 +517,6 @@ After Backend V1 freeze, open separate tracks (not mixed into V1 core):
 | S18 runbook | [`operations/S18_PROVIDERS.md`](../operations/S18_PROVIDERS.md) |
 | S19 runbook | [`operations/S19_BILLING_ENTITLEMENTS.md`](../operations/S19_BILLING_ENTITLEMENTS.md) |
 | S20 certificate | [`operations/S20_PRODUCTION_CERTIFICATION.md`](../operations/S20_PRODUCTION_CERTIFICATION.md) |
+| V1.1 roadmap | [`operations/V1.1_ADVANCED_ENGINE.md`](../operations/V1.1_ADVANCED_ENGINE.md) |
+| S21 Radar Intelligence | [`packages/radar-intelligence/src/index.ts`](../packages/radar-intelligence/src/index.ts) |
 | Production checklist | [`operations/PRODUCTION_READINESS.md`](../operations/PRODUCTION_READINESS.md) |

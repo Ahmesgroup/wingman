@@ -55,6 +55,9 @@ importers:
       '@wingman/providers':
         specifier: workspace:*
         version: link:../../packages/providers
+      '@wingman/radar-intelligence':
+        specifier: workspace:*
+        version: link:../../packages/radar-intelligence
       '@wingman/realtime':
         specifier: workspace:*
         version: link:../../packages/realtime
@@ -245,6 +248,15 @@ importers:
       '@wingman/notifications':
         specifier: workspace:*
         version: link:../notifications
+    devDependencies:
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.8
+        version: 2.1.9(@types/node@22.20.1)
+
+  packages/radar-intelligence:
     devDependencies:
       typescript:
         specifier: ^5.7.3

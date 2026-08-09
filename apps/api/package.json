@@ -27,6 +27,7 @@
     "@wingman/observability": "workspace:*",
     "@wingman/persistence": "workspace:*",
     "@wingman/providers": "workspace:*",
+    "@wingman/radar-intelligence": "workspace:*",
     "@wingman/realtime": "workspace:*",
     "ioredis": "^5.4.2",
     "reflect-metadata": "^0.2.2",

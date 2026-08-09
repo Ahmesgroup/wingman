@@ -87,3 +87,14 @@ describe("S19 architecture: no Stripe SDK in domain or protocol modules", () => 
     }
   });
 });
+
+describe("S21 architecture: V1 domain never imports radar-intelligence", () => {
+  it("packages/domain does not depend on @wingman/radar-intelligence", () => {
+    const domainRoot = join(__dirname, "..", "..", "..", "packages", "domain", "src");
+    const domainFiles = walk(domainRoot, (p) => p.endsWith(".ts") && !p.endsWith(".test.ts"));
+    for (const file of domainFiles) {
+      const src = readFileSync(file, "utf8");
+      expect(src).not.toMatch(/from\s+["']@wingman\/radar-intelligence["']/);
+    }
+  });
+});
