@@ -1,7 +1,7 @@
-# Backend Implementation Status (S0–S19)
+# Backend Implementation Status (S0–S20)
 
-**Status:** Implemented in this repository · **Language:** English (source of truth for what was built)  
-**Related:** [`apps/BACKEND_README.md`](../apps/BACKEND_README.md), [`operations/PRODUCTION_READINESS.md`](../operations/PRODUCTION_READINESS.md), [`operations/S16_PERSISTENCE_LIVE.md`](../operations/S16_PERSISTENCE_LIVE.md), [`operations/S17_WEBSOCKET.md`](../operations/S17_WEBSOCKET.md), [`operations/S18_PROVIDERS.md`](../operations/S18_PROVIDERS.md), [`operations/S19_BILLING_ENTITLEMENTS.md`](../operations/S19_BILLING_ENTITLEMENTS.md), [`architecture/STATE_MACHINES.md`](../architecture/STATE_MACHINES.md)
+**Status:** Implemented · **Backend V1 certified GO** · **Language:** English  
+**Related:** [`apps/BACKEND_README.md`](../apps/BACKEND_README.md), [`operations/PRODUCTION_READINESS.md`](../operations/PRODUCTION_READINESS.md), [`operations/S16_PERSISTENCE_LIVE.md`](../operations/S16_PERSISTENCE_LIVE.md), [`operations/S17_WEBSOCKET.md`](../operations/S17_WEBSOCKET.md), [`operations/S18_PROVIDERS.md`](../operations/S18_PROVIDERS.md), [`operations/S19_BILLING_ENTITLEMENTS.md`](../operations/S19_BILLING_ENTITLEMENTS.md), [`operations/S20_PRODUCTION_CERTIFICATION.md`](../operations/S20_PRODUCTION_CERTIFICATION.md), [`architecture/STATE_MACHINES.md`](../architecture/STATE_MACHINES.md)
 
 This document describes the **executable backend** that was built from the V4.1 product & engineering specification. It covers:
 
@@ -12,6 +12,7 @@ This document describes the **executable backend** that was built from the V4.1 
 5. **S17 — WebSocket realtime transport** (same application services as HTTP; no parallel domain)
 6. **S18 — Production SMS/Push providers + channel orchestrator** (no vendor imports in protocol modules)
 7. **S19 — Billing → Entitlements** (Stripe as external billing facts; backend-owned rights)
+8. **S20 — Production certification** (multi-instance, chaos, load/races, observability, go/no-go) — **Backend V1 GO**
 
 The original product specs under `docs/`, `architecture/`, `api/` remain authoritative for product rules. This file is authoritative for **what code exists today** and how to operate it.
 
@@ -342,6 +343,7 @@ Approximate commit trail on `master`:
 | `S17` | WebSocket transport + multi-client realtime gates |
 | `S18` | Production SMS/Push providers + device tokens |
 | `S19` | Billing → Entitlements (Stripe facts → backend rights) |
+| `S20` | Production certification — Backend V1 GO |
 
 Always re-verify with `pnpm -r test` after pulls.
 
@@ -448,23 +450,44 @@ See [`operations/S19_BILLING_ENTITLEMENTS.md`](../operations/S19_BILLING_ENTITLE
 
 ---
 
-## 20. What is intentionally not done yet
+## 20. Sprint delivery — S20 (production certification)
 
-- **S20** production certification only (multi-instance, chaos/recovery, load, observability, go/no-go) — **no new product features**
-- Live Stripe credentials + price wiring in staging (FakeStripe + live port ready)
-- Live APNs JWT / FCM HTTP v1 credentials wiring in staging (ports + simulators ready)
+| Sprint | Objective | What was built | Exit gate |
+|--------|-----------|----------------|-----------|
+| **S20** | Certify existing backend (no product features) | `s20.certification.test.ts` G1–G4; `GET /internal/live`; requestId correlation + p99 metrics; [`operations/S20_PRODUCTION_CERTIFICATION.md`](../operations/S20_PRODUCTION_CERTIFICATION.md) with binary **GO** | All G1–G5 PASS; Backend V1 frozen |
+
+### 20.1 Rules
+
+- Certification only — must not change S0–S19 business rules to pass
+- Five gates: multi-instance, recovery/chaos, load/races, observability, go/no-go
+- Post-GO work is **V1.1 / advanced engine**, not V1 core
+
+See [`operations/S20_PRODUCTION_CERTIFICATION.md`](../operations/S20_PRODUCTION_CERTIFICATION.md).
+
+---
+
+## 21. What is intentionally not in Backend V1
+
+- Live staging credentials for Twilio / FCM HTTP v1 / APNs JWT / Stripe (adapters ready; ops wiring)
 - Destiny V2, ranking radar, behavioral anti-abuse, geo optimization
+- Multi-region product features beyond single-EU compose envelope
 - Mobile / web / admin application UIs
 
 ---
 
-## 21. Where to go next (S20)
+## 22. Where to go next (V1.1+)
 
-1. **S20** Production certification — multi-instance, outages, load/race, final observability, go/no-go
+After Backend V1 freeze, open separate tracks (not mixed into V1 core):
+
+1. Radar ranking / scoring / context
+2. Destiny V2
+3. Advanced anti-abuse + analytics
+4. Geographic optimization
+5. Staging credential & load-test campaign in real Redis/Postgres
 
 ---
 
-## 22. Quick reference — key files
+## 23. Quick reference — key files
 
 | Concern | File |
 |---------|------|
@@ -481,6 +504,7 @@ See [`operations/S19_BILLING_ENTITLEMENTS.md`](../operations/S19_BILLING_ENTITLE
 | Nest app composition | [`apps/api/src/app.module.ts`](../apps/api/src/app.module.ts) |
 | WS e2e | [`apps/api/src/ws.e2e.test.ts`](../apps/api/src/ws.e2e.test.ts) |
 | Billing e2e | [`apps/api/src/billing.e2e.test.ts`](../apps/api/src/billing.e2e.test.ts) |
+| S20 certification | [`apps/api/src/s20.certification.test.ts`](../apps/api/src/s20.certification.test.ts) |
 | Restart gate | [`apps/api/src/restart.e2e.test.ts`](../apps/api/src/restart.e2e.test.ts) |
 | Nest e2e loop | [`apps/api/src/e2e.test.ts`](../apps/api/src/e2e.test.ts) |
 | Architecture gates | [`apps/api/src/architecture.test.ts`](../apps/api/src/architecture.test.ts) |
@@ -488,4 +512,5 @@ See [`operations/S19_BILLING_ENTITLEMENTS.md`](../operations/S19_BILLING_ENTITLE
 | S17 runbook | [`operations/S17_WEBSOCKET.md`](../operations/S17_WEBSOCKET.md) |
 | S18 runbook | [`operations/S18_PROVIDERS.md`](../operations/S18_PROVIDERS.md) |
 | S19 runbook | [`operations/S19_BILLING_ENTITLEMENTS.md`](../operations/S19_BILLING_ENTITLEMENTS.md) |
+| S20 certificate | [`operations/S20_PRODUCTION_CERTIFICATION.md`](../operations/S20_PRODUCTION_CERTIFICATION.md) |
 | Production checklist | [`operations/PRODUCTION_READINESS.md`](../operations/PRODUCTION_READINESS.md) |

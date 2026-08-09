@@ -143,6 +143,12 @@ export class InternalController {
     return this.internal.metrics();
   }
 
+  /** Liveness — process is up (orchestration probes). Does not check deps. */
+  @Get("live")
+  live() {
+    return { live: true, utc: new Date().toISOString() };
+  }
+
   @Get("ready")
   ready() {
     return this.internal.readiness();

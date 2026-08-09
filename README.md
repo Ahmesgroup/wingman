@@ -3,7 +3,7 @@
 > **Make the first acquaintance easy.** · *Love is in the air.*
 > Category: **social interaction facilitation technology** — not a traditional dating app.
 
-**Status:** Foundation spec **plus executable backend (S0–S19)** in this monorepo.
+**Status:** Foundation spec **plus executable backend (S0–S20)** — **Backend V1 certified GO**.
 **Version:** 4.1 · **Region:** Single EU · **Owner:** Igor Chernikov · **Prepared by:** AHMES GROUP
 
 This repository is the complete design-and-engineering dossier for Wingman **and** the working
@@ -26,7 +26,8 @@ of a real interaction must be rejected.*
 Start here, then follow the links:
 
 1. `DOCUMENTATION_INDEX.md` — the full map of every document.
-2. `implementation/BACKEND_IMPLEMENTATION_STATUS.md` — what was built for the backend (S0–S19).
+2. `implementation/BACKEND_IMPLEMENTATION_STATUS.md` — what was built for the backend (S0–S20).
+3. `operations/S20_PRODUCTION_CERTIFICATION.md` — Backend V1 go/no-go certificate.
 3. `apps/BACKEND_README.md` — run/test the NestJS API.
 4. `docs/PRD.md` — the product requirements.
 5. `docs/FR_EXECUTIVE_SUMMARY.md` — résumé exécutif en français.

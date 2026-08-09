@@ -67,15 +67,15 @@ export class MetricsRegistry {
 
   snapshot(): {
     counters: Record<string, number>;
-    histograms: Record<string, { count: number; p50: number; p95: number }>;
+    histograms: Record<string, { count: number; p50: number; p95: number; p99: number }>;
   } {
     const counters: Record<string, number> = {};
     for (const [k, v] of this.counters) counters[k] = v;
-    const histograms: Record<string, { count: number; p50: number; p95: number }> = {};
+    const histograms: Record<string, { count: number; p50: number; p95: number; p99: number }> = {};
     for (const [k, arr] of this.histograms) {
       const sorted = [...arr].sort((a, b) => a - b);
       const pct = (p: number) => sorted[Math.min(sorted.length - 1, Math.floor(p * (sorted.length - 1)))] ?? 0;
-      histograms[k] = { count: sorted.length, p50: pct(0.5), p95: pct(0.95) };
+      histograms[k] = { count: sorted.length, p50: pct(0.5), p95: pct(0.95), p99: pct(0.99) };
     }
     return { counters, histograms };
   }

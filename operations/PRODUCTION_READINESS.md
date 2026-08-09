@@ -1,11 +1,11 @@
-# Production readiness (S12–S19)
+# Production readiness (S12–S20)
 
-**Status:** Measured against the S8–S19 envelope (domain S0–S7 frozen).  
+**Status:** **Backend V1 certified GO** (see [`S20_PRODUCTION_CERTIFICATION.md`](./S20_PRODUCTION_CERTIFICATION.md)).  
 **Full build narrative:** [`implementation/BACKEND_IMPLEMENTATION_STATUS.md`](../implementation/BACKEND_IMPLEMENTATION_STATUS.md)
 
 ## Purpose
 
-This checklist proves the backend is operable as a production-shaped service envelope around the frozen protocol engine. S16–S19 cover durable hydrate, WebSocket transport, production-shaped SMS/push provider ports, and billing → entitlements.
+This checklist proves the backend is operable as a production-shaped service envelope around the frozen protocol engine. S16–S19 delivered durable hydrate, WebSocket, providers, and entitlements. **S20 certifies** multi-instance, chaos/recovery, load/races, observability, and issues the binary go/no-go.
 
 ## Checks
 
@@ -26,15 +26,22 @@ This checklist proves the backend is operable as a production-shaped service env
 | Push reliability | orchestrator + mobile transport tests | Idempotent; invalid tokens deactivated; outage ≠ protocol failure |
 | Billing → entitlements | `packages/billing` + `billing.e2e.test.ts` | Free/Plus caps; webhook idempotence; no client self-promote; Stripe outage ≠ core failure |
 | Billing architecture | S19 architecture gate | No Stripe SDK in domain/signals/connections/mission/destiny |
+| S20 multi-instance / chaos / load | `s20.certification.test.ts` | G1–G3 PASS |
+| S20 observability | live/ready/metrics + requestId | G4 PASS |
+| S20 go/no-go | [`S20_PRODUCTION_CERTIFICATION.md`](./S20_PRODUCTION_CERTIFICATION.md) | **GO** |
 | Readiness endpoint | `GET /internal/ready` | `ready: true` with domain + ephemeral + persistence (+ database when configured) |
-| Structured logs | `packages/observability` tests | Sensitive fields redacted |
-| Metrics | `GET /internal/metrics` includes `http` + `persistence` | Counters present |
+| Liveness endpoint | `GET /internal/live` | Process up (orchestration) |
+| Structured logs | `packages/observability` tests | Sensitive fields redacted; `requestId` correlated |
+| Metrics | `GET /internal/metrics` includes `http` (p50/p95/p99) + `persistence` | Counters present |
 
 ## Run
 
 ```bash
 pnpm -r test
+pnpm --filter @wingman/api test -- src/s20.certification.test.ts
 pnpm --filter @wingman/api dev
+curl -s localhost:3000/health
+curl -s localhost:3000/internal/live
 curl -s localhost:3000/internal/ready
 curl -s localhost:3000/internal/metrics
 ```
@@ -47,26 +54,22 @@ curl -s localhost:3000/internal/metrics
 | `AUTH_DEBUG_OTP` | Must be unset/false | Never expose OTP codes |
 | `REDIS_URL` | Recommended | Memory store is single-instance only |
 | `DATABASE_URL` | Yes for durable restart | Live `LivePrismaProtocolRepository` |
-| `SMS_PROVIDER` | Prefer real adapter later | `console` / `noop` are stubs |
-| `PUSH_PROVIDER` | Prefer APNs/FCM later | `logging` is a stub |
+| `SMS_PROVIDER` | Prefer real adapter | `console` / `noop` are stubs |
+| `PUSH_PROVIDER` | Prefer APNs/FCM | `logging` / `memory` are stubs |
+| `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` | For live billing | FakeStripe without keys |
 | `DESTINY_ENABLED` | Default false | DPIA before enabling |
 | `PORT` | As needed | Default 3000 |
 
-## Chaos (minimal)
+## Chaos (certified)
 
-1. Kill API mid-mission → client reconciles via `GET /connections/:id` + server `expiresAt`.
-2. Reconcile worker / `POST /internal/reconcile` recovers expired signals/connections without exact-second cron.
-3. Duplicate push enqueue with same idempotency key → ignored.
-4. Two concurrent accepts on the same signal with shared ephemeral store → one connection only.
+Covered by S20 G2 + prior gates: API restart/hydrate, ephemeral down → readiness fail, push DEAD without protocol failure, Stripe signature reject without core outage, concurrent accept single Match.
 
-## Explicit gaps before “full prod”
+## Explicit gaps (ops / V1.1 — not V1 blockers)
 
-- Staging credentials for Twilio + FCM HTTP v1 + APNs JWT (adapters ready)
-- S19 Stripe entitlements
-- S20 multi-instance / outage certification
+- Staging credentials for Twilio + FCM HTTP v1 + APNs JWT + Stripe price
 - Multi-region, autoscaling runbooks beyond compose
-- Load/chaos automation in CI
+- Large-scale load campaign in real Redis/Postgres (S20 certifies invariants under concurrency, not millions of users)
 
-## Not in scope until post-S20
+## Not in Backend V1 (open as V1.1+)
 
 Destiny V2, ranking radar, behavioral anti-abuse, geospatial optimization, adaptive intelligence.

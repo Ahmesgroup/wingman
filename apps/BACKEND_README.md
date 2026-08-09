@@ -54,10 +54,11 @@ Optional:
 - `SMS_PROVIDER=noop` — disable console SMS
 - `PUSH_PROVIDER=logging` — log push deliveries
 
-S16: [`operations/S16_PERSISTENCE_LIVE.md`](../operations/S16_PERSISTENCE_LIVE.md) · S17 `/ws`: [`operations/S17_WEBSOCKET.md`](../operations/S17_WEBSOCKET.md) · S18 providers: [`operations/S18_PROVIDERS.md`](../operations/S18_PROVIDERS.md) · S19 billing: [`operations/S19_BILLING_ENTITLEMENTS.md`](../operations/S19_BILLING_ENTITLEMENTS.md).
+S16: [`operations/S16_PERSISTENCE_LIVE.md`](../operations/S16_PERSISTENCE_LIVE.md) · S17 `/ws`: [`operations/S17_WEBSOCKET.md`](../operations/S17_WEBSOCKET.md) · S18 providers: [`operations/S18_PROVIDERS.md`](../operations/S18_PROVIDERS.md) · S19 billing: [`operations/S19_BILLING_ENTITLEMENTS.md`](../operations/S19_BILLING_ENTITLEMENTS.md) · S20: [`operations/S20_PRODUCTION_CERTIFICATION.md`](../operations/S20_PRODUCTION_CERTIFICATION.md) (**Backend V1 GO**).
 
 `POST /devices/push-token` registers FCM/APNs tokens for the authenticated user.  
-`GET /billing/entitlements` returns effective plan capabilities (never trust client `isPremium`).
+`GET /billing/entitlements` returns effective plan capabilities (never trust client `isPremium`).  
+`GET /internal/live` · `GET /internal/ready` · `GET /internal/metrics` for orchestration and ops.
 
 ## Auth modes
 
@@ -101,7 +102,8 @@ S16: [`operations/S16_PERSISTENCE_LIVE.md`](../operations/S16_PERSISTENCE_LIVE.m
 
 ```bash
 pnpm --filter @wingman/domain test          # 15 protocol tests (freeze baseline)
-pnpm --filter @wingman/api test             # Nest e2e + auth + multi-instance + persistence + billing + architecture
+pnpm --filter @wingman/api test             # Nest e2e + S20 certification + architecture
+pnpm --filter @wingman/api test -- src/s20.certification.test.ts
 pnpm --filter @wingman/persistence test
 pnpm --filter @wingman/providers test
 pnpm --filter @wingman/billing test
