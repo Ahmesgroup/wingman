@@ -47,6 +47,8 @@ export interface EligibleCandidate {
   recentInteraction?: boolean;
   /** Context Engine freshness 0..1 when available */
   contextFreshness?: number;
+  /** S25 Geo — same opaque spatial cell as viewer (ranking only) */
+  geoSameCell?: boolean;
 }
 
 export type RankingReason =
@@ -57,7 +59,8 @@ export type RankingReason =
   | "context_compatible"
   | "recent_unsuccessful_exposure"
   | "recent_interaction"
-  | "diversity_rotation";
+  | "diversity_rotation"
+  | "same_spatial_cell";
 
 export interface RankedDecision {
   candidateId: string;

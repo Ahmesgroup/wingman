@@ -32,6 +32,7 @@ Executable backend for the Wingman protocol loop:
 | `@wingman/context-engine` | V1.1 S22 normalized ephemeral context (flagged) |
 | `@wingman/destiny-v2` | V1.1 S23 rare Destiny proposals + mutual consent (flagged) |
 | `@wingman/anti-abuse` | V1.1 S24 observation + graduated enforcement (flagged) |
+| `@wingman/geo-intelligence` | V1.1 S25 ephemeral spatial relevance (flagged) |
 | `@wingman/realtime` | WS envelope, rooms, hub, replay buffer |
 | `@wingman/api` | NestJS modular HTTP + WebSocket API |
 | `@wingman/workers` | Expiration reconciler |
@@ -58,14 +59,15 @@ Optional:
 - `SMS_PROVIDER=noop` — disable console SMS
 - `PUSH_PROVIDER=logging` — log push deliveries
 
-S16: [`operations/S16_PERSISTENCE_LIVE.md`](../operations/S16_PERSISTENCE_LIVE.md) · S17 `/ws`: [`operations/S17_WEBSOCKET.md`](../operations/S17_WEBSOCKET.md) · S18 providers: [`operations/S18_PROVIDERS.md`](../operations/S18_PROVIDERS.md) · S19 billing: [`operations/S19_BILLING_ENTITLEMENTS.md`](../operations/S19_BILLING_ENTITLEMENTS.md) · S20: [`operations/S20_PRODUCTION_CERTIFICATION.md`](../operations/S20_PRODUCTION_CERTIFICATION.md) (**Backend V1 GO**) · S21: [`operations/S21_RADAR_INTELLIGENCE.md`](../operations/S21_RADAR_INTELLIGENCE.md) · S22: [`operations/S22_CONTEXT_ENGINE.md`](../operations/S22_CONTEXT_ENGINE.md) · S23: [`operations/S23_DESTINY_V2.md`](../operations/S23_DESTINY_V2.md) · S24: [`operations/S24_ANTI_ABUSE.md`](../operations/S24_ANTI_ABUSE.md).
+S16: [`operations/S16_PERSISTENCE_LIVE.md`](../operations/S16_PERSISTENCE_LIVE.md) · S17 `/ws`: [`operations/S17_WEBSOCKET.md`](../operations/S17_WEBSOCKET.md) · S18 providers: [`operations/S18_PROVIDERS.md`](../operations/S18_PROVIDERS.md) · S19 billing: [`operations/S19_BILLING_ENTITLEMENTS.md`](../operations/S19_BILLING_ENTITLEMENTS.md) · S20: [`operations/S20_PRODUCTION_CERTIFICATION.md`](../operations/S20_PRODUCTION_CERTIFICATION.md) (**Backend V1 GO**) · S21: [`operations/S21_RADAR_INTELLIGENCE.md`](../operations/S21_RADAR_INTELLIGENCE.md) · S22: [`operations/S22_CONTEXT_ENGINE.md`](../operations/S22_CONTEXT_ENGINE.md) · S23: [`operations/S23_DESTINY_V2.md`](../operations/S23_DESTINY_V2.md) · S24: [`operations/S24_ANTI_ABUSE.md`](../operations/S24_ANTI_ABUSE.md) · S25: [`operations/S25_GEO_INTELLIGENCE.md`](../operations/S25_GEO_INTELLIGENCE.md).
 
 `POST /devices/push-token` registers FCM/APNs tokens for the authenticated user.  
 `GET /billing/entitlements` returns effective plan capabilities (never trust client `isPremium`).  
 `GET /internal/live` · `GET /internal/ready` · `GET /internal/metrics` for orchestration and ops.  
 `GET /radar/candidates` — V1 eligibility; optional S21 reorder when `RADAR_INTELLIGENCE_ENABLED=true`; optional S22 context when `CONTEXT_ENGINE_ENABLED=true` (scores/context never in response).  
 Destiny: `POST /destiny/copresence` — V1 when `DESTINY_V2_ENABLED` off; V2 candidate/policy when on; shadow when `DESTINY_V2_PROPOSALS_ENABLED=false`; live consent via `/destiny/proposals/*` (handoff to V1 Signal/Connection on mutual).  
-Anti-abuse: optional Nest gates when `ANTI_ABUSE_ENABLED=true`; shadow when `ANTI_ABUSE_ENFORCEMENT_ENABLED=false`; enforcement returns `ABUSE_*` without changing domain rules.
+Anti-abuse: optional Nest gates when `ANTI_ABUSE_ENABLED=true`; shadow when `ANTI_ABUSE_ENFORCEMENT_ENABLED=false`; enforcement returns `ABUSE_*` without changing domain rules.  
+Geo: when `GEO_INTELLIGENCE_ENABLED=true`, Radar activate/heartbeat ingest ephemeral spatial snapshots (`GeoContextPort`); never exact lat/lng on candidate HTTP; V1 eligibility radii unchanged.
 
 ## Auth modes
 

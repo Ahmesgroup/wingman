@@ -21,12 +21,17 @@ import {
   type DestinyProposalPublic,
 } from "@wingman/destiny-v2";
 import type { RadarContextPort } from "@wingman/radar-intelligence";
+import {
+  GeoIntelligenceEngine,
+  isGeoIntelligenceEnabled,
+} from "@wingman/geo-intelligence";
 import { CurrentUser } from "../../common/auth.js";
 import { WINGMAN_ENGINE } from "../../engine/engine.tokens.js";
 import { EPHEMERAL_STORE } from "../infra/infra.tokens.js";
 import { RADAR_CONTEXT_PORT } from "../context/context.tokens.js";
 import { SignalsService } from "../signals/signals.controller.js";
 import { AntiAbuseGate } from "../anti-abuse/anti-abuse.module.js";
+import { GEO_ENGINE } from "../geo/geo.tokens.js";
 import { DESTINY_V2_ENGINE } from "./destiny.tokens.js";
 
 function asDestinyContextPort(port?: RadarContextPort): DestinyContextPort | undefined {
@@ -47,6 +52,7 @@ export class DestinyService {
     @Optional() @Inject(DESTINY_V2_ENGINE) private readonly destinyV2?: DestinyV2Engine,
     @Optional() @Inject(RADAR_CONTEXT_PORT) private readonly radarContext?: RadarContextPort,
     @Optional() private readonly antiAbuse?: AntiAbuseGate,
+    @Optional() @Inject(GEO_ENGINE) private readonly geo?: GeoIntelligenceEngine,
   ) {}
 
   /** V1 eligibility: mutual interest + both radar-visible + not blocked (via getCandidates). */
@@ -61,6 +67,11 @@ export class DestinyService {
   }
 
   private distanceBand(a: string, b: string): "NEAR" | "AROUND" | undefined {
+    if (isGeoIntelligenceEnabled() && this.geo) {
+      const pair = this.geo.forPair(a, b, this.engine.clock.now());
+      if (pair?.distanceBand === "NEAR" || pair?.distanceBand === "AROUND") return pair.distanceBand;
+      // Geo FAR / missing → fall through to V1 haversine for Destiny candidate scoring only
+    }
     const la = this.engine.locations.get(a);
     const lb = this.engine.locations.get(b);
     if (!la || !lb) return undefined;

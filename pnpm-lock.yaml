@@ -52,6 +52,9 @@ importers:
       '@wingman/ephemeral':
         specifier: workspace:*
         version: link:../../packages/ephemeral
+      '@wingman/geo-intelligence':
+        specifier: workspace:*
+        version: link:../../packages/geo-intelligence
       '@wingman/notifications':
         specifier: workspace:*
         version: link:../../packages/notifications
@@ -231,6 +234,15 @@ importers:
       ioredis:
         specifier: ^5.4.2
         version: 5.11.1
+    devDependencies:
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.8
+        version: 2.1.9(@types/node@22.20.1)
+
+  packages/geo-intelligence:
     devDependencies:
       typescript:
         specifier: ^5.7.3

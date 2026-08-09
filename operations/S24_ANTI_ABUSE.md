@@ -97,5 +97,5 @@ Verified by `packages/anti-abuse` unit tests and `apps/api/src/s24.anti-abuse.te
 
 ## Next
 
-**S25 Geo Intelligence** — smarter proximity without exposing exact location.  
+**S25 Geo Intelligence** — smarter proximity without exposing exact location. See [`S25_GEO_INTELLIGENCE.md`](./S25_GEO_INTELLIGENCE.md).  
 Optional: **S24.1 Destiny Proposal Persistence**.

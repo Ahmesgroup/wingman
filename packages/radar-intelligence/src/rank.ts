@@ -77,6 +77,11 @@ export function scoreCandidate(
     reasons.push("recent_interaction");
   }
 
+  if (c.geoSameCell) {
+    score += 0.06;
+    reasons.push("same_spatial_cell");
+  }
+
   const exposures = input.recentExposureCount?.(c.userId) ?? 0;
   if (exposures >= 2) {
     score -= 0.15 * Math.min(exposures, 5);

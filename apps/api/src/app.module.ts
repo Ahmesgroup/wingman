@@ -12,6 +12,7 @@ import { AuthModule } from "./modules/auth/auth.module.js";
 import { AntiAbuseModule } from "./modules/anti-abuse/anti-abuse.module.js";
 import { BillingModule, setBillingOverrides, type BillingOverrides } from "./modules/billing/billing.module.js";
 import { ContextModule } from "./modules/context/context.module.js";
+import { GeoModule } from "./modules/geo/geo.module.js";
 import { ConnectionsModule } from "./modules/connections/connections.module.js";
 import { DestinyModule } from "./modules/destiny/destiny.module.js";
 import { DevicesModule } from "./modules/devices/devices.module.js";
@@ -66,6 +67,7 @@ export class AppModule {
         InfraModule,
         BillingModule,
         AntiAbuseModule,
+        GeoModule,
         ContextModule,
         HealthModule,
         DevModule,

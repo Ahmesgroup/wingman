@@ -8,15 +8,17 @@ import {
   type ContextSnapshot,
 } from "@wingman/context-engine";
 import type { RadarContextPort } from "@wingman/radar-intelligence";
+import type { GeoContextPort } from "@wingman/geo-intelligence";
 
 /**
- * Merges durable/session hints store with live presence/profile.
+ * Merges durable/session hints store with live presence/profile + optional Geo mobility.
  * Never reads or stores exact coordinates.
  */
 export class NestContextInputsPort implements ContextInputsPort {
   constructor(
     private readonly store: MemoryContextInputStore,
     private readonly engine: WingmanEngine,
+    private readonly geo?: GeoContextPort,
   ) {}
 
   getRawHints(userId: string, now: Date): ContextRawHints | undefined {
@@ -46,6 +48,22 @@ export class NestContextInputsPort implements ContextInputsPort {
       if (hints.availabilityMinutes === undefined) {
         hints.availabilityMinutes = Math.round(hints.presenceRemainingMs / 60_000);
         hints.availabilityConfidence = hints.availabilityConfidence ?? 0.8;
+      }
+    }
+
+    const geo = this.geo?.forUser(userId, now);
+    if (geo && geo.freshness !== "EXPIRED") {
+      // Session mobility from Geo — never a durable profile trait
+      const mob =
+        geo.movement === "FAST_MOVING"
+          ? "transit"
+          : geo.movement === "WALKING"
+            ? "walking"
+            : "stationary";
+      hints.mobility = mob;
+      hints.mobilityConfidence = Math.max(hints.mobilityConfidence ?? 0, geo.confidence);
+      if (geo.freshness === "FRESH") {
+        hints.freshnessConfidence = Math.max(hints.freshnessConfidence ?? 0, geo.confidence);
       }
     }
     return hints;
