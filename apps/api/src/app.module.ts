@@ -10,6 +10,7 @@ import { createEngine, EngineModule } from "./engine/engine.module.js";
 import { WINGMAN_ENGINE } from "./engine/engine.tokens.js";
 import { AuthModule } from "./modules/auth/auth.module.js";
 import { BillingModule, setBillingOverrides, type BillingOverrides } from "./modules/billing/billing.module.js";
+import { ContextModule } from "./modules/context/context.module.js";
 import { ConnectionsModule } from "./modules/connections/connections.module.js";
 import { DestinyModule } from "./modules/destiny/destiny.module.js";
 import { DevicesModule } from "./modules/devices/devices.module.js";
@@ -63,6 +64,7 @@ export class AppModule {
         EngineModule,
         InfraModule,
         BillingModule,
+        ContextModule,
         HealthModule,
         DevModule,
         AuthModule,

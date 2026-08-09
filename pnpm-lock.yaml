@@ -31,6 +31,9 @@ importers:
       '@wingman/billing':
         specifier: workspace:*
         version: link:../../packages/billing
+      '@wingman/context-engine':
+        specifier: workspace:*
+        version: link:../../packages/context-engine
       '@wingman/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
@@ -151,6 +154,15 @@ importers:
       '@prisma/client':
         specifier: ^6.3.0
         version: 6.19.3(prisma@6.19.3(typescript@5.9.3))(typescript@5.9.3)
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.8
+        version: 2.1.9(@types/node@22.20.1)
+
+  packages/context-engine:
+    devDependencies:
       typescript:
         specifier: ^5.7.3
         version: 5.9.3

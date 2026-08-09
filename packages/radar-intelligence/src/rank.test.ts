@@ -88,6 +88,26 @@ describe("S21 Radar Intelligence", () => {
     expect(ordered.map((c) => c.userId).sort()).toEqual(["fresh", "over"]);
   });
 
+  it("unknown languages stay neutral (no shared_language penalty path)", () => {
+    const candidates = [
+      cand({ userId: "a", approximateDistanceBand: "NEAR", presenceRemainingMs: 90_000 }),
+      cand({
+        userId: "b",
+        approximateDistanceBand: "NEAR",
+        presenceRemainingMs: 90_000,
+        languages: ["fr"],
+      }),
+    ];
+    const { ordered, audit } = rankRadarCandidates({
+      viewerId: "v",
+      viewerLanguages: undefined,
+      now: new Date(),
+      candidates,
+    });
+    expect(ordered.map((c) => c.userId).sort()).toEqual(["a", "b"]);
+    expect(audit.decisions.every((d) => !d.reasons.includes("shared_language"))).toBe(true);
+  });
+
   it("public view never includes score or enrichment fields", () => {
     const pub = toPublicCandidateView(
       cand({
@@ -105,5 +125,26 @@ describe("S21 Radar Intelligence", () => {
     });
     expect(JSON.stringify(pub)).not.toContain("score");
     expect(JSON.stringify(pub)).not.toContain("presenceRemaining");
+  });
+
+  it("RadarContextPort enrichment is preferred when provided", () => {
+    const now = new Date();
+    const { ordered } = rankRadarCandidates({
+      viewerId: "v",
+      now,
+      candidates: [
+        cand({ userId: "x", approximateDistanceBand: "NEAR", presenceRemainingMs: 90_000 }),
+        cand({ userId: "y", approximateDistanceBand: "NEAR", presenceRemainingMs: 90_000 }),
+      ],
+      contextPort: {
+        forUser(id) {
+          if (id === "v") return { languages: ["fr"] };
+          if (id === "y") return { languages: ["fr"], freshness: 0.9 };
+          if (id === "x") return { languages: ["en"], freshness: 0.9 };
+          return undefined;
+        },
+      },
+    });
+    expect(ordered[0]!.userId).toBe("y");
   });
 });

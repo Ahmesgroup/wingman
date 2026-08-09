@@ -1,0 +1,3 @@
+export const CONTEXT_ENGINE = Symbol("CONTEXT_ENGINE");
+export const CONTEXT_INPUT_STORE = Symbol("CONTEXT_INPUT_STORE");
+export const RADAR_CONTEXT_PORT = Symbol("RADAR_CONTEXT_PORT");

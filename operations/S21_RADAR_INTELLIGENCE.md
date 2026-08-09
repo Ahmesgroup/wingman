@@ -59,3 +59,5 @@ pnpm --filter @wingman/api test -- src/s21.radar-intelligence.test.ts
 ## S22 next
 
 Move language / time / mobility hints into a dedicated **Context Engine**; Radar Intelligence consumes normalized context only.
+
+→ **Done:** see [`S22_CONTEXT_ENGINE.md`](./S22_CONTEXT_ENGINE.md). Next: **S23 Destiny V2**.

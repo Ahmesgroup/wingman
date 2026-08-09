@@ -3,8 +3,33 @@ export function isRadarIntelligenceEnabled(env: NodeJS.ProcessEnv = process.env)
   return env.RADAR_INTELLIGENCE_ENABLED === "true";
 }
 
-export const RADAR_RANKING_VERSION = "1.1.0";
+export const RADAR_RANKING_VERSION = "1.1.1";
 export const RADAR_RANKING_ENGINE = "RADAR_RANKING";
+
+/**
+ * Port for contextual enrichment — Nest adapts Context Engine snapshots here.
+ * @wingman/radar-intelligence MUST NOT import Context Engine implementation.
+ */
+export interface RadarContextPort {
+  /**
+   * Normalized context view for ranking. Missing fields = neutral (no penalty).
+   * Expired / disabled engines return undefined.
+   */
+  forUser(
+    userId: string,
+    now: Date,
+  ):
+    | {
+        languages?: string[];
+        availabilityMinutes?: number;
+        mobility?: string;
+        intention?: string;
+        mood?: string;
+        /** 0..1 freshness when known */
+        freshness?: number;
+      }
+    | undefined;
+}
 
 /** V1-eligible candidate view + optional server-only enrichment. Never from client trust. */
 export interface EligibleCandidate {
@@ -12,14 +37,16 @@ export interface EligibleCandidate {
   approximateDistanceBand: "NEAR" | "AROUND";
   mood?: string;
   intention?: string;
-  /** ms remaining on presence TTL — freshness signal */
+  /** ms remaining on presence TTL — freshness signal (legacy S21 path) */
   presenceRemainingMs?: number;
-  /** last heartbeat age in ms */
+  /** last heartbeat age in ms (legacy S21 path) */
   heartbeatAgeMs?: number;
-  /** optional language tags from Context hints (S22 will own this); not identity */
+  /** optional language tags — prefer RadarContextPort when CONTEXT_ENGINE enabled */
   languages?: string[];
   /** recent signal/interaction with viewer (server-derived) */
   recentInteraction?: boolean;
+  /** Context Engine freshness 0..1 when available */
+  contextFreshness?: number;
 }
 
 export type RankingReason =
@@ -57,4 +84,6 @@ export interface RankRadarInput {
   candidates: EligibleCandidate[];
   /** Recent impression counts viewer→candidate (higher = recently over-exposed) */
   recentExposureCount?: (candidateId: string) => number;
+  /** Optional Context Engine port — when provided, preferred over inline languages */
+  contextPort?: RadarContextPort;
 }

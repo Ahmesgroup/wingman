@@ -2,6 +2,7 @@ import { Body, Controller, Get, Inject, Injectable, Optional, Post, Query } from
 import { ActivateRadarSchema, HeartbeatSchema } from "@wingman/contracts";
 import type { PresenceVisibility, WingmanEngine } from "@wingman/domain";
 import type { EphemeralStore } from "@wingman/ephemeral";
+import { isContextEngineEnabled } from "@wingman/context-engine";
 import type { ProtocolPersistenceMirror } from "@wingman/persistence";
 import {
   ExposureStore,
@@ -9,6 +10,7 @@ import {
   rankRadarCandidates,
   toPublicCandidateView,
   type EligibleCandidate,
+  type RadarContextPort,
   type RankingAuditRecord,
 } from "@wingman/radar-intelligence";
 import { CurrentUser } from "../../common/auth.js";
@@ -16,9 +18,10 @@ import { ZodValidationPipe } from "../../common/zod-validation.pipe.js";
 import { WINGMAN_ENGINE } from "../../engine/engine.tokens.js";
 import { EPHEMERAL_STORE, PROTOCOL_MIRROR } from "../infra/infra.tokens.js";
 import { RealtimeAppService } from "../realtime/realtime-app.service.js";
+import { RADAR_CONTEXT_PORT } from "../context/context.tokens.js";
 import { RADAR_EXPOSURE_STORE, RADAR_LANGUAGE_HINTS } from "./radar.tokens.js";
 
-/** Optional language hints — Context Engine (S22) will own this; not identity. */
+/** Legacy S21 language hints when Context Engine flag is off. */
 export type LanguageHints = Map<string, string[]>;
 
 @Injectable()
@@ -32,9 +35,9 @@ export class RadarService {
     private readonly realtime: RealtimeAppService,
     @Optional() @Inject(RADAR_EXPOSURE_STORE) private readonly exposure?: ExposureStore,
     @Optional() @Inject(RADAR_LANGUAGE_HINTS) private readonly languageHints?: LanguageHints,
+    @Optional() @Inject(RADAR_CONTEXT_PORT) private readonly contextPort?: RadarContextPort,
   ) {}
 
-  /** Test/ops: last internal ranking audit (scores never in HTTP body). */
   getLastRankingAudit(): RankingAuditRecord | undefined {
     return this.lastAudit;
   }
@@ -89,6 +92,8 @@ export class RadarService {
       return { candidates: v1, serverTime: now.toISOString() };
     }
 
+    const useContext = isContextEngineEnabled() && this.contextPort;
+
     const enriched: EligibleCandidate[] = v1.map((c) => {
       const presence = this.engine.presence.get(c.userId);
       const recentInteraction = [...this.engine.signals.values()].some(
@@ -96,27 +101,31 @@ export class RadarService {
           (s.senderId === userId && s.receiverId === c.userId) ||
           (s.senderId === c.userId && s.receiverId === userId),
       );
-      return {
+      const base: EligibleCandidate = {
         userId: c.userId,
         approximateDistanceBand: c.approximateDistanceBand,
         mood: c.mood,
         intention: c.intention,
         presenceRemainingMs: presence ? presence.expiresAt.getTime() - now.getTime() : undefined,
         heartbeatAgeMs: presence ? now.getTime() - presence.lastHeartbeatAt.getTime() : undefined,
-        languages: this.languageHints?.get(c.userId),
         recentInteraction,
       };
+      if (!useContext) {
+        base.languages = this.languageHints?.get(c.userId);
+      }
+      return base;
     });
 
     const exposure = this.exposure;
     const { ordered, audit } = rankRadarCandidates({
       viewerId: userId,
-      viewerLanguages: this.languageHints?.get(userId),
+      viewerLanguages: useContext ? undefined : this.languageHints?.get(userId),
       now,
       candidates: enriched,
       recentExposureCount: exposure
         ? (candidateId) => exposure.countRecent(userId, candidateId, now)
         : undefined,
+      contextPort: useContext ? this.contextPort : undefined,
     });
 
     this.lastAudit = audit;
@@ -126,8 +135,20 @@ export class RadarService {
       now,
     );
 
+    // Public payload: V1 fields only — never raw context snapshot / confidence / score
     return {
-      candidates: ordered.map(toPublicCandidateView),
+      candidates: ordered.map((c) => {
+        const pub = toPublicCandidateView(c);
+        if (useContext) {
+          const snap = this.contextPort!.forUser(c.userId, now);
+          return {
+            ...pub,
+            ...(snap?.mood && !pub.mood ? { mood: snap.mood } : {}),
+            ...(snap?.intention && !pub.intention ? { intention: snap.intention } : {}),
+          };
+        }
+        return pub;
+      }),
       serverTime: now.toISOString(),
     };
   }

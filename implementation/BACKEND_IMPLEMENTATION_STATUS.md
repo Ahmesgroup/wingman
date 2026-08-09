@@ -14,6 +14,7 @@ This document describes the **executable backend** that was built from the V4.1 
 7. **S19 — Billing → Entitlements** (Stripe as external billing facts; backend-owned rights)
 8. **S20 — Production certification** (multi-instance, chaos, load/races, observability, go/no-go) — **Backend V1 GO**
 9. **V1.1 S21 — Radar Intelligence** (feature-flagged ordering above immutable V1 eligibility)
+10. **V1.1 S22 — Context Engine** (normalized ephemeral context for Radar/Destiny/Geo)
 
 The original product specs under `docs/`, `architecture/`, `api/` remain authoritative for product rules. This file is authoritative for **what code exists today** and how to operate it.
 
@@ -483,10 +484,11 @@ Backend V1 is frozen. Advanced engines are feature-flagged and must not change V
 | Sprint | Doc |
 |--------|-----|
 | **S21** Radar Intelligence | [`operations/S21_RADAR_INTELLIGENCE.md`](../operations/S21_RADAR_INTELLIGENCE.md) — **done** |
-| S22–S26 roadmap | [`operations/V1.1_ADVANCED_ENGINE.md`](../operations/V1.1_ADVANCED_ENGINE.md) |
+| **S22** Context Engine | [`operations/S22_CONTEXT_ENGINE.md`](../operations/S22_CONTEXT_ENGINE.md) — **done** |
+| S23–S26 roadmap | [`operations/V1.1_ADVANCED_ENGINE.md`](../operations/V1.1_ADVANCED_ENGINE.md) |
 
-1. **S22** Context Engine — normalize time/place/availability/language for Radar/Destiny
-2. Destiny V2, Anti-Abuse, Geo, Measurement (S23–S26)
+1. **S23** Destiny V2 — rare contextual opportunities on normalized context
+2. Anti-Abuse, Geo, Measurement (S24–S26)
 3. Staging credential & load-test campaign in real Redis/Postgres
 
 ---
@@ -519,4 +521,5 @@ Backend V1 is frozen. Advanced engines are feature-flagged and must not change V
 | S20 certificate | [`operations/S20_PRODUCTION_CERTIFICATION.md`](../operations/S20_PRODUCTION_CERTIFICATION.md) |
 | V1.1 roadmap | [`operations/V1.1_ADVANCED_ENGINE.md`](../operations/V1.1_ADVANCED_ENGINE.md) |
 | S21 Radar Intelligence | [`packages/radar-intelligence/src/index.ts`](../packages/radar-intelligence/src/index.ts) |
+| S22 Context Engine | [`packages/context-engine/src/index.ts`](../packages/context-engine/src/index.ts) |
 | Production checklist | [`operations/PRODUCTION_READINESS.md`](../operations/PRODUCTION_READINESS.md) |

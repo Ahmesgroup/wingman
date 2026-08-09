@@ -185,6 +185,7 @@ Start with `README.md`, then `docs/PRD.md`, `architecture/STATE_MACHINES.md`, `d
 - [`operations/S20_PRODUCTION_CERTIFICATION.md`](operations/S20_PRODUCTION_CERTIFICATION.md) — **Backend V1 certification GO**
 - [`operations/V1.1_ADVANCED_ENGINE.md`](operations/V1.1_ADVANCED_ENGINE.md) — V1.1 advanced engines roadmap
 - [`operations/S21_RADAR_INTELLIGENCE.md`](operations/S21_RADAR_INTELLIGENCE.md) — Radar Intelligence (flagged ranking)
+- [`operations/S22_CONTEXT_ENGINE.md`](operations/S22_CONTEXT_ENGINE.md) — Context Engine (normalized ephemeral context)
 - [`apps/BACKEND_README.md`](apps/BACKEND_README.md) — developer quick start for the executable API
 - [`operations/PRODUCTION_READINESS.md`](operations/PRODUCTION_READINESS.md) — S12–S20 readiness gates
 - [`implementation/AI_CODING_RULES.md`](implementation/AI_CODING_RULES.md)
