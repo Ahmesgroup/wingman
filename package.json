@@ -8,7 +8,8 @@
     "typecheck": "pnpm -r run typecheck",
     "lint": "pnpm -r run lint",
     "dev:api": "pnpm --filter @wingman/api dev",
-    "dev:workers": "pnpm --filter @wingman/workers dev"
+    "dev:workers": "pnpm --filter @wingman/workers dev",
+    "cert:staging": "node scripts/staging-load-cert.mjs"
   },
   "engines": {
     "node": ">=20"
