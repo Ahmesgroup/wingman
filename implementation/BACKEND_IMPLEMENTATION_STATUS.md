@@ -492,7 +492,7 @@ Backend V1 is frozen. Advanced engines are feature-flagged and must not change V
 
 V1.1 engines S21–S26 + **S24.1** are implemented. **Locked next sequence:**
 
-1. **Staging load certification** (infra, not product) — [`operations/STAGING_LOAD_CERTIFICATION.md`](../operations/STAGING_LOAD_CERTIFICATION.md) — suite ready; live GO when Redis+Postgres up
+1. **Staging load certification** (infra, not product) — [`operations/STAGING_LOAD_CERTIFICATION.md`](../operations/STAGING_LOAD_CERTIFICATION.md) — **GO** (2026-08-11)
 2. **S26 measurement baselines** (campaign with learning off) — close metric gaps listed in [`V1.1_ADVANCED_ENGINE.md`](../operations/V1.1_ADVANCED_ENGINE.md) before any learning debate
 3. **S27 Learning Engine** — decision gate only; open iff baselines show better real connections without safety/diversity loss
 

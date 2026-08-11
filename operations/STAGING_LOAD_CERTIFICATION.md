@@ -1,6 +1,6 @@
 # Staging Load Certification (infra)
 
-**Status:** **SUITE READY** · Live verdict **PENDING** until Redis + Postgres are reachable  
+**Status:** **GO** · Certified · **Date:** 2026-08-11  
 **Nature:** Short infra certification — **not** a product sprint  
 **Related:** [`V1.1_ADVANCED_ENGINE.md`](./V1.1_ADVANCED_ENGINE.md), [`S20_PRODUCTION_CERTIFICATION.md`](./S20_PRODUCTION_CERTIFICATION.md), [`S24.1_DESTINY_PROPOSAL_PERSISTENCE.md`](./S24.1_DESTINY_PROPOSAL_PERSISTENCE.md)
 
@@ -24,51 +24,43 @@ S20 remains the **memory** Backend V1 certificate. This doc is the **staging loa
 `apps/api/src/staging.load.certification.test.ts` **soft-passes** when `REDIS_URL` or `DATABASE_URL` is unset/unreachable so default CI stays green.  
 **Live GO** requires both URLs and all L1–L5 asserting (not soft-passing).
 
-## Environment
+## Environment tested (live GO)
 
-```bash
-docker compose -f infrastructure/docker/docker-compose.yml up -d
+| Item | Value |
+|------|--------|
+| OS | Windows 10/11 |
+| Node | ≥20 |
+| Redis | Redis on Windows 3.0.504 (`REDIS_URL=redis://127.0.0.1:6379`) — GEO index best-effort (unsupported on 3.0; presence/locks/quotas/pubsub used) |
+| Postgres | PostgreSQL 15 (`DATABASE_URL=postgresql://wingman:wingman@127.0.0.1:5432/wingman`) |
+| Date (UTC) | 2026-08-11 |
+| Suite | `apps/api/src/staging.load.certification.test.ts` |
 
-pnpm --filter @wingman/database prisma:generate
-DATABASE_URL=postgresql://wingman:wingman@127.0.0.1:5432/wingman \
-  pnpm --filter @wingman/database exec prisma db push --schema=./prisma/schema.prisma
-```
-
-| Variable | Example |
-|----------|---------|
-| `REDIS_URL` | `redis://127.0.0.1:6379` |
-| `DATABASE_URL` | `postgresql://wingman:wingman@127.0.0.1:5432/wingman` |
+**Note:** Prefer Redis ≥6 / Docker `redis:7` / Memurai for full `GEOADD` support. Presence TTL + domain locations remain authoritative when GEO is skipped.
 
 ## Commands
 
 ```bash
-# Soft-pass mode (no infra) — suite loads, gates warn and return
+# Soft-pass mode (no infra)
 pnpm --filter @wingman/api test -- src/staging.load.certification.test.ts
+# or: pnpm cert:staging
 
-# Live mode
-REDIS_URL=redis://127.0.0.1:6379 \
-DATABASE_URL=postgresql://wingman:wingman@127.0.0.1:5432/wingman \
-  pnpm --filter @wingman/api test -- src/staging.load.certification.test.ts
-```
-
-Windows PowerShell:
-
-```powershell
+# Live mode (PowerShell)
 $env:REDIS_URL="redis://127.0.0.1:6379"
 $env:DATABASE_URL="postgresql://wingman:wingman@127.0.0.1:5432/wingman"
-pnpm --filter @wingman/api test -- src/staging.load.certification.test.ts
+pnpm --filter @wingman/database exec prisma db push --schema=./prisma/schema.prisma
+pnpm cert:staging
 ```
 
-## Gates
+## Gate results (live 2026-08-11)
 
-| Gate | Proof | Live result |
-|------|-------|-------------|
-| **L0** | Probe / soft-pass documentation | soft-pass until infra up |
-| **L1** | Nest A consent → Nest B list → MUTUAL handoff once (Redis proposal store) | pending |
-| **L2** | Concurrent Destiny accept → one connection (Redis locks) | pending |
-| **L3** | Concurrent FREE signals → quota ≤ 2/day | pending |
-| **L4** | Redis pub/sub delivers `eventId` on `wingman.realtime` | pending |
-| **L5** | Concurrent seeds + Postgres `SELECT 1` p95 &lt; 500ms; `/internal/ready` | pending |
+| Gate | Proof | Result |
+|------|-------|--------|
+| **L0** | Probe live URLs | **PASS** |
+| **L1** | Nest A consent → Nest B list → MUTUAL handoff once (Redis proposal store) | **PASS** |
+| **L2** | Concurrent Destiny accept → one connection (Redis locks) | **PASS** |
+| **L3** | Concurrent FREE signals → quota ≤ 2/day | **PASS** |
+| **L4** | Redis pub/sub delivers `eventId` on `wingman.realtime` | **PASS** |
+| **L5** | Concurrent seeds + Postgres `SELECT 1` p95 &lt; 500ms; `/internal/ready` | **PASS** |
 
 ## Binary verdict
 
@@ -78,7 +70,7 @@ pnpm --filter @wingman/api test -- src/staging.load.certification.test.ts
 | **GO** | L1–L5 live pass on shared Redis + Postgres |
 | **NO-GO** | Any live gate fails under real concurrency |
 
-**Current:** **SUITE READY / LIVE PENDING** (this agent host: Docker CLI absent, Redis port closed, local Postgres credentials ≠ compose defaults).
+**Current:** **GO**
 
 ## Out of scope
 

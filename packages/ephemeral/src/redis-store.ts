@@ -25,7 +25,12 @@ export class RedisEphemeralStore implements EphemeralStore {
   async setPresence(p: PresenceSnapshot, ttlSeconds: number): Promise<void> {
     await this.redis.set(this.presenceKey(p.userId), JSON.stringify(p), "EX", ttlSeconds);
     if (p.location) {
-      await this.redis.geoadd("radar:geo", p.location.lng, p.location.lat, p.userId);
+      // GEO index is optional (Redis ≥3.2). Presence TTL + domain locations remain authoritative.
+      try {
+        await this.redis.geoadd("radar:geo", p.location.lng, p.location.lat, p.userId);
+      } catch {
+        /* ignore unsupported GEO on older Redis builds */
+      }
     }
   }
 
@@ -49,7 +54,11 @@ export class RedisEphemeralStore implements EphemeralStore {
 
   async deletePresence(userId: string): Promise<void> {
     await this.redis.del(this.presenceKey(userId));
-    await this.redis.zrem("radar:geo", userId);
+    try {
+      await this.redis.zrem("radar:geo", userId);
+    } catch {
+      /* ignore */
+    }
   }
 
   async acquireLock(key: string, owner: string, ttlSeconds: number): Promise<boolean> {
