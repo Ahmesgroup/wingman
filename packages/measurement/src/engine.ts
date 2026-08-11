@@ -115,7 +115,16 @@ function sanitizeMeta(
   const out: Record<string, string | number | boolean> = {};
   for (const [k, v] of Object.entries(meta)) {
     const key = k.toLowerCase();
-    if (key.includes("lat") || key.includes("lng") || key.includes("phone") || key.includes("token")) {
+    // Exact geo/PII keys only — do not match substrings like "latencyMs"
+    if (
+      key === "lat" ||
+      key === "lng" ||
+      key === "latitude" ||
+      key === "longitude" ||
+      key.includes("phone") ||
+      key.includes("token") ||
+      key.includes("selfie")
+    ) {
       continue;
     }
     out[k] = v;

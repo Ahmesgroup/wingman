@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Inject, Injectable, Param, Post } from "@nestjs/common";
+import { Body, Controller, Get, Inject, Injectable, Optional, Param, Post } from "@nestjs/common";
 import { DomainError, type WingmanEngine } from "@wingman/domain";
 import { MissionMessageSchema, OutcomeSchema, SelfieSchema } from "@wingman/contracts";
 import type { NotificationOrchestrator } from "@wingman/notifications";
@@ -8,6 +8,7 @@ import { ZodValidationPipe } from "../../common/zod-validation.pipe.js";
 import { WINGMAN_ENGINE } from "../../engine/engine.tokens.js";
 import { NOTIFICATION_ORCH, PROTOCOL_MIRROR } from "../infra/infra.tokens.js";
 import { RealtimeAppService } from "../realtime/realtime-app.service.js";
+import { MeasurementGate } from "../measurement/measurement.module.js";
 
 function safeNotify(orch: NotificationOrchestrator): void {
   void orch.processQueue().catch(() => {});
@@ -20,6 +21,7 @@ export class ConnectionsService {
     @Inject(NOTIFICATION_ORCH) private readonly notifications: NotificationOrchestrator,
     @Inject(PROTOCOL_MIRROR) private readonly mirror: ProtocolPersistenceMirror,
     private readonly realtime: RealtimeAppService,
+    @Optional() private readonly measurement?: MeasurementGate,
   ) {}
 
   get(id: string) {
@@ -69,6 +71,13 @@ export class ConnectionsService {
   async meetNow(id: string, userId: string) {
     const connection = this.engine.applyConnection(id, "meet_now", userId);
     await this.mirror.mirrorConnection(id);
+    if (connection.state === "MISSION_MEET_ACTIVE") {
+      this.measurement?.noteDecision("CORE_CONNECTION", "1.0.0", "mission_enter", {
+        actorId: userId,
+        meta: { via: "meet_now" },
+      });
+      this.measurement?.noteOutcome("mission.entered", { meta: { via: "meet_now" } });
+    }
     for (const uid of [connection.initiatorId, connection.recipientId]) {
       this.notifications.handleAppEvent({
         type: "mission.updated",
@@ -85,6 +94,20 @@ export class ConnectionsService {
   async apply(id: string, event: Parameters<WingmanEngine["applyConnection"]>[1], userId: string) {
     const connection = this.engine.applyConnection(id, event, userId);
     await this.mirror.mirrorConnection(id);
+    if (connection.state === "MISSION_MEET_ACTIVE" && (event === "meet_now" || event === "ticket_confirm")) {
+      this.measurement?.noteDecision("CORE_CONNECTION", "1.0.0", "mission_enter", {
+        actorId: userId,
+        meta: { via: event },
+      });
+      this.measurement?.noteOutcome("mission.entered", { meta: { via: event } });
+    }
+    if (connection.state === "COMPLETED") {
+      this.measurement?.noteDecision("CORE_CONNECTION", "1.0.0", "mission_complete", {
+        actorId: userId,
+        meta: { via: event },
+      });
+      this.measurement?.noteOutcome("mission.completed", { meta: { via: event } });
+    }
     const closed = ["EXPIRED", "CANCELLED", "BLOCKED", "COMPLETED", "FAILED"].includes(connection.state);
     if (!closed) {
       for (const uid of [connection.initiatorId, connection.recipientId]) {
@@ -108,6 +131,16 @@ export class ConnectionsService {
   async outcome(id: string, userId: string, outcome: "YES" | "NO") {
     const connection = this.engine.recordOutcome(id, userId, outcome);
     await this.mirror.mirrorConnection(id);
+    // Both parties answered → cooldown = completed encounter for baseline purposes
+    if (connection.state === "COOLDOWN_ACTIVE" || connection.state === "COMPLETED") {
+      this.measurement?.noteDecision("CORE_CONNECTION", "1.0.0", "mission_complete", {
+        actorId: userId,
+        meta: { via: "outcome", state: connection.state },
+      });
+      this.measurement?.noteOutcome("mission.completed", {
+        meta: { via: "outcome", state: connection.state },
+      });
+    }
     for (const uid of [connection.initiatorId, connection.recipientId]) {
       this.notifications.handleAppEvent({
         type: "mission.updated",

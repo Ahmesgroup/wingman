@@ -29,9 +29,13 @@ export function setMeasurementOverrides(opts: {
 
 /**
  * Nest boundary — observe engine decisions/outcomes without changing business rules.
+ * Measurement observes; it never decides (no feedback into S21–S25 engines).
  */
 @Injectable()
 export class MeasurementGate {
+  /** actorKey → last radar impression epoch ms (time-to-signal) */
+  private readonly lastRadarAt = new Map<string, number>();
+
   constructor(
     @Inject(WINGMAN_ENGINE) private readonly wingman: WingmanEngine,
     @Optional() @Inject(MEASUREMENT_ENGINE) private readonly engine?: MeasurementEngine,
@@ -47,6 +51,22 @@ export class MeasurementGate {
 
   private now(): Date {
     return this.wingman.clock.now();
+  }
+
+  /** Record radar impression timestamp for time-to-signal (observe-only). */
+  markRadarImpression(actorId: string): void {
+    if (!this.active()) return;
+    this.lastRadarAt.set(hashActorKey(actorId), this.now().getTime());
+  }
+
+  /** Consume latency since last radar impression for this actor, if any. */
+  takeTimeToSignalMs(actorId: string): number | undefined {
+    if (!this.active()) return undefined;
+    const key = hashActorKey(actorId);
+    const at = this.lastRadarAt.get(key);
+    if (at === undefined) return undefined;
+    this.lastRadarAt.delete(key);
+    return Math.max(0, this.now().getTime() - at);
   }
 
   noteDecision(

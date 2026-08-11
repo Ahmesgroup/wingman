@@ -493,7 +493,7 @@ Backend V1 is frozen. Advanced engines are feature-flagged and must not change V
 V1.1 engines S21–S26 + **S24.1** are implemented. **Locked next sequence:**
 
 1. **Staging load certification** (infra, not product) — [`operations/STAGING_LOAD_CERTIFICATION.md`](../operations/STAGING_LOAD_CERTIFICATION.md) — **GO** (2026-08-11)
-2. **S26 measurement baselines** (campaign with learning off) — close metric gaps listed in [`V1.1_ADVANCED_ENGINE.md`](../operations/V1.1_ADVANCED_ENGINE.md) before any learning debate
+2. **S26 measurement baselines** (campaign with learning off) — metric suite complete in [`S26_MEASUREMENT.md`](../operations/S26_MEASUREMENT.md) v1.2.0; next is **collect** real data then analyse
 3. **S27 Learning Engine** — decision gate only; open iff baselines show better real connections without safety/diversity loss
 
 Do not start auto-learning without (1) + (2).

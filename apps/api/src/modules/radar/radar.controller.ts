@@ -179,6 +179,12 @@ export class RadarService {
     });
 
     const exposure = this.exposure;
+    let repeatCount = 0;
+    if (exposure) {
+      for (const c of enriched) {
+        if (exposure.countRecent(userId, c.userId, now) >= 1) repeatCount += 1;
+      }
+    }
     const { ordered, audit } = rankRadarCandidates({
       viewerId: userId,
       viewerLanguages: useContext ? undefined : this.languageHints?.get(userId),
@@ -199,14 +205,34 @@ export class RadarService {
 
     const reasonSet = new Set<string>();
     for (const d of audit.decisions) for (const r of d.reasons) reasonSet.add(r);
+    const missingContext =
+      !useContext ||
+      !this.contextPort?.forUser(userId, now) ||
+      ordered.some((c) => useContext && !this.contextPort?.forUser(c.userId, now));
+    if (missingContext) reasonSet.add("missing_context_neutral");
+
+    this.measurement?.markRadarImpression(userId);
     this.measurement?.noteDecision("RADAR_RANKING", audit.version, "rank", {
       actorId: userId,
       reasons: [...reasonSet].slice(0, 12),
-      meta: { inputCount: audit.inputCount, outputCount: ordered.length },
+      meta: {
+        inputCount: audit.inputCount,
+        outputCount: ordered.length,
+        missingContext,
+        repeatCandidates: repeatCount,
+      },
     });
     this.measurement?.noteOutcome("radar.ranked", {
       meta: { inputCount: audit.inputCount },
     });
+    if (repeatCount > 0) {
+      this.measurement?.noteOutcome("radar.repeat_exposure", {
+        meta: { repeatCandidates: repeatCount },
+      });
+    }
+    if (missingContext) {
+      this.measurement?.noteOutcome("context.fallback", { meta: { source: "radar" } });
+    }
 
     // Public payload: V1 fields only — never raw context snapshot / confidence / score
     return {

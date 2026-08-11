@@ -68,17 +68,27 @@ export class DestinyService {
     }
   }
 
-  private distanceBand(a: string, b: string): "NEAR" | "AROUND" | undefined {
+  private distanceBand(a: string, b: string): {
+    band: "NEAR" | "AROUND" | undefined;
+    geoFallback: boolean;
+  } {
     if (isGeoIntelligenceEnabled() && this.geo) {
       const pair = this.geo.forPair(a, b, this.engine.clock.now());
-      if (pair?.distanceBand === "NEAR" || pair?.distanceBand === "AROUND") return pair.distanceBand;
+      if (pair?.distanceBand === "NEAR" || pair?.distanceBand === "AROUND") {
+        return { band: pair.distanceBand, geoFallback: false };
+      }
       // Geo FAR / missing → fall through to V1 haversine for Destiny candidate scoring only
+      const la = this.engine.locations.get(a);
+      const lb = this.engine.locations.get(b);
+      if (!la || !lb) return { band: undefined, geoFallback: true };
+      const d = distanceMeters(la, lb);
+      return { band: d <= 50 ? "NEAR" : d <= 200 ? "AROUND" : undefined, geoFallback: true };
     }
     const la = this.engine.locations.get(a);
     const lb = this.engine.locations.get(b);
-    if (!la || !lb) return undefined;
+    if (!la || !lb) return { band: undefined, geoFallback: true };
     const d = distanceMeters(la, lb);
-    return d <= 50 ? "NEAR" : d <= 200 ? "AROUND" : undefined;
+    return { band: d <= 50 ? "NEAR" : d <= 200 ? "AROUND" : undefined, geoFallback: true };
   }
 
   private recentInteraction(a: string, b: string): boolean {
@@ -104,26 +114,42 @@ export class DestinyService {
 
     const now = this.engine.clock.now();
     const proposalsEnabled = isDestinyV2ProposalsEnabled();
+    const dist = this.distanceBand(userId, otherUserId);
+    const contextPort = asDestinyContextPort(this.radarContext);
+    const missingContext =
+      !contextPort?.forUser(userId, now) || !contextPort?.forUser(otherUserId, now);
     const outcome = await this.destinyV2.evaluate(
       {
         userA: userId,
         userB: otherUserId,
         v1Eligible: this.v1PairEligible(userId, otherUserId),
-        distanceBand: this.distanceBand(userId, otherUserId),
+        distanceBand: dist.band,
         recentInteraction: this.recentInteraction(userId, otherUserId),
         recentExposureCount: 0,
         now,
-        contextPort: asDestinyContextPort(this.radarContext),
+        contextPort,
       },
       { proposalsEnabled },
     );
 
+    const reasons = outcome.candidate.reasons.slice(0, 8);
+    if (missingContext && !reasons.includes("missing_context_neutral")) {
+      reasons.push("missing_context_neutral");
+    }
+
     if (!proposalsEnabled) {
       this.measurement?.noteDecision("DESTINY_V2", outcome.audit.version, "destiny_evaluate", {
         actorId: userId,
-        reasons: outcome.candidate.reasons.slice(0, 8),
-        meta: { shadow: true, decision: outcome.candidate.decision },
+        reasons,
+        meta: {
+          shadow: true,
+          decision: outcome.candidate.decision,
+          geoFallback: dist.geoFallback,
+          missingContext,
+        },
       });
+      if (missingContext) this.measurement?.noteOutcome("context.fallback", { meta: { source: "destiny" } });
+      if (dist.geoFallback) this.measurement?.noteOutcome("geo.fallback", { meta: { source: "destiny" } });
       return {
         copresence,
         promptEmitted: false,
@@ -136,10 +162,16 @@ export class DestinyService {
     if (outcome.publicProposal) {
       this.measurement?.noteDecision("DESTINY_V2", outcome.audit.version, "destiny_evaluate", {
         actorId: userId,
-        reasons: outcome.candidate.reasons.slice(0, 8),
-        meta: { decision: outcome.candidate.decision },
+        reasons,
+        meta: {
+          decision: outcome.candidate.decision,
+          geoFallback: dist.geoFallback,
+          missingContext,
+        },
       });
       this.measurement?.noteOutcome("destiny.proposed");
+      if (missingContext) this.measurement?.noteOutcome("context.fallback", { meta: { source: "destiny" } });
+      if (dist.geoFallback) this.measurement?.noteOutcome("geo.fallback", { meta: { source: "destiny" } });
     }
 
     return {
@@ -182,6 +214,10 @@ export class DestinyService {
       };
 
       if (!result.becameMutual && result.proposal.status !== "MUTUAL") {
+        this.measurement?.noteDecision("DESTINY_V2", "1.1.0", "destiny_accept", { actorId: userId });
+        this.measurement?.noteOutcome("destiny.accept", {
+          meta: { status: result.proposal.status },
+        });
         return { ok: true, proposal: publicView, connection: null };
       }
 

@@ -46,7 +46,13 @@ export class SignalsService {
       actorId: userId,
       meta: { source: body.source },
     });
-    this.measurement?.noteOutcome("signal.created", { meta: { source: body.source } });
+    const latencyMs = this.measurement?.takeTimeToSignalMs(userId);
+    this.measurement?.noteOutcome("signal.created", {
+      meta: {
+        source: body.source,
+        ...(latencyMs !== undefined ? { latencyMs } : {}),
+      },
+    });
     await this.mirror.mirrorSignal(signal.id);
     await this.mirror.mirrorSignalUsage(userId);
     this.notifications.handleAppEvent({

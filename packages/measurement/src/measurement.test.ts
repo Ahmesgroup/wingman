@@ -27,7 +27,7 @@ describe("S26 Measurement package", () => {
     }
   });
 
-  it("records decisions/outcomes and aggregates quality + safety", () => {
+  it("records decisions/outcomes and aggregates quality + safety + baselines", () => {
     delete process.env.MEASUREMENT_LEARNING_ENABLED;
     const store = new MemoryMeasurementStore();
     const eng = new MeasurementEngine(store);
@@ -43,21 +43,44 @@ describe("S26 Measurement package", () => {
       actorKey: hashActorKey("a"),
     });
     eng.recordOutcome({ kind: "radar.ranked", at: t0 });
-    eng.recordOutcome({ kind: "signal.created", at: t0 });
-    eng.recordOutcome({ kind: "signal.created", at: t0 });
+    eng.recordOutcome({ kind: "radar.repeat_exposure", at: t0, meta: { repeatCandidates: 1 } });
+    eng.recordOutcome({ kind: "context.fallback", at: t0, meta: { source: "radar" } });
+    eng.recordOutcome({ kind: "signal.created", at: t0, meta: { latencyMs: 1200 } });
+    eng.recordOutcome({ kind: "signal.created", at: t0, meta: { latencyMs: 800 } });
     eng.recordOutcome({ kind: "connection.opened", at: t1 });
+    eng.recordOutcome({ kind: "mission.entered", at: t1 });
+    eng.recordOutcome({ kind: "mission.completed", at: t1 });
+    eng.recordOutcome({ kind: "destiny.proposed", at: t0 });
+    eng.recordOutcome({ kind: "destiny.proposed", at: t0 });
+    eng.recordOutcome({ kind: "destiny.accept", at: t0 });
+    eng.recordOutcome({ kind: "destiny.mutual", at: t1 });
+    eng.recordOutcome({ kind: "geo.fallback", at: t0 });
     eng.recordOutcome({ kind: "block.issued", at: t1 });
     eng.recordOutcome({ kind: "geo.ingested", at: t0, meta: { density: "HIGH" } });
     eng.recordOutcome({ kind: "geo.ingested", at: t0, meta: { density: "LOW" } });
 
     const report = eng.report(t0, t1);
     expect(report.learningEnabled).toBe(false);
+    expect(report.measurementVersion).toBe("1.2.0");
     expect(report.quality.signalsCreated).toBe(2);
     expect(report.quality.connectionsOpened).toBe(1);
     expect(report.quality.signalToConnectionRate).toBe(0.5);
     expect(report.safety.blocksIssued).toBe(1);
     expect(report.geo.ingests).toBe(2);
     expect(report.geo.highDensityShare).toBe(0.5);
+    expect(report.baselines.missionEntered).toBe(1);
+    expect(report.baselines.missionCompleted).toBe(1);
+    expect(report.baselines.connectionToMissionRate).toBe(1);
+    expect(report.baselines.missionCompletionRate).toBe(1);
+    expect(report.baselines.timeToSignal.samples).toBe(2);
+    expect(report.baselines.timeToSignal.p50Ms).toBe(800);
+    expect(report.baselines.repeatExposures).toBe(1);
+    expect(report.baselines.repeatExposureRate).toBe(1);
+    expect(report.baselines.destinyAcceptanceRate).toBe(0.5);
+    expect(report.baselines.destinyAccepts).toBe(1);
+    expect(report.baselines.contextFallbacks).toBe(1);
+    expect(report.baselines.geoFallbacks).toBe(1);
+    expect(report.baselines.fallbackShare).toBeGreaterThan(0);
     expect(report.byEngine.RADAR_RANKING?.decisions).toBe(1);
     expect(JSON.stringify(report)).not.toMatch(/"lat"|"lng"|phone/);
   });

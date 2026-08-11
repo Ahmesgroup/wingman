@@ -73,6 +73,8 @@ describe("S26 Measurement Nest gates", () => {
       expect(report.body.quality.signalsCreated).toBeGreaterThanOrEqual(1);
       expect(report.body.safety.blocksIssued).toBeGreaterThanOrEqual(1);
       expect(report.body.byEngine.RADAR_RANKING?.decisions).toBeGreaterThanOrEqual(1);
+      expect(report.body.baselines).toBeDefined();
+      expect(report.body.baselines.timeToSignal.samples).toBeGreaterThanOrEqual(1);
       expect(JSON.stringify(report.body)).not.toMatch(/"lat"|"lng"|phone|selfie/);
       expect(report.body.flagsSeen.MEASUREMENT_LEARNING_ENABLED).toBe(false);
 
