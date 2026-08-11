@@ -490,11 +490,13 @@ Backend V1 is frozen. Advanced engines are feature-flagged and must not change V
 | **S25** Geo Intelligence | [`operations/S25_GEO_INTELLIGENCE.md`](../operations/S25_GEO_INTELLIGENCE.md) — **done** |
 | **S26** Measurement | [`operations/S26_MEASUREMENT.md`](../operations/S26_MEASUREMENT.md) — **done** |
 
-V1.1 advanced engines S21–S26 complete. Follow-ups:
+V1.1 engines S21–S26 + **S24.1** are implemented. **Locked next sequence:**
 
-1. **S24.1** Destiny proposal persistence — [`operations/S24.1_DESTINY_PROPOSAL_PERSISTENCE.md`](../operations/S24.1_DESTINY_PROPOSAL_PERSISTENCE.md) — **done**
-2. Staging credential & load-test campaign in real Redis/Postgres
-3. Auto-learning only after measurement baselines (post-S26)
+1. **Staging load certification** (infra, not product) — Redis/Postgres concurrency for S21–S24.1 (proposal store, Destiny locks, quotas, replay, PG latency)
+2. **S26 measurement baselines** (campaign with learning off) — close metric gaps listed in [`V1.1_ADVANCED_ENGINE.md`](../operations/V1.1_ADVANCED_ENGINE.md) before any learning debate
+3. **S27 Learning Engine** — decision gate only; open iff baselines show better real connections without safety/diversity loss
+
+Do not start auto-learning without (1) + (2).
 
 ---
 

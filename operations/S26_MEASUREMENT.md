@@ -78,4 +78,4 @@ Verified by package tests + `apps/api/src/s26.measurement.test.ts`:
 
 ## Next
 
-→ **Done:** [`S24.1_DESTINY_PROPOSAL_PERSISTENCE.md`](./S24.1_DESTINY_PROPOSAL_PERSISTENCE.md). Optional: staging credential campaign, load tests on Redis/Postgres.
+**Locked:** staging load certification (Redis/Postgres) → S26 baseline campaign (learning off) → decision on S27. See [`V1.1_ADVANCED_ENGINE.md`](./V1.1_ADVANCED_ENGINE.md). No auto-learning until baselines close the metric gaps listed there.
