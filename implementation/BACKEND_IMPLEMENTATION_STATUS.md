@@ -490,13 +490,15 @@ Backend V1 is frozen. Advanced engines are feature-flagged and must not change V
 | **S25** Geo Intelligence | [`operations/S25_GEO_INTELLIGENCE.md`](../operations/S25_GEO_INTELLIGENCE.md) — **done** |
 | **S26** Measurement | [`operations/S26_MEASUREMENT.md`](../operations/S26_MEASUREMENT.md) — **done** |
 
-V1.1 engines S21–S26 + **S24.1** are implemented. **Locked next sequence:**
+V1.1 engines S21–S26 + **S24.1** are implemented. Staging load is **GO**.
 
-1. **Staging load certification** (infra, not product) — [`operations/STAGING_LOAD_CERTIFICATION.md`](../operations/STAGING_LOAD_CERTIFICATION.md) — **GO** (2026-08-11)
-2. **S26 measurement baselines** (campaign with learning off) — metric suite complete in [`S26_MEASUREMENT.md`](../operations/S26_MEASUREMENT.md) v1.2.0; next is **collect** real data then analyse
-3. **S27 Learning Engine** — decision gate only; open iff baselines show better real connections without safety/diversity loss
+**Locked operating mode** — see [`operations/PROJECT_STATE.md`](../operations/PROJECT_STATE.md):
 
-Do not start auto-learning without (1) + (2).
+1. **`MEASUREMENT_ENABLED=true`** · **`MEASUREMENT_LEARNING_ENABLED=false`** — collect real baseline (quality / safety / diversity / contextual resilience)
+2. **S26 Review** — evidence gate (not a new engine): compare V1 vs V1.1; no single North Star metric
+3. Then choose: **A)** no change · **B)** manual S21–S25 policy tune · **C)** S27 Adaptive Engine only if justified
+
+Do **not** open S27 by default. The next advantage is knowing whether existing engines improve human encounters.
 
 ---
 

@@ -191,6 +191,7 @@ Start with `README.md`, then `docs/PRD.md`, `architecture/STATE_MACHINES.md`, `d
 - [`operations/S24.1_DESTINY_PROPOSAL_PERSISTENCE.md`](operations/S24.1_DESTINY_PROPOSAL_PERSISTENCE.md) — Destiny proposal Redis/shared store
 - [`operations/S25_GEO_INTELLIGENCE.md`](operations/S25_GEO_INTELLIGENCE.md) — Geo Intelligence (ephemeral spatial relevance)
 - [`operations/S26_MEASUREMENT.md`](operations/S26_MEASUREMENT.md) — Measurement & Engine Audit (no auto-learning)
+- [`operations/PROJECT_STATE.md`](operations/PROJECT_STATE.md) — locked board: baseline collection → S26 Review
 - [`operations/STAGING_LOAD_CERTIFICATION.md`](operations/STAGING_LOAD_CERTIFICATION.md) — Staging Redis/Postgres load cert (infra)
 - [`apps/BACKEND_README.md`](apps/BACKEND_README.md) — developer quick start for the executable API
 - [`operations/PRODUCTION_READINESS.md`](operations/PRODUCTION_READINESS.md) — S12–S20 readiness gates

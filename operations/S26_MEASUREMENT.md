@@ -108,4 +108,8 @@ Verified by package tests + `apps/api/src/s26.measurement.test.ts`:
 
 ## Next
 
-**Collect baseline** with `MEASUREMENT_ENABLED=true` and learning off → analyse quality / safety / diversity → **only then** decide if S27 exists.
+**NOW:** real baseline collection (`MEASUREMENT_ENABLED=true`, learning off) across quality / safety / diversity / contextual resilience — no single North Star.
+
+**THEN:** **S26 Review** (evidence gate) → A no change · B manual policy tune · C S27 Adaptive only if justified.
+
+Board: [`PROJECT_STATE.md`](./PROJECT_STATE.md).
