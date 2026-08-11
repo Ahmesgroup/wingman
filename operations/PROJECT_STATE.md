@@ -1,5 +1,6 @@
 # Project state — locked 2026-08-11
 
+**Reference commit:** `ccbb7a3`  
 **Related:** [`V1.1_ADVANCED_ENGINE.md`](./V1.1_ADVANCED_ENGINE.md), [`S26_MEASUREMENT.md`](./S26_MEASUREMENT.md), [`STAGING_LOAD_CERTIFICATION.md`](./STAGING_LOAD_CERTIFICATION.md)
 
 ```text
@@ -13,9 +14,21 @@ S25       Geo Intelligence          DONE
 S26       Measurement v1.2.0        DONE (instrumentation)
 LEARNING                            OFF
 MEASUREMENT                         ON  (collect real traffic)
+ENGINE SPRINTS                      STOPPED during baseline
 NEXT                                REAL BASELINE COLLECTION
 THEN                                S26 Review (not automatic S27)
 ```
+
+## Freeze during baseline collection
+
+Until **S26 Review** closes with an A/B/C decision:
+
+- Do **not** open new advanced-engine sprints (no S27 by habit, no parallel “intelligence” packages).
+- Do **not** turn `MEASUREMENT_LEARNING_ENABLED` on.
+- Do **not** feed measurement outputs back into ranking / Destiny / geo / anti-abuse.
+- Keep `MEASUREMENT_ENABLED=true` so the baseline stays continuous and **uncontaminated** by mid-flight engine changes.
+
+Bugfixes / infra / ops that do not change V1.1 decision logic remain allowed when objectified.
 
 ## Operating mode now
 
@@ -60,4 +73,4 @@ Then choose **exactly one**:
 
 ## Principle
 
-Wingman now has enough engines. The next advantage is knowing whether they **improve real human encounters** — not shipping another engine by habit.
+Wingman now has enough engines. The next advantage is knowing whether they **improve real human encounters** — not shipping another engine by habit. Stop engine sprints here; observe first.
