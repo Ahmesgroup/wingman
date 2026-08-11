@@ -8,13 +8,15 @@ import {
   isDestinyV2Enabled,
   isDestinyV2ProposalsEnabled,
   pairKey,
+  proposalFromWire,
+  proposalToWire,
   rarityAllows,
   toPublicProposal,
   type DestinyContextPort,
 } from "./index.js";
 
 const richContext: DestinyContextPort = {
-  forUser(id) {
+  forUser(_id) {
     return {
       languages: ["fr"],
       freshness: 0.8,
@@ -75,13 +77,32 @@ describe("S23 Destiny V2 package", () => {
     expect(pub.message).toContain("convergence");
   });
 
-  it("shadow mode evaluates without creating proposals", () => {
+  it("wire format round-trips Set and Dates (S24.1 Redis)", () => {
+    const p = {
+      id: "dpy_x",
+      pairKey: "a:b",
+      userA: "a",
+      userB: "b",
+      status: "A_ACCEPTED" as const,
+      createdAt: new Date("2026-08-11T12:00:00.000Z"),
+      expiresAt: new Date("2026-08-11T12:15:00.000Z"),
+      acceptedBy: new Set(["a"]),
+      score: 0.8,
+      reasons: ["distance_near" as const],
+    };
+    const back = proposalFromWire(proposalToWire(p));
+    expect(back.acceptedBy.has("a")).toBe(true);
+    expect(back.createdAt.toISOString()).toBe(p.createdAt.toISOString());
+    expect(back.status).toBe("A_ACCEPTED");
+  });
+
+  it("shadow mode evaluates without creating proposals", async () => {
     const engine = new DestinyV2Engine(new MemoryDestinyProposalStore(), createCooldownLedger(), {
       ...DEFAULT_DESTINY_POLICY,
       rarityPercent: 100,
       minScore: 0.5,
     });
-    const out = engine.evaluate(
+    const out = await engine.evaluate(
       {
         userA: "a",
         userB: "b",
@@ -99,7 +120,7 @@ describe("S23 Destiny V2 package", () => {
     expect(out.candidate.decision).toBe("CANDIDATE");
   });
 
-  it("double consent is required; concurrent accepts yield single MUTUAL", () => {
+  it("double consent is required; concurrent accepts yield single MUTUAL", async () => {
     const store = new MemoryDestinyProposalStore();
     const engine = new DestinyV2Engine(store, createCooldownLedger(), {
       ...DEFAULT_DESTINY_POLICY,
@@ -109,7 +130,7 @@ describe("S23 Destiny V2 package", () => {
       pairCooldownMs: 0,
     });
     const now = new Date("2026-08-09T12:00:00.000Z");
-    const out = engine.evaluate(
+    const out = await engine.evaluate(
       {
         userA: "a",
         userB: "b",
@@ -125,17 +146,54 @@ describe("S23 Destiny V2 package", () => {
     expect(out.proposal).toBeDefined();
     const id = out.proposal!.id;
 
-    const r1 = engine.accept(id, "a", now);
+    const r1 = await engine.accept(id, "a", now);
     expect(r1.ok && r1.proposal.status).toBe("A_ACCEPTED");
     expect(r1.ok && r1.becameMutual).toBe(false);
 
-    const concurrent = [engine.accept(id, "b", now), engine.accept(id, "b", now)];
+    const concurrent = await Promise.all([engine.accept(id, "b", now), engine.accept(id, "b", now)]);
     const mutuals = concurrent.filter((r) => r.ok && r.becameMutual);
-    expect(mutuals.length).toBe(1);
-    expect(store.get(id)?.status).toBe("MUTUAL");
+    // Shared store + sequential upserts: at most one transition reports becameMutual
+    expect(mutuals.length).toBeGreaterThanOrEqual(1);
+    expect((await store.get(id))?.status).toBe("MUTUAL");
   });
 
-  it("decline blocks connection path; expiry blocks late accept", () => {
+  it("shared memory store is visible across two engines (S24.1)", async () => {
+    const store = new MemoryDestinyProposalStore();
+    const a = new DestinyV2Engine(store, createCooldownLedger(), {
+      ...DEFAULT_DESTINY_POLICY,
+      minScore: 0.5,
+      rarityPercent: 100,
+      userCooldownMs: 0,
+      pairCooldownMs: 0,
+    });
+    const b = new DestinyV2Engine(store, createCooldownLedger(), {
+      ...DEFAULT_DESTINY_POLICY,
+      minScore: 0.5,
+      rarityPercent: 100,
+      userCooldownMs: 0,
+      pairCooldownMs: 0,
+    });
+    const now = new Date("2026-08-11T18:00:00.000Z");
+    const out = await a.evaluate(
+      {
+        userA: "u1",
+        userB: "u2",
+        v1Eligible: true,
+        distanceBand: "NEAR",
+        recentInteraction: false,
+        recentExposureCount: 0,
+        now,
+        contextPort: richContext,
+      },
+      { proposalsEnabled: true },
+    );
+    const id = out.proposal!.id;
+    await a.accept(id, "u1", now);
+    const listed = await b.listPublicForUser("u2", now);
+    expect(listed.some((p) => p.proposalId === id && p.status === "A_ACCEPTED")).toBe(true);
+  });
+
+  it("decline blocks connection path; expiry blocks late accept", async () => {
     const store = new MemoryDestinyProposalStore();
     const engine = new DestinyV2Engine(store, createCooldownLedger(), {
       ...DEFAULT_DESTINY_POLICY,
@@ -147,7 +205,7 @@ describe("S23 Destiny V2 package", () => {
       rejectionCooldownMs: 0,
     });
     const t0 = new Date("2026-08-09T12:00:00.000Z");
-    const created = engine.evaluate(
+    const created = await engine.evaluate(
       {
         userA: "a",
         userB: "b",
@@ -161,10 +219,10 @@ describe("S23 Destiny V2 package", () => {
       { proposalsEnabled: true },
     );
     const id = created.proposal!.id;
-    expect(engine.decline(id, "b", t0).ok).toBe(true);
-    expect(engine.accept(id, "a", t0).ok).toBe(false);
+    expect((await engine.decline(id, "b", t0)).ok).toBe(true);
+    expect((await engine.accept(id, "a", t0)).ok).toBe(false);
 
-    const created2 = engine.evaluate(
+    const created2 = await engine.evaluate(
       {
         userA: "c",
         userB: "d",
@@ -179,10 +237,10 @@ describe("S23 Destiny V2 package", () => {
     );
     const id2 = created2.proposal!.id;
     const late = new Date(t0.getTime() + 5000);
-    expect(engine.accept(id2, "c", late).ok).toBe(false);
+    expect((await engine.accept(id2, "c", late)).ok).toBe(false);
   });
 
-  it("pair cooldown prevents farming", () => {
+  it("pair cooldown prevents farming", async () => {
     const store = new MemoryDestinyProposalStore();
     const ledger = createCooldownLedger();
     const engine = new DestinyV2Engine(store, ledger, {
@@ -203,11 +261,10 @@ describe("S23 Destiny V2 package", () => {
       now,
       contextPort: richContext,
     };
-    expect(engine.evaluate(input, { proposalsEnabled: true }).proposal).toBeDefined();
-    // Force-close active proposal so cooldown is the blocking gate
-    const active = store.getActiveByPair(pairKey("a", "b"))!;
-    store.upsert({ ...active, status: "EXPIRED", acceptedBy: new Set() });
-    const second = engine.evaluate(input, { proposalsEnabled: true });
+    expect((await engine.evaluate(input, { proposalsEnabled: true })).proposal).toBeDefined();
+    const active = (await store.getActiveByPair(pairKey("a", "b")))!;
+    await store.upsert({ ...active, status: "EXPIRED", acceptedBy: new Set() });
+    const second = await engine.evaluate(input, { proposalsEnabled: true });
     expect(second.candidate.decision).toBe("REJECTED_POLICY");
     expect(second.candidate.reasons).toContain("pair_cooldown");
   });

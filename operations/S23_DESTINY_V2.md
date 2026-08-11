@@ -91,9 +91,9 @@ Score, reasons, distance, language, and context stay server/audit — never on p
 - `@wingman/domain` must **not** import `@wingman/destiny-v2`.
 - No `DestinyConnectionService` duplicating connection rules.
 
-## Persistence note (S23)
+## Persistence note (S23 → S24.1)
 
-Proposal store is **in-memory** for this sprint. Valid proposals survive within a process; durable multi-instance proposal storage is a follow-up. Concurrent accept uses ephemeral locks (`destiny-accept:{id}`) so multi-instance Nest does not double-handoff to Connection.
+Proposal store is multi-instance capable via `DestinyProposalStore` (memory or Redis). See [`S24.1_DESTINY_PROPOSAL_PERSISTENCE.md`](./S24.1_DESTINY_PROPOSAL_PERSISTENCE.md). Concurrent accept uses ephemeral locks (`destiny-accept:{id}`) so multi-instance Nest does not double-handoff to Connection.
 
 ## Gates
 
@@ -110,4 +110,4 @@ Verified by `packages/destiny-v2` unit tests and `apps/api/src/s23.destiny-v2.te
 
 ## Next
 
-**S24 Anti-Abuse Engine** — observe Radar / Signal / Destiny abuse cross-cutting without polluting their business rules. See [`S24_ANTI_ABUSE.md`](./S24_ANTI_ABUSE.md).
+→ **Done:** [`S24.1_DESTINY_PROPOSAL_PERSISTENCE.md`](./S24.1_DESTINY_PROPOSAL_PERSISTENCE.md). Optional: staging Redis/Postgres load tests; auto-learning after S26 baselines.

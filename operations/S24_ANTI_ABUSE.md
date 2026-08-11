@@ -79,7 +79,7 @@ Abuse events never store exact `lat`/`lng`, phone numbers, or message bodies. OT
 
 S24 uses an in-process / injectable `MemoryAbuseStateStore`. Multi-instance coherence is proven by **sharing the same store** across instances (tests). Redis-backed durable sanctions are a follow-up.
 
-**Out of scope:** Destiny proposal persistence remains a separate follow-up (**S24.1**), not mixed into anti-abuse.
+**Out of scope (this sprint):** Destiny proposal persistence was deferred to **S24.1** (now done — see [`S24.1_DESTINY_PROPOSAL_PERSISTENCE.md`](./S24.1_DESTINY_PROPOSAL_PERSISTENCE.md)).
 
 ## Gates
 
@@ -98,4 +98,4 @@ Verified by `packages/anti-abuse` unit tests and `apps/api/src/s24.anti-abuse.te
 ## Next
 
 **S25 Geo Intelligence** — smarter proximity without exposing exact location. See [`S25_GEO_INTELLIGENCE.md`](./S25_GEO_INTELLIGENCE.md).  
-Optional: **S24.1 Destiny Proposal Persistence**.
+→ **Done:** [`S24.1_DESTINY_PROPOSAL_PERSISTENCE.md`](./S24.1_DESTINY_PROPOSAL_PERSISTENCE.md).

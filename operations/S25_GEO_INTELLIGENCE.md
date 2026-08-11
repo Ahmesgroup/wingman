@@ -104,7 +104,7 @@ Verified by `packages/geo-intelligence` and `apps/api/src/s25.geo-intelligence.t
 
 ## Out of scope
 
-**S24.1 Destiny Proposal Persistence** remains a separate follow-up.
+→ **Done:** [`S24.1_DESTINY_PROPOSAL_PERSISTENCE.md`](./S24.1_DESTINY_PROPOSAL_PERSISTENCE.md).
 
 ## Next
 

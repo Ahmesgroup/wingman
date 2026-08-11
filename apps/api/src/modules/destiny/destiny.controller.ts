@@ -88,7 +88,7 @@ export class DestinyService {
     );
   }
 
-  copresence(userId: string, otherUserId: string) {
+  async copresence(userId: string, otherUserId: string) {
     this.antiAbuse?.assertAllowed(userId, "DESTINY_ACTION");
     // Always record copresence fact in V1 store (DPIA / hydrate)
     const copresence = this.engine.noteCopresence(userId, otherUserId);
@@ -104,7 +104,7 @@ export class DestinyService {
 
     const now = this.engine.clock.now();
     const proposalsEnabled = isDestinyV2ProposalsEnabled();
-    const outcome = this.destinyV2.evaluate(
+    const outcome = await this.destinyV2.evaluate(
       {
         userA: userId,
         userB: otherUserId,
@@ -149,11 +149,11 @@ export class DestinyService {
     };
   }
 
-  listProposals(userId: string): { proposals: DestinyProposalPublic[] } {
+  async listProposals(userId: string): Promise<{ proposals: DestinyProposalPublic[] }> {
     if (!isDestinyV2Enabled() || !isDestinyV2ProposalsEnabled() || !this.destinyV2) {
       return { proposals: [] };
     }
-    return { proposals: this.destinyV2.listPublicForUser(userId, this.engine.clock.now()) };
+    return { proposals: await this.destinyV2.listPublicForUser(userId, this.engine.clock.now()) };
   }
 
   async acceptProposal(userId: string, proposalId: string) {
@@ -166,7 +166,7 @@ export class DestinyService {
     const owner = `api:${process.pid}:${userId}`;
     const got = await this.ephemeral.acquireLock(lockKey, owner, 15);
     try {
-      const result = this.destinyV2.accept(proposalId, userId, now);
+      const result = await this.destinyV2.accept(proposalId, userId, now);
       if (!result.ok) {
         return { ok: false, error: result.error };
       }
@@ -181,24 +181,55 @@ export class DestinyService {
         expiresAt: result.proposal.expiresAt.toISOString(),
       };
 
-      if (!result.becameMutual) {
+      if (!result.becameMutual && result.proposal.status !== "MUTUAL") {
         return { ok: true, proposal: publicView, connection: null };
+      }
+
+      // Shared store may already have connection from peer handoff (S24.1)
+      let latest = (await this.destinyV2.getProposal(proposalId)) ?? result.proposal;
+      if (latest.connectionId) {
+        const existing = this.engine.connections.get(latest.connectionId);
+        return {
+          ok: true,
+          proposal: { ...publicView, status: "MUTUAL" as const },
+          connection: existing
+            ? { id: existing.id, state: existing.state }
+            : { id: latest.connectionId, state: "WAITING_FOR_INITIATOR_SELFIE" },
+        };
+      }
+
+      // Only lock holder creates V1 Signal→Connection (prevents double handoff)
+      if (!got) {
+        for (let i = 0; i < 20; i++) {
+          await new Promise((r) => setTimeout(r, 25));
+          latest = (await this.destinyV2.getProposal(proposalId)) ?? latest;
+          if (latest.connectionId) {
+            const existing = this.engine.connections.get(latest.connectionId);
+            return {
+              ok: true,
+              proposal: { ...publicView, status: "MUTUAL" as const },
+              connection: existing
+                ? { id: existing.id, state: existing.state }
+                : { id: latest.connectionId, state: "WAITING_FOR_INITIATOR_SELFIE" },
+            };
+          }
+        }
+        return { ok: true, proposal: { ...publicView, status: "MUTUAL" as const }, connection: null };
       }
 
       this.measurement?.noteDecision("DESTINY_V2", "1.1.0", "destiny_mutual", { actorId: userId });
       this.measurement?.noteOutcome("destiny.mutual");
 
-      // Handoff to existing V1 Signal → Connection path (no parallel protocol)
-      const initiator = result.proposal.userA;
-      const recipient = result.proposal.userB;
+      const initiator = latest.userA;
+      const recipient = latest.userB;
       const { signal } = await this.signals.create(
         initiator,
         { receiverId: recipient, source: "DESTINY" },
-        `destiny:${result.proposal.id}`,
+        `destiny:${latest.id}`,
       );
       await this.signals.open(signal.id, recipient);
       const connection = await this.signals.accept(signal.id, recipient);
-      this.destinyV2.attachConnection(result.proposal.id, signal.id, connection.id);
+      await this.destinyV2.attachConnection(latest.id, signal.id, connection.id);
       return {
         ok: true,
         proposal: { ...publicView, status: "MUTUAL" as const },
@@ -209,12 +240,12 @@ export class DestinyService {
     }
   }
 
-  declineProposal(userId: string, proposalId: string) {
+  async declineProposal(userId: string, proposalId: string) {
     if (!isDestinyV2Enabled() || !isDestinyV2ProposalsEnabled() || !this.destinyV2) {
       throw new UnauthorizedException({ error: { code: "DESTINY_V2_OFF", message: "Destiny V2 proposals disabled" } });
     }
     this.antiAbuse?.assertAllowed(userId, "DESTINY_ACTION");
-    const result = this.destinyV2.decline(proposalId, userId, this.engine.clock.now());
+    const result = await this.destinyV2.decline(proposalId, userId, this.engine.clock.now());
     if (!result.ok) return { ok: false, error: result.error };
     this.antiAbuse?.note("destiny.decline", userId, {
       eventId: `destiny-decline:${proposalId}:${userId}`,
@@ -231,9 +262,9 @@ export class DestinyService {
     };
   }
 
-  invalidateForBlock(blockerId: string, blockedId: string): void {
+  async invalidateForBlock(blockerId: string, blockedId: string): Promise<void> {
     if (!this.destinyV2) return;
-    this.destinyV2.invalidatePair(pairKey(blockerId, blockedId), this.engine.clock.now());
+    await this.destinyV2.invalidatePair(pairKey(blockerId, blockedId), this.engine.clock.now());
   }
 }
 

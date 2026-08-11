@@ -26,7 +26,7 @@ export class SafetyService {
 
   async block(actorId: string, targetId: string) {
     const block = this.engine.blockUser(actorId, targetId);
-    this.destiny?.invalidateForBlock(actorId, targetId);
+    await this.destiny?.invalidateForBlock(actorId, targetId);
     this.antiAbuse?.noteBlock(actorId, targetId);
     this.measurement?.noteDecision("CORE_SAFETY", "1.0.0", "block_issued", { actorId });
     this.measurement?.noteOutcome("block.issued");

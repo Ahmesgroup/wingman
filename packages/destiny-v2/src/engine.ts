@@ -51,6 +51,7 @@ function expireIfNeeded(p: DestinyProposal, now: Date): DestinyProposal {
 /**
  * Destiny V2 facade — candidate + policy + consent.
  * Never creates connections itself; caller hands MUTUAL to V1 Signal/Connection services.
+ * Store I/O is async so Redis and memory backends share one API (S24.1).
  */
 export class DestinyV2Engine {
   constructor(
@@ -59,12 +60,11 @@ export class DestinyV2Engine {
     private readonly policy: DestinyPolicyConfig = DEFAULT_DESTINY_POLICY,
   ) {}
 
-  evaluate(input: DestinyPairInput, opts: EvaluateOptions): EvaluateOutcome {
+  async evaluate(input: DestinyPairInput, opts: EvaluateOptions): Promise<EvaluateOutcome> {
     const now = input.now;
-    // Expire stale open proposals for this pair/users
-    for (const p of this.store.listByUser(input.userA)) {
+    for (const p of await this.store.listByUser(input.userA)) {
       const next = expireIfNeeded(p, now);
-      if (next.status !== p.status) this.store.upsert(next);
+      if (next.status !== p.status) await this.store.upsert(next);
     }
 
     const raw = evaluateDestinyCandidate(input);
@@ -73,9 +73,10 @@ export class DestinyV2Engine {
         this.isUserCooling(input.userA, now) || this.isUserCooling(input.userB, now),
       pairOnCooldown: this.isPairCooling(raw.pairKey, now),
       rejectionOnCooldown: this.isRejectionCooling(raw.pairKey, now),
-      hasActiveProposal: Boolean(this.store.getActiveByPair(raw.pairKey)) ||
-        this.store.listActiveByUser(input.userA).length >= this.policy.maxSimultaneousProposalsPerUser ||
-        this.store.listActiveByUser(input.userB).length >= this.policy.maxSimultaneousProposalsPerUser,
+      hasActiveProposal:
+        Boolean(await this.store.getActiveByPair(raw.pairKey)) ||
+        (await this.store.listActiveByUser(input.userA)).length >= this.policy.maxSimultaneousProposalsPerUser ||
+        (await this.store.listActiveByUser(input.userB)).length >= this.policy.maxSimultaneousProposalsPerUser,
     };
 
     const candidate = applyDestinyPolicy(raw, gates, now, opts.policy ?? this.policy);
@@ -91,12 +92,11 @@ export class DestinyV2Engine {
     }
 
     if (!opts.proposalsEnabled) {
-      // Shadow: compute only
       return { candidate, shadow: true, audit };
     }
 
     const proposal = this.createProposal(candidate, now);
-    this.store.upsert(proposal);
+    await this.store.upsert(proposal);
     this.cooldowns.lastUserProposalAt.set(input.userA, now.getTime());
     this.cooldowns.lastUserProposalAt.set(input.userB, now.getTime());
     this.cooldowns.lastPairProposalAt.set(candidate.pairKey, now.getTime());
@@ -126,36 +126,37 @@ export class DestinyV2Engine {
     };
   }
 
-  getPublicProposal(id: string, userId: string, now: Date): DestinyProposalPublic | undefined {
-    let p = this.store.get(id);
+  async getPublicProposal(id: string, userId: string, now: Date): Promise<DestinyProposalPublic | undefined> {
+    let p = await this.store.get(id);
     if (!p) return undefined;
     if (p.userA !== userId && p.userB !== userId) return undefined;
     p = expireIfNeeded(p, now);
-    if (p.status === "EXPIRED") this.store.upsert(p);
+    if (p.status === "EXPIRED") await this.store.upsert(p);
     return toPublicProposal(p);
   }
 
-  listPublicForUser(userId: string, now: Date): DestinyProposalPublic[] {
-    return this.store
-      .listByUser(userId)
-      .map((p) => {
-        const next = expireIfNeeded(p, now);
-        if (next.status !== p.status) this.store.upsert(next);
-        return next;
-      })
+  async listPublicForUser(userId: string, now: Date): Promise<DestinyProposalPublic[]> {
+    const listed = await this.store.listByUser(userId);
+    const nexts: DestinyProposal[] = [];
+    for (const p of listed) {
+      const next = expireIfNeeded(p, now);
+      if (next.status !== p.status) await this.store.upsert(next);
+      nexts.push(next);
+    }
+    return nexts
       .filter((p) => isOpenStatus(p.status) || p.status === "MUTUAL")
       .map(toPublicProposal);
   }
 
   /**
-   * Atomic consent. Concurrent accepts converge to a single MUTUAL.
+   * Atomic consent against the shared store. Concurrent accepts converge to a single MUTUAL.
    */
-  accept(proposalId: string, userId: string, now: Date): ConsentResult {
-    let p = this.store.get(proposalId);
+  async accept(proposalId: string, userId: string, now: Date): Promise<ConsentResult> {
+    let p = await this.store.get(proposalId);
     if (!p) return { ok: false, error: "not_found" };
     p = expireIfNeeded(p, now);
     if (p.status === "EXPIRED") {
-      this.store.upsert(p);
+      await this.store.upsert(p);
       return { ok: false, error: "expired" };
     }
     if (p.status === "DECLINED" || p.status === "INVALIDATED") {
@@ -182,16 +183,16 @@ export class DestinyV2Engine {
     }
 
     const next: DestinyProposal = { ...p, status, acceptedBy };
-    this.store.upsert(next);
+    await this.store.upsert(next);
     return { ok: true, proposal: next, becameMutual: both };
   }
 
-  decline(proposalId: string, userId: string, now: Date): ConsentResult {
-    let p = this.store.get(proposalId);
+  async decline(proposalId: string, userId: string, now: Date): Promise<ConsentResult> {
+    let p = await this.store.get(proposalId);
     if (!p) return { ok: false, error: "not_found" };
     p = expireIfNeeded(p, now);
     if (p.status === "EXPIRED") {
-      this.store.upsert(p);
+      await this.store.upsert(p);
       return { ok: false, error: "expired" };
     }
     if (p.status === "MUTUAL") return { ok: false, error: "already_mutual" };
@@ -199,24 +200,28 @@ export class DestinyV2Engine {
     if (!isOpenStatus(p.status)) return { ok: false, error: "not_open" };
 
     const next: DestinyProposal = { ...p, status: "DECLINED", acceptedBy: new Set(p.acceptedBy) };
-    this.store.upsert(next);
+    await this.store.upsert(next);
     this.cooldowns.lastPairRejectionAt.set(p.pairKey, now.getTime());
     return { ok: true, proposal: next, becameMutual: false };
   }
 
-  invalidatePair(pairKeyStr: string, now: Date): void {
+  async invalidatePair(pairKeyStr: string, now: Date): Promise<void> {
     void now;
-    for (const p of this.store.listAll()) {
+    for (const p of await this.store.listAll()) {
       if (p.pairKey === pairKeyStr && isOpenStatus(p.status)) {
-        this.store.upsert({ ...p, status: "INVALIDATED", acceptedBy: new Set(p.acceptedBy) });
+        await this.store.upsert({ ...p, status: "INVALIDATED", acceptedBy: new Set(p.acceptedBy) });
       }
     }
   }
 
-  attachConnection(proposalId: string, signalId: string, connectionId: string): void {
-    const p = this.store.get(proposalId);
+  async attachConnection(proposalId: string, signalId: string, connectionId: string): Promise<void> {
+    const p = await this.store.get(proposalId);
     if (!p) return;
-    this.store.upsert({ ...p, signalId, connectionId, acceptedBy: new Set(p.acceptedBy) });
+    await this.store.upsert({ ...p, signalId, connectionId, acceptedBy: new Set(p.acceptedBy) });
+  }
+
+  async getProposal(proposalId: string): Promise<DestinyProposal | undefined> {
+    return this.store.get(proposalId);
   }
 
   private isUserCooling(userId: string, now: Date): boolean {

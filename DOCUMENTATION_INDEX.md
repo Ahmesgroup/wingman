@@ -188,6 +188,7 @@ Start with `README.md`, then `docs/PRD.md`, `architecture/STATE_MACHINES.md`, `d
 - [`operations/S22_CONTEXT_ENGINE.md`](operations/S22_CONTEXT_ENGINE.md) — Context Engine (normalized ephemeral context)
 - [`operations/S23_DESTINY_V2.md`](operations/S23_DESTINY_V2.md) — Destiny V2 (rare proposals + mutual consent)
 - [`operations/S24_ANTI_ABUSE.md`](operations/S24_ANTI_ABUSE.md) — Anti-Abuse Engine (observe → graduated policy)
+- [`operations/S24.1_DESTINY_PROPOSAL_PERSISTENCE.md`](operations/S24.1_DESTINY_PROPOSAL_PERSISTENCE.md) — Destiny proposal Redis/shared store
 - [`operations/S25_GEO_INTELLIGENCE.md`](operations/S25_GEO_INTELLIGENCE.md) — Geo Intelligence (ephemeral spatial relevance)
 - [`operations/S26_MEASUREMENT.md`](operations/S26_MEASUREMENT.md) — Measurement & Engine Audit (no auto-learning)
 - [`apps/BACKEND_README.md`](apps/BACKEND_README.md) — developer quick start for the executable API

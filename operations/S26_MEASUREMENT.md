@@ -78,4 +78,4 @@ Verified by package tests + `apps/api/src/s26.measurement.test.ts`:
 
 ## Next
 
-V1.1 advanced engines S21–S26 are complete. Optional follow-ups: **S24.1 Destiny Proposal Persistence**, staging credential campaign, load tests on Redis/Postgres.
+→ **Done:** [`S24.1_DESTINY_PROPOSAL_PERSISTENCE.md`](./S24.1_DESTINY_PROPOSAL_PERSISTENCE.md). Optional: staging credential campaign, load tests on Redis/Postgres.

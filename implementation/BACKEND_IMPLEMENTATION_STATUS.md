@@ -490,9 +490,9 @@ Backend V1 is frozen. Advanced engines are feature-flagged and must not change V
 | **S25** Geo Intelligence | [`operations/S25_GEO_INTELLIGENCE.md`](../operations/S25_GEO_INTELLIGENCE.md) — **done** |
 | **S26** Measurement | [`operations/S26_MEASUREMENT.md`](../operations/S26_MEASUREMENT.md) — **done** |
 
-V1.1 advanced engines S21–S26 complete. Optional follow-ups:
+V1.1 advanced engines S21–S26 complete. Follow-ups:
 
-1. **S24.1** Destiny proposal persistence
+1. **S24.1** Destiny proposal persistence — [`operations/S24.1_DESTINY_PROPOSAL_PERSISTENCE.md`](../operations/S24.1_DESTINY_PROPOSAL_PERSISTENCE.md) — **done**
 2. Staging credential & load-test campaign in real Redis/Postgres
 3. Auto-learning only after measurement baselines (post-S26)
 

@@ -1,44 +1,48 @@
 import type { DestinyProposal, DestinyProposalStatus } from "./types.js";
 
+/**
+ * Multi-instance proposal persistence (S24.1).
+ * Implementations may be process-local (memory) or Redis-backed.
+ */
 export interface DestinyProposalStore {
-  get(id: string): DestinyProposal | undefined;
-  getActiveByPair(pairKey: string): DestinyProposal | undefined;
-  listByUser(userId: string): DestinyProposal[];
-  listActiveByUser(userId: string): DestinyProposal[];
-  upsert(p: DestinyProposal): void;
-  listAll(): DestinyProposal[];
+  get(id: string): Promise<DestinyProposal | undefined>;
+  getActiveByPair(pairKey: string): Promise<DestinyProposal | undefined>;
+  listByUser(userId: string): Promise<DestinyProposal[]>;
+  listActiveByUser(userId: string): Promise<DestinyProposal[]>;
+  upsert(p: DestinyProposal): Promise<void>;
+  listAll(): Promise<DestinyProposal[]>;
 }
 
 export class MemoryDestinyProposalStore implements DestinyProposalStore {
   private byId = new Map<string, DestinyProposal>();
 
-  get(id: string): DestinyProposal | undefined {
+  async get(id: string): Promise<DestinyProposal | undefined> {
     return this.byId.get(id);
   }
 
-  getActiveByPair(pairKey: string): DestinyProposal | undefined {
+  async getActiveByPair(pairKey: string): Promise<DestinyProposal | undefined> {
     for (const p of this.byId.values()) {
       if (p.pairKey === pairKey && isOpenStatus(p.status)) return p;
     }
     return undefined;
   }
 
-  listByUser(userId: string): DestinyProposal[] {
+  async listByUser(userId: string): Promise<DestinyProposal[]> {
     return [...this.byId.values()].filter((p) => p.userA === userId || p.userB === userId);
   }
 
-  listActiveByUser(userId: string): DestinyProposal[] {
-    return this.listByUser(userId).filter((p) => isOpenStatus(p.status));
+  async listActiveByUser(userId: string): Promise<DestinyProposal[]> {
+    return (await this.listByUser(userId)).filter((p) => isOpenStatus(p.status));
   }
 
-  upsert(p: DestinyProposal): void {
+  async upsert(p: DestinyProposal): Promise<void> {
     this.byId.set(p.id, {
       ...p,
       acceptedBy: new Set(p.acceptedBy),
     });
   }
 
-  listAll(): DestinyProposal[] {
+  async listAll(): Promise<DestinyProposal[]> {
     return [...this.byId.values()].map((p) => ({ ...p, acceptedBy: new Set(p.acceptedBy) }));
   }
 }
@@ -58,5 +62,55 @@ export function createCooldownLedger(): DestinyCooldownLedger {
     lastUserProposalAt: new Map(),
     lastPairProposalAt: new Map(),
     lastPairRejectionAt: new Map(),
+  };
+}
+
+/** JSON wire format for Redis (Set → array, Date → ISO). */
+export interface DestinyProposalWire {
+  id: string;
+  pairKey: string;
+  userA: string;
+  userB: string;
+  status: DestinyProposalStatus;
+  createdAt: string;
+  expiresAt: string;
+  acceptedBy: string[];
+  score: number;
+  reasons: DestinyProposal["reasons"];
+  connectionId?: string;
+  signalId?: string;
+}
+
+export function proposalToWire(p: DestinyProposal): DestinyProposalWire {
+  return {
+    id: p.id,
+    pairKey: p.pairKey,
+    userA: p.userA,
+    userB: p.userB,
+    status: p.status,
+    createdAt: p.createdAt.toISOString(),
+    expiresAt: p.expiresAt.toISOString(),
+    acceptedBy: [...p.acceptedBy],
+    score: p.score,
+    reasons: p.reasons,
+    connectionId: p.connectionId,
+    signalId: p.signalId,
+  };
+}
+
+export function proposalFromWire(w: DestinyProposalWire): DestinyProposal {
+  return {
+    id: w.id,
+    pairKey: w.pairKey,
+    userA: w.userA,
+    userB: w.userB,
+    status: w.status,
+    createdAt: new Date(w.createdAt),
+    expiresAt: new Date(w.expiresAt),
+    acceptedBy: new Set(w.acceptedBy),
+    score: w.score,
+    reasons: w.reasons,
+    connectionId: w.connectionId,
+    signalId: w.signalId,
   };
 }

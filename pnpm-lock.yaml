@@ -215,6 +215,10 @@ importers:
         version: 5.9.3
 
   packages/destiny-v2:
+    dependencies:
+      ioredis:
+        specifier: ^5.4.2
+        version: 5.11.1
     devDependencies:
       typescript:
         specifier: ^5.7.3
