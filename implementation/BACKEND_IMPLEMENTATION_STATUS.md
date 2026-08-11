@@ -488,11 +488,13 @@ Backend V1 is frozen. Advanced engines are feature-flagged and must not change V
 | **S23** Destiny V2 | [`operations/S23_DESTINY_V2.md`](../operations/S23_DESTINY_V2.md) — **done** |
 | **S24** Anti-Abuse | [`operations/S24_ANTI_ABUSE.md`](../operations/S24_ANTI_ABUSE.md) — **done** |
 | **S25** Geo Intelligence | [`operations/S25_GEO_INTELLIGENCE.md`](../operations/S25_GEO_INTELLIGENCE.md) — **done** |
-| S26 roadmap | [`operations/V1.1_ADVANCED_ENGINE.md`](../operations/V1.1_ADVANCED_ENGINE.md) |
+| **S26** Measurement | [`operations/S26_MEASUREMENT.md`](../operations/S26_MEASUREMENT.md) — **done** |
 
-1. **S26** Measurement & Engine Audit — prove S21–S25 improve quality without more blocks/abuse/geo exposure
+V1.1 advanced engines S21–S26 complete. Optional follow-ups:
+
+1. **S24.1** Destiny proposal persistence
 2. Staging credential & load-test campaign in real Redis/Postgres
-3. Optional **S24.1** Destiny proposal persistence (not mixed into geo)
+3. Auto-learning only after measurement baselines (post-S26)
 
 ---
 

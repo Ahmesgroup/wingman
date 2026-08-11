@@ -9,6 +9,7 @@ import { PROTOCOL_MIRROR } from "../infra/infra.tokens.js";
 import { RealtimeAppService } from "../realtime/realtime-app.service.js";
 import { DestinyService } from "../destiny/destiny.controller.js";
 import { AntiAbuseGate } from "../anti-abuse/anti-abuse.module.js";
+import { MeasurementGate } from "../measurement/measurement.module.js";
 
 @Injectable()
 export class SafetyService {
@@ -20,12 +21,15 @@ export class SafetyService {
     @Inject(forwardRef(() => DestinyService))
     private readonly destiny?: DestinyService,
     @Optional() private readonly antiAbuse?: AntiAbuseGate,
+    @Optional() private readonly measurement?: MeasurementGate,
   ) {}
 
   async block(actorId: string, targetId: string) {
     const block = this.engine.blockUser(actorId, targetId);
     this.destiny?.invalidateForBlock(actorId, targetId);
     this.antiAbuse?.noteBlock(actorId, targetId);
+    this.measurement?.noteDecision("CORE_SAFETY", "1.0.0", "block_issued", { actorId });
+    this.measurement?.noteOutcome("block.issued");
     await this.mirror.mirrorLatestBlock();
     await this.mirror.mirrorAll();
     for (const c of this.engine.connections.values()) {

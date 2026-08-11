@@ -9,6 +9,7 @@ import { DomainError } from "@wingman/domain";
 import { ERROR_CATALOG } from "@wingman/contracts";
 import { AuthError } from "@wingman/auth";
 import { AntiAbuseError, httpStatusForAbuse } from "@wingman/anti-abuse";
+import { MeasurementLearningForbiddenError } from "@wingman/measurement";
 import type { Response } from "express";
 import { ZodError } from "zod";
 
@@ -21,6 +22,13 @@ export class DomainExceptionFilter implements ExceptionFilter {
       const status = (ERROR_CATALOG as Record<string, number>)[exception.code] ?? 400;
       res.status(status).json({
         error: { code: exception.code, message: exception.message, details: exception.details },
+      });
+      return;
+    }
+
+    if (exception instanceof MeasurementLearningForbiddenError) {
+      res.status(503).json({
+        error: { code: exception.code, message: exception.message },
       });
       return;
     }

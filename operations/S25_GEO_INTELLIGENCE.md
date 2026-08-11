@@ -108,4 +108,4 @@ Verified by `packages/geo-intelligence` and `apps/api/src/s25.geo-intelligence.t
 
 ## Next
 
-**S26 Measurement & Engine Audit** — prove S21–S25 improve encounter quality without increasing blocks, abuse, or geographic exposure.
+**S26 Measurement & Engine Audit** — prove S21–S25 improve encounter quality without increasing blocks, abuse, or geographic exposure. See [`S26_MEASUREMENT.md`](./S26_MEASUREMENT.md).

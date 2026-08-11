@@ -22,6 +22,7 @@
     "@wingman/destiny-v2": "workspace:*",
     "@wingman/anti-abuse": "workspace:*",
     "@wingman/geo-intelligence": "workspace:*",
+    "@wingman/measurement": "workspace:*",
     "@wingman/domain": "workspace:*",
     "@wingman/ephemeral": "workspace:*",
     "@wingman/notifications": "workspace:*",

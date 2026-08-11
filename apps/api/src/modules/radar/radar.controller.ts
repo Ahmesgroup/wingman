@@ -25,6 +25,7 @@ import { RealtimeAppService } from "../realtime/realtime-app.service.js";
 import { RADAR_CONTEXT_PORT } from "../context/context.tokens.js";
 import { AntiAbuseGate } from "../anti-abuse/anti-abuse.module.js";
 import { GEO_ENGINE } from "../geo/geo.tokens.js";
+import { MeasurementGate } from "../measurement/measurement.module.js";
 import { RADAR_EXPOSURE_STORE, RADAR_LANGUAGE_HINTS } from "./radar.tokens.js";
 
 /** Legacy S21 language hints when Context Engine flag is off. */
@@ -44,6 +45,7 @@ export class RadarService {
     @Optional() @Inject(RADAR_CONTEXT_PORT) private readonly contextPort?: RadarContextPort,
     @Optional() private readonly antiAbuse?: AntiAbuseGate,
     @Optional() @Inject(GEO_ENGINE) private readonly geo?: GeoIntelligenceEngine,
+    @Optional() private readonly measurement?: MeasurementGate,
   ) {}
 
   getLastRankingAudit(): RankingAuditRecord | undefined {
@@ -64,6 +66,16 @@ export class RadarService {
     const geo = this.geoActive();
     const now = this.engine.clock.now();
     const ingested = geo?.ingest(userId, body.lat, body.lng, now);
+    if (ingested) {
+      this.measurement?.noteDecision("GEO_INTELLIGENCE", ingested.audit.version, "geo_ingest", {
+        actorId: userId,
+        reasons: [ingested.view.freshness, ingested.view.density, ingested.view.movement],
+        meta: { density: ingested.view.density, freshness: ingested.view.freshness },
+      });
+      this.measurement?.noteOutcome("geo.ingested", {
+        meta: { density: ingested.view.density },
+      });
+    }
     // Prefer privacy-reduced coords for ephemeral when Geo on
     const ephemeralLoc = ingested?.quantized ?? { lat: body.lat, lng: body.lng };
     await this.ephemeral.setPresence(
@@ -184,6 +196,17 @@ export class RadarService {
       ordered.map((c) => c.userId),
       now,
     );
+
+    const reasonSet = new Set<string>();
+    for (const d of audit.decisions) for (const r of d.reasons) reasonSet.add(r);
+    this.measurement?.noteDecision("RADAR_RANKING", audit.version, "rank", {
+      actorId: userId,
+      reasons: [...reasonSet].slice(0, 12),
+      meta: { inputCount: audit.inputCount, outputCount: ordered.length },
+    });
+    this.measurement?.noteOutcome("radar.ranked", {
+      meta: { inputCount: audit.inputCount },
+    });
 
     // Public payload: V1 fields only — never raw context snapshot / confidence / score
     return {

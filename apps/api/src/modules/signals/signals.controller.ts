@@ -10,6 +10,7 @@ import { WINGMAN_ENGINE } from "../../engine/engine.tokens.js";
 import { EPHEMERAL_STORE, NOTIFICATION_ORCH, PROTOCOL_MIRROR } from "../infra/infra.tokens.js";
 import { RealtimeAppService } from "../realtime/realtime-app.service.js";
 import { AntiAbuseGate } from "../anti-abuse/anti-abuse.module.js";
+import { MeasurementGate } from "../measurement/measurement.module.js";
 
 function safeNotify(orch: NotificationOrchestrator): void {
   void orch.processQueue().catch(() => {
@@ -26,6 +27,7 @@ export class SignalsService {
     @Inject(PROTOCOL_MIRROR) private readonly mirror: ProtocolPersistenceMirror,
     private readonly realtime: RealtimeAppService,
     @Optional() private readonly antiAbuse?: AntiAbuseGate,
+    @Optional() private readonly measurement?: MeasurementGate,
   ) {}
 
   async create(
@@ -40,6 +42,11 @@ export class SignalsService {
       eventId: idem ? `signal-idem:${userId}:${idem}` : undefined,
       evaluate: true,
     });
+    this.measurement?.noteDecision("CORE_SIGNAL", "1.0.0", "signal_create", {
+      actorId: userId,
+      meta: { source: body.source },
+    });
+    this.measurement?.noteOutcome("signal.created", { meta: { source: body.source } });
     await this.mirror.mirrorSignal(signal.id);
     await this.mirror.mirrorSignalUsage(userId);
     this.notifications.handleAppEvent({
@@ -107,11 +114,15 @@ export class SignalsService {
     if (!got) {
       const connection = this.engine.acceptSignal(id, userId);
       await this.mirror.mirrorAccept(id, connection.id);
+      this.measurement?.noteDecision("CORE_SIGNAL", "1.0.0", "connection_open", { actorId: userId });
+      this.measurement?.noteOutcome("connection.opened");
       return connection;
     }
     try {
       const connection = this.engine.acceptSignal(id, userId);
       await this.mirror.mirrorAccept(id, connection.id);
+      this.measurement?.noteDecision("CORE_SIGNAL", "1.0.0", "connection_open", { actorId: userId });
+      this.measurement?.noteOutcome("connection.opened");
       this.notifications.handleAppEvent({
         type: "match.created",
         userId: connection.initiatorId,

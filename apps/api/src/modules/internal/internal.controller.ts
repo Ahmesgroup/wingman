@@ -1,4 +1,4 @@
-import { Controller, Get, Inject, Injectable, Post } from "@nestjs/common";
+import { Controller, Get, Inject, Injectable, Optional, Post, Query } from "@nestjs/common";
 import type { EphemeralStore } from "@wingman/ephemeral";
 import type { WingmanEngine } from "@wingman/domain";
 import type { MetricsRegistry } from "@wingman/observability";
@@ -11,6 +11,7 @@ import { WINGMAN_ENGINE } from "../../engine/engine.tokens.js";
 import type { NotificationOrchestrator } from "@wingman/notifications";
 import { EPHEMERAL_STORE, NOTIFICATION_ORCH, PRISMA_CLIENT, PROTOCOL_MIRROR } from "../infra/infra.tokens.js";
 import { RealtimeAppService } from "../realtime/realtime-app.service.js";
+import { MeasurementGate } from "../measurement/measurement.module.js";
 
 @Injectable()
 export class InternalService {
@@ -22,6 +23,7 @@ export class InternalService {
     @Inject(PRISMA_CLIENT) private readonly prisma: PrismaClient | null,
     private readonly realtime: RealtimeAppService,
     @Inject(NOTIFICATION_ORCH) private readonly notifications: NotificationOrchestrator,
+    @Optional() private readonly measurement?: MeasurementGate,
   ) {}
 
   async reconcile() {
@@ -126,6 +128,12 @@ export class InternalService {
       destinyFlag: { ok: true, detail: String(this.engine.destinyEnabled) },
     });
   }
+
+  measurementReport(fromIso?: string, toIso?: string) {
+    const from = fromIso ? new Date(fromIso) : undefined;
+    const to = toIso ? new Date(toIso) : undefined;
+    return this.measurement?.report(from, to) ?? { enabled: false };
+  }
 }
 
 @Public()
@@ -152,5 +160,11 @@ export class InternalController {
   @Get("ready")
   ready() {
     return this.internal.readiness();
+  }
+
+  /** S26 Measurement report — aggregates only; no lat/lng / PII */
+  @Get("measurement/report")
+  measurementReport(@Query("from") from?: string, @Query("to") to?: string) {
+    return this.internal.measurementReport(from, to);
   }
 }

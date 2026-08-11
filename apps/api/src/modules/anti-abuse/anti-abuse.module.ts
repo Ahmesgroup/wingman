@@ -10,6 +10,7 @@ import {
 } from "@wingman/anti-abuse";
 import { WINGMAN_ENGINE } from "../../engine/engine.tokens.js";
 import type { WingmanEngine } from "@wingman/domain";
+import { MeasurementGate } from "../measurement/measurement.module.js";
 import { ANTI_ABUSE_ENGINE, ANTI_ABUSE_STORE } from "./anti-abuse.tokens.js";
 
 let storeOverride: MemoryAbuseStateStore | undefined;
@@ -31,6 +32,7 @@ export class AntiAbuseGate {
   constructor(
     @Inject(WINGMAN_ENGINE) private readonly wingman: WingmanEngine,
     @Optional() @Inject(ANTI_ABUSE_ENGINE) private readonly engine?: AntiAbuseEngine,
+    @Optional() private readonly measurement?: MeasurementGate,
   ) {}
 
   private active(): AntiAbuseEngine | undefined {
@@ -84,7 +86,7 @@ export class AntiAbuseGate {
       });
       return undefined;
     }
-    return eng.observeAndEvaluate(
+    const decision = eng.observeAndEvaluate(
       {
         kind,
         actorId,
@@ -95,6 +97,15 @@ export class AntiAbuseGate {
       },
       { enforcementEnabled: this.enforcement() },
     );
+    this.measurement?.noteDecision("ANTI_ABUSE", decision.version, "abuse_decision", {
+      actorId,
+      reasons: decision.signals.slice(0, 8),
+      meta: { action: decision.action, shadow: decision.shadow, riskLevel: decision.riskLevel },
+    });
+    if (!decision.shadow && decision.action !== "ALLOW" && decision.action !== "REVIEW") {
+      this.measurement?.noteOutcome("abuse.enforced", { meta: { action: decision.action } });
+    }
+    return decision;
   }
 
   /** Record block on both actor and target (target gets block_received). */

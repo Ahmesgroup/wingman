@@ -55,6 +55,9 @@ importers:
       '@wingman/geo-intelligence':
         specifier: workspace:*
         version: link:../../packages/geo-intelligence
+      '@wingman/measurement':
+        specifier: workspace:*
+        version: link:../../packages/measurement
       '@wingman/notifications':
         specifier: workspace:*
         version: link:../../packages/notifications
@@ -243,6 +246,15 @@ importers:
         version: 2.1.9(@types/node@22.20.1)
 
   packages/geo-intelligence:
+    devDependencies:
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.8
+        version: 2.1.9(@types/node@22.20.1)
+
+  packages/measurement:
     devDependencies:
       typescript:
         specifier: ^5.7.3

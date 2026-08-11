@@ -1,0 +1,2 @@
+export const MEASUREMENT_ENGINE = Symbol("MEASUREMENT_ENGINE");
+export const MEASUREMENT_STORE = Symbol("MEASUREMENT_STORE");

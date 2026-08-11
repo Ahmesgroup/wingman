@@ -32,6 +32,7 @@ import { RADAR_CONTEXT_PORT } from "../context/context.tokens.js";
 import { SignalsService } from "../signals/signals.controller.js";
 import { AntiAbuseGate } from "../anti-abuse/anti-abuse.module.js";
 import { GEO_ENGINE } from "../geo/geo.tokens.js";
+import { MeasurementGate } from "../measurement/measurement.module.js";
 import { DESTINY_V2_ENGINE } from "./destiny.tokens.js";
 
 function asDestinyContextPort(port?: RadarContextPort): DestinyContextPort | undefined {
@@ -53,6 +54,7 @@ export class DestinyService {
     @Optional() @Inject(RADAR_CONTEXT_PORT) private readonly radarContext?: RadarContextPort,
     @Optional() private readonly antiAbuse?: AntiAbuseGate,
     @Optional() @Inject(GEO_ENGINE) private readonly geo?: GeoIntelligenceEngine,
+    @Optional() private readonly measurement?: MeasurementGate,
   ) {}
 
   /** V1 eligibility: mutual interest + both radar-visible + not blocked (via getCandidates). */
@@ -117,6 +119,11 @@ export class DestinyService {
     );
 
     if (!proposalsEnabled) {
+      this.measurement?.noteDecision("DESTINY_V2", outcome.audit.version, "destiny_evaluate", {
+        actorId: userId,
+        reasons: outcome.candidate.reasons.slice(0, 8),
+        meta: { shadow: true, decision: outcome.candidate.decision },
+      });
       return {
         copresence,
         promptEmitted: false,
@@ -124,6 +131,15 @@ export class DestinyService {
         // audit id only — never score/reasons in public body
         shadowDecisionId: outcome.audit.decisionId,
       };
+    }
+
+    if (outcome.publicProposal) {
+      this.measurement?.noteDecision("DESTINY_V2", outcome.audit.version, "destiny_evaluate", {
+        actorId: userId,
+        reasons: outcome.candidate.reasons.slice(0, 8),
+        meta: { decision: outcome.candidate.decision },
+      });
+      this.measurement?.noteOutcome("destiny.proposed");
     }
 
     return {
@@ -168,6 +184,9 @@ export class DestinyService {
       if (!result.becameMutual) {
         return { ok: true, proposal: publicView, connection: null };
       }
+
+      this.measurement?.noteDecision("DESTINY_V2", "1.1.0", "destiny_mutual", { actorId: userId });
+      this.measurement?.noteOutcome("destiny.mutual");
 
       // Handoff to existing V1 Signal → Connection path (no parallel protocol)
       const initiator = result.proposal.userA;
