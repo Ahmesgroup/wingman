@@ -1,94 +1,105 @@
 # Client Polish Review — real-phone verdict
 
 **Status:** OPEN — next action (no code sprint)  
-**Implements closed:** P1–P4 (`bb9bb13`) — polish *implementation* phase done  
-**Forbidden:** engines (S27+), `PAYMENTS_ENABLED=true`, domain/architecture refactors, **P5 by habit**
+**Client checkpoint before field validation:** `04e7c4d`  
+**Implements closed:** P1–P4 (`bb9bb13`) — polish *implementation* done  
+**Forbidden until verdict:** code changes from theoretical impressions; engines; payments; **P5 by habit**
 
-## Sequence (locked)
+## Boundary (locked)
 
 ```text
-Client Polish Review (real phone)
-        │
-        ├─► FREEZE client V1     if loop is fluid & clear
-        └─► P5 targeted only     if review lists reproducible defects
+Smoke / P1–P4 tests     → prove the client works
+Real-phone review       → prove it behaves as a product
+Verdict                 → FREEZE V1  |  P5 closed correction list
 ```
 
-No P5 “par principe”. Hypotheses do not open tickets.
+No code change on “feels like” alone. No P5 as a new design phase.
 
-## Verdict rule (simple)
+## Sequence
 
-| Verdict | When | Next |
+```text
+Client Polish Review @ 04e7c4d (real phone)
+        │
+        ├─► FREEZE V1     no significant defect blocks understanding, fluidity, or real use
+        └─► P5 ciblé      closed list of reproducible defects only → fix sprint, not redesign
+```
+
+## Verdict (binary)
+
+| Verdict | Rule | Next |
 |---------|------|------|
-| **FREEZE V1** | Full loop stays fluid and clear on a real device; no blocking defect from the list below | Document freeze; stop client polish |
-| **P5 ciblé** | Review produces **reproducible** defects (device, OS, steps, expected vs actual) | Scoped polish tickets only — still no engines/payments |
+| **FREEZE V1** | No significant defect prevents understanding, fluidity, or real-world use | Document freeze; stop polish |
+| **P5 ciblé** | Review supplies concrete, reproducible defects | Closed correction sprint only (still no engines/payments) |
 
-### Defect classes that can justify P5 (examples)
+### Defect classes that can justify P5
 
-- Overflow / clipped UI on real viewport
-- Keyboard masking a primary CTA
-- Insufficient contrast / unreadable in motion
-- Confusing reconnect / offline recovery
-- Ambiguous protocol state (Signal / Match / Mission / Cooldown)
-- Perceptible UI latency that breaks trust
-- Inaccessible interaction (touch, focus, SR)
+- Overflow / clipped UI on real viewport  
+- Keyboard masking a primary CTA  
+- Insufficient contrast / unreadable in motion  
+- Confusing reconnect / offline recovery  
+- Ambiguous protocol state (Signal / Match / Mission / Cooldown)  
+- Perceptible UI latency that breaks trust  
+- Inaccessible interaction (touch, focus, SR)  
 
-Smoke (`Smoke P4` / `?smoke=1`) is **necessary but not sufficient** — this review catches fluidity, state comprehension, real touch size, and readability in motion.
+## Observation format (required for any finding)
 
-## Real-device observation protocol
+Every finding that could open P5 **must** include:
 
-Record **device / OS / browser** once, then walk:
+| Field | Content |
+|-------|---------|
+| **Device** | model + OS |
+| **Viewport** | CSS px / orientation (e.g. 390×844 portrait) |
+| **Loop step** | cold start / auth / Radar / Signal / validation / Match / Mission / Outcome / Cooldown / refresh / offline / reconnect / rotation / background |
+| **Expected** | what should happen |
+| **Observed** | what happened (repro steps) |
+| **Severity** | blocker / major / minor |
 
-1. **Cold start** — launch → Splash readable, primary CTA obvious  
-2. **Auth** — phone → OTP → profile → consent (no dead screen)  
-3. **Radar** — invisible → go active; mood meaning without color alone  
-4. **Signal** — send / receive; feedback immediate and blue-coded  
-5. **Validation** — selfie / pending; timer + actions clear  
-6. **Match** — Connection confirmed → ticket (not ambiguous with Mission)  
-7. **Mission** — Meet + Mode; only active mission may “breathe”  
-8. **Outcome** — private answer; advance works  
-9. **Cooldown** — calm; back to Radar  
-10. **Refresh** mid-loop — coherent restore (no mute / wrong phase)  
-11. **Offline → reconnect** — banner + CTA; usable again  
-12. **Rotation** — landscape / return; no trapped CTA  
-13. **Background → foreground** — app usable; no infinite spinner  
+Impressions without this schema do **not** change code and do **not** open P5.
 
-Also note: reduced-motion path if the tester enables it.
+## Real-device walk
+
+Record device / OS / browser once, then:
+
+1. Cold start → Splash  
+2. Auth (phone → OTP → profile → consent)  
+3. Radar (invisible → active; mood not color-only)  
+4. Signal  
+5. Validation  
+6. Match → ticket  
+7. Mission (Meet + Mode)  
+8. Outcome  
+9. Cooldown → Radar  
+10. Refresh mid-loop  
+11. Offline → reconnect  
+12. Rotation  
+13. Background → foreground  
+
+Also note reduced-motion if enabled.
 
 ## Entry criteria
 
-- [x] P1–P4 checklists in [`CLIENT_POLISH.md`](./CLIENT_POLISH.md)  
-- [x] Prototype smoke passes in mock mode  
-- [ ] Review session completed on at least one real phone  
+- [x] P1–P4 done (`bb9bb13`)  
+- [x] Docs checkpoint `04e7c4d`  
+- [x] Smoke P4 passes in mock  
+- [ ] Review completed on ≥1 real phone  
 
-## Review log (fill on device)
+## Review log
 
 | Field | Value |
 |-------|--------|
 | Date | |
-| Device | |
-| OS / browser | |
+| Device / OS / browser | |
+| Checkpoint | `04e7c4d` |
 | Tester | |
 | Verdict | `FREEZE V1` / `P5` |
-| Evidence (links / notes) | |
 
-### Checklist
+### Findings (P5 candidates — closed list if verdict = P5)
 
-- [ ] Cold start → Cooldown → Radar fluid end-to-end  
-- [ ] Protocol states immediately understandable (not color-only)  
-- [ ] Touch targets feel usable in hand (not only CSS ≥44)  
-- [ ] Refresh mid-loop coherent  
-- [ ] Offline / reconnect clear  
-- [ ] Rotation + background resume OK  
-- [ ] Keyboard does not hide primary CTA  
-- [ ] No infinite spinner / dead screen  
-
-### Reproducible findings (P5 candidates only)
-
-| ID | Observation (repro steps) | Severity | Opens P5? |
-|----|---------------------------|----------|-----------|
-| | | | Y/N |
+| ID | Device | Viewport | Loop step | Expected | Observed | Severity |
+|----|--------|----------|-----------|----------|----------|----------|
+| | | | | | | |
 
 ## After verdict
 
-- **FREEZE V1** → update [`PROJECT_STATE.md`](./PROJECT_STATE.md) client line to frozen; no further polish sprint unless new objectified evidence.  
-- **P5** → open only tickets tied to rows above; keep scope polish-only.
+- **FREEZE V1** → mark client V1 frozen in [`PROJECT_STATE.md`](./PROJECT_STATE.md); no polish sprint without new objectified evidence.  
+- **P5** → tickets = rows in the table above only; execute as correction list, then re-verify on device → FREEZE or residual minors accepted.

@@ -1,7 +1,7 @@
 # Project state — locked 2026-08-11 · client track updated 2026-08-12
 
 **Reference commit (engines / baseline):** `ccbb7a3`  
-**Client track:** polish P1–P4 closed at `bb9bb13` · next = real-phone Client Polish Review  
+**Client track:** checkpoint `04e7c4d` (P1–P4 + review gate) · field validation OPEN · no code from theory  
 **Related:** [`V1.1_ADVANCED_ENGINE.md`](./V1.1_ADVANCED_ENGINE.md), [`S26_MEASUREMENT.md`](./S26_MEASUREMENT.md), [`STAGING_LOAD_CERTIFICATION.md`](./STAGING_LOAD_CERTIFICATION.md), [`CLIENT_MOBILE_PAYMENT_READINESS.md`](./CLIENT_MOBILE_PAYMENT_READINESS.md), [`CLIENT_POLISH_REVIEW.md`](./CLIENT_POLISH_REVIEW.md)
 
 ```text
@@ -23,7 +23,8 @@ CLIENT    Mobile-first + payments   DONE (payments DISABLED)
           Connection→Mission loop   DONE (wired to Nest)
 PAYMENTS  Architecture ready        OFF (PAYMENTS_ENABLED=false)
 CLIENT    Polish P1–P4 impl         DONE (`bb9bb13`)
-CLIENT    Polish Review (phone)     OPEN → FREEZE V1 or P5 only if repro defects
+CLIENT    Checkpoint pre-field      `04e7c4d`
+CLIENT    Polish Review (phone)     OPEN → FREEZE V1 | P5 closed list only
 ```
 
 ## Freeze during baseline collection
@@ -42,7 +43,7 @@ Bugfixes / infra / ops / **client polish** that do not change V1.1 decision logi
 
 **Shipped:** [`CLIENT_MOBILE_PAYMENT_READINESS.md`](./CLIENT_MOBILE_PAYMENT_READINESS.md) — mobile-first + payment-ready disabled + loop wired.  
 **Shipped:** [`CLIENT_POLISH.md`](./CLIENT_POLISH.md) — P1–P4 implementation closed.  
-**Open:** [`CLIENT_POLISH_REVIEW.md`](./CLIENT_POLISH_REVIEW.md) — real-phone review → **FREEZE V1** or **P5 ciblé** (no P5 by principle).
+**Open:** [`CLIENT_POLISH_REVIEW.md`](./CLIENT_POLISH_REVIEW.md) — checkpoint `04e7c4d` → real phone → **FREEZE V1** or **P5 closed correction list** (not a design phase). No code from theoretical impressions.
 
 - Web prototype is the mobile-first client against Nest (`AUTH_ALLOW_DEV` / `x-user-id`).
 - S19 remains the **only** entitlement authority; client never self-promotes.
