@@ -99,6 +99,19 @@ Rose (`--love`) remains reserved for Connection Confirmed. Do not recolor moods 
 
 **P3 shipped** — next: **P4 accessibility + QA** only.
 
+## P4 exit checklist
+
+- [x] Contrast: raised `--t-muted` / `--t-secondary`; nav & secondary actions readable
+- [x] Focus: `:focus-visible` on controls; skip link; focus moves into active view
+- [x] Labels / ARIA: form `for`/`id`, switch `aria-labelledby`, sheet `role=dialog`, view `aria-hidden`/`inert`, live announce
+- [x] Touch ≥44px: pills, Open Signal (`btn-compact`), chips/nav already gated
+- [x] Mood not by color alone: legend shape hints (ring / solid / quiet) + SR nearby list
+- [x] Radar keyboard: canvas Enter/Space opens nearest; Escape closes sheet
+- [x] Orientation / keyboard / refresh session / offline-reconnect retained
+- [x] Smoke: `Smoke P4` chip + `?smoke=1` walks Splash→…→Cooldown→Radar
+
+**P4 shipped** — **do not auto-start P5**. Next: [`CLIENT_POLISH_REVIEW.md`](./CLIENT_POLISH_REVIEW.md) on a real phone, then decide freeze vs optional P5.
+
 ## Run
 
 ```bash

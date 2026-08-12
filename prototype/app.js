@@ -175,6 +175,26 @@ function syncRadarEmpty() {
   shell.classList.toggle('is-empty', !state.radarActive);
   const dist = $('#radar-distance');
   if (dist) dist.classList.toggle('hidden', !state.radarActive);
+  syncRadarA11yList();
+}
+
+function syncRadarA11yList() {
+  const list = $('#radar-a11y-list');
+  if (!list) return;
+  if (!state.radarActive) {
+    list.innerHTML = '';
+    list.removeAttribute('aria-label');
+    return;
+  }
+  list.setAttribute('aria-label', state.lang === 'fr' ? 'Personnes à proximité' : 'Nearby people');
+  list.innerHTML = dots.map((d, i) => {
+    const mood = d.mood === 'SUPER_READY' ? t('mood_ready') : d.mood === 'OPEN' ? t('mood_open') : t('mood_explore');
+    const age = state.lang === 'fr' ? d.ageFr : d.age;
+    return `<li><button type="button" class="sr-only-btn" data-dot="${i}">${age} · ${mood}</button></li>`;
+  }).join('');
+  $$('[data-dot]', list).forEach(btn => {
+    btn.addEventListener('click', () => openSheet(dots[Number(btn.dataset.dot)]));
+  });
 }
 
 function syncSignalEmpty() {
@@ -289,6 +309,8 @@ const I18N = {
     t_timeout: 'Taking too long — try again', t_offline_blocked: 'Offline — try again', t_offline_banner: 'Offline — timers keep running on the server',
     t_reconnecting: 'Reconnecting…', t_reconnected: 'Back online', t_reconnect_fail: 'Still offline', t_reconnect: 'Reconnect',
     empty_radar: 'Go active to see who’s nearby.', empty_signals: 'No Signals right now. When someone reaches out, it appears here.',
+    mood_shape_ring: ' · ring', mood_shape_solid: ' · solid', mood_shape_quiet: ' · quiet',
+    a11y_skip: 'Skip to app', t_smoke_ok: 'P4 smoke OK', t_smoke_fail: 'P4 smoke failed',
     t_phase_idle: 'Ready', t_phase_available: 'Available on Radar', t_phase_busy: 'Busy', t_phase_unavailable: 'Unavailable',
     t_phase_signal: 'Signal in progress', t_phase_validation: 'Validation pending', t_phase_match: 'Match created',
     t_phase_mission: 'Mission active', t_phase_cooldown: 'Cooldown', t_phase_offline: 'Offline',
@@ -345,6 +367,8 @@ const I18N = {
     t_timeout: 'Trop long — réessayez', t_offline_blocked: 'Hors ligne — réessayez', t_offline_banner: 'Hors ligne — les timers continuent côté serveur',
     t_reconnecting: 'Reconnexion…', t_reconnected: 'De retour en ligne', t_reconnect_fail: 'Toujours hors ligne', t_reconnect: 'Reconnecter',
     empty_radar: 'Activez le Radar pour voir qui est à proximité.', empty_signals: 'Aucun Signal pour l’instant. Ils apparaîtront ici.',
+    mood_shape_ring: ' · anneau', mood_shape_solid: ' · plein', mood_shape_quiet: ' · calme',
+    a11y_skip: 'Aller à l’app', t_smoke_ok: 'Smoke P4 OK', t_smoke_fail: 'Smoke P4 échoué',
     t_phase_idle: 'Prêt', t_phase_available: 'Disponible sur le Radar', t_phase_busy: 'Occupé', t_phase_unavailable: 'Indisponible',
     t_phase_signal: 'Signal en cours', t_phase_validation: 'Validation en cours', t_phase_match: 'Match créé',
     t_phase_mission: 'Mission active', t_phase_cooldown: 'Cooldown', t_phase_offline: 'Hors ligne',
@@ -385,16 +409,49 @@ function haptic(kind) {
   navigator.vibrate(map[kind] || 0);
 }
 
+function announce(msg) {
+  const el = $('#a11y-announce');
+  if (!el || !msg) return;
+  el.textContent = '';
+  requestAnimationFrame(() => { el.textContent = msg; });
+}
+
+function syncViewA11y(activeId) {
+  $$('.view').forEach(v => {
+    const on = v.id === activeId;
+    v.classList.toggle('active', on);
+    v.setAttribute('aria-hidden', on ? 'false' : 'true');
+    if ('inert' in v) v.inert = !on;
+  });
+}
+
+function focusActiveView(id) {
+  const v = $('#' + id);
+  if (!v) return;
+  const target = v.querySelector('[data-autofocus], h1.big, h2.head, .btn-primary, .act-primary, [tabindex="0"]');
+  if (target && typeof target.focus === 'function') {
+    try { target.focus({ preventScroll: true }); } catch (_) { try { target.focus(); } catch (__) {} }
+  }
+}
+
 /* ------------------------------------------------------------- navigation */
+let confirmedAdvanceTimer = null;
 function show(id) {
-  $$('.view').forEach(v => v.classList.remove('active'));
+  if (confirmedAdvanceTimer) {
+    clearTimeout(confirmedAdvanceTimer);
+    confirmedAdvanceTimer = null;
+  }
+  syncViewA11y(id);
   const v = $('#' + id); if (!v) return;
-  v.classList.add('active');
   state.viewId = id;
-  $('#screen').scrollTop = 0;
+  const screen = $('#main-screen');
+  if (screen) screen.scrollTop = 0;
   const body = $('.body', v); if (body) body.scrollTop = 0;
   onEnter(id);
   persistSession();
+  const title = ($('.subtitle', v) || $('h1', v) || $('h2', v));
+  if (title) announce(title.textContent.trim());
+  requestAnimationFrame(() => focusActiveView(id));
 }
 const NAV = [
   ['v-radar', 'radar', 'M12 12m-2 0a2 2 0 104 0 2 2 0 10-4 0 M12 12m-6 0a6 6 0 1012 0 6 6 0 10-12 0'],
@@ -526,15 +583,34 @@ function openSheet(d) {
   $('#sheet-age').textContent = state.lang === 'fr' ? d.ageFr : d.age;
   $('#sheet-bio').textContent = state.lang === 'fr' ? d.bioFr : d.bio;
   $('#sheet-tags').innerHTML = d.tags.map(x => `<span>${x}</span>`).join('');
-  $('#dot-sheet').classList.add('open');
+  const sheet = $('#dot-sheet');
+  sheet.classList.add('open');
+  sheet.setAttribute('aria-hidden', 'false');
+  announce($('#sheet-age').textContent + ' · ' + $('#sheet-mood').textContent);
+  requestAnimationFrame(() => { const b = $('#send-signal-btn'); if (b) b.focus(); });
 }
-$('#close-sheet').addEventListener('click', () => $('#dot-sheet').classList.remove('open'));
+$('#close-sheet').addEventListener('click', () => {
+  const sheet = $('#dot-sheet');
+  sheet.classList.remove('open');
+  sheet.setAttribute('aria-hidden', 'true');
+  const canvasEl = $('#radar-canvas'); if (canvasEl) canvasEl.focus();
+});
+canvas.addEventListener('keydown', e => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  e.preventDefault();
+  if (!state.radarActive) {
+    feedback('busy', state.lang === 'fr' ? 'Activez le Radar pour découvrir' : 'Go active to discover');
+    return;
+  }
+  openSheet(dots[0]);
+});
 $('#send-signal-btn').addEventListener('click', async () => {
   if (state.busy) return;
   if (state.signalsLeft <= 0) { toast(state.lang === 'fr' ? 'Plus de signaux aujourd\'hui' : 'No signals left today'); return; }
   const w = canvas.clientWidth || 400; signalWave = { x: w / 2, y: 170, t: performance.now() };
   startRadar(); haptic('signalSent');
   $('#dot-sheet').classList.remove('open');
+  $('#dot-sheet').setAttribute('aria-hidden', 'true');
 
   if (liveApi()) {
     try {
@@ -682,7 +758,10 @@ function onEnter(id) {
     const stage = $('#confirm-stage'); stage.classList.remove('fused'); void stage.offsetWidth; stage.classList.add('fused');
     haptic('connectionConfirmed');
     feedback('match', t('t_match'));
-    setTimeout(() => show('v-ticket'), motionMs(900, 200));
+    confirmedAdvanceTimer = setTimeout(() => {
+      confirmedAdvanceTimer = null;
+      show('v-ticket');
+    }, motionMs(900, 200));
   }
   if (id === 'v-ticket') setPhase('match', t('t_phase_match'));
   if (id === 'v-mission-meet') {
@@ -1092,10 +1171,81 @@ window.addEventListener('orientationchange', () => setTimeout(syncVisualViewport
 syncVisualViewport();
 
 window.addEventListener('resize', () => { sizeCanvas(); startRadar(); syncVisualViewport(); });
+window.addEventListener('orientationchange', () => {
+  setTimeout(() => { sizeCanvas(); startRadar(); syncVisualViewport(); }, 200);
+});
+
+/* P4 smoke — full client loop without engines/payments */
+function checkTouchTargets(root) {
+  const fails = [];
+  const sels = 'button.btn, .act-primary, .act-secondary, .radar-toggle, .nav button, .mood-btn, #open-signal-btn';
+  $$(sels, root || document).forEach(el => {
+    if (!el.closest('.view.active')) return;
+    const r = el.getBoundingClientRect();
+    if (r.width > 0 && r.height > 0 && (r.width < 44 || r.height < 44)) {
+      fails.push((el.id || el.className || el.tagName) + ` ${Math.round(r.width)}x${Math.round(r.height)}`);
+    }
+  });
+  return fails;
+}
+
+async function runP4Smoke() {
+  const path = [
+    'v-splash', 'v-onboard1', 'v-onboard2', 'v-onboard3', 'v-phone', 'v-otp', 'v-profile', 'v-consent',
+    'v-radar', 'v-signal', 'v-selfie', 'v-confirmed', 'v-ticket', 'v-mission-meet', 'v-mission-mode',
+    'v-outcome', 'v-cooldown', 'v-radar',
+  ];
+  const errors = [];
+  const prevReduce = state.reduceMotion;
+  setReduceMotion(true);
+  try {
+    for (const id of path) {
+      show(id);
+      await new Promise(r => setTimeout(r, 30));
+      const v = $('#' + id);
+      if (!v || !v.classList.contains('active')) errors.push('view not active: ' + id);
+      if (v && v.getAttribute('aria-hidden') !== 'false') errors.push('aria-hidden: ' + id);
+      const allowNoCta = id === 'v-confirmed';
+      const cta = v && v.querySelector('.btn-primary, .act-primary, .btn-love, [data-go], .radar-toggle, .nav button');
+      if (!cta && !allowNoCta) errors.push('no action: ' + id);
+      errors.push(...checkTouchTargets(v).map(x => id + ' touch ' + x));
+    }
+    // offline / reconnect feedback not mute
+    setOfflineUi(true, false);
+    if ($('#offline-banner') && $('#offline-banner').classList.contains('hidden')) errors.push('offline banner missing');
+    setOfflineUi(false, false);
+    // overflow probe at current width
+    const stage = $('.stage');
+    if (stage && stage.scrollWidth > stage.clientWidth + 2) errors.push('horizontal overflow stage');
+  } finally {
+    setReduceMotion(prevReduce);
+  }
+  const ok = errors.length === 0;
+  console[ok ? 'info' : 'warn']('[wingman P4 smoke]', ok ? 'PASS' : errors);
+  feedback(ok ? 'success' : 'error', ok ? t('t_smoke_ok') : t('t_smoke_fail'));
+  announce(ok ? t('t_smoke_ok') : (t('t_smoke_fail') + ': ' + errors.slice(0, 3).join('; ')));
+  return { ok, errors };
+}
+
+$('#smoke-p4-btn') && $('#smoke-p4-btn').addEventListener('click', () => { runP4Smoke(); });
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  const sheet = $('#dot-sheet');
+  if (sheet && sheet.classList.contains('open')) {
+    sheet.classList.remove('open');
+    sheet.setAttribute('aria-hidden', 'true');
+  }
+});
+
 applyLang();
 sizeCanvas();
 startRadar();
+syncViewA11y(state.viewId || 'v-splash');
 syncRadarEmpty();
 syncSignalEmpty();
 applyEntitlements({ plan: 'FREE', capabilities: { dailySignals: 2, activeConnectionTickets: 1 } });
-bootApi().then(() => restoreSessionIfAny());
+bootApi().then(() => {
+  restoreSessionIfAny();
+  if (/[?&]smoke=1\b/.test(location.search)) runP4Smoke();
+});
+window.__wingmanRunP4Smoke = runP4Smoke;

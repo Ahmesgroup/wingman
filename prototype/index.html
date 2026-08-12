@@ -12,42 +12,45 @@
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+<a class="skip-link" href="#main-screen" data-i18n="a11y_skip">Skip to app</a>
+<div id="a11y-announce" class="sr-only" aria-live="polite" aria-atomic="true"></div>
 <div class="stage">
   <div class="top-controls">
     <span class="brand-tag" data-i18n="brandtag">Make the first acquaintance easy</span>
-    <div class="control-group">
-      <button class="chip lang" data-lang="en" aria-pressed="true">EN</button>
-      <button class="chip lang" data-lang="fr" aria-pressed="false">FR</button>
-      <button class="chip" id="rm-toggle" aria-pressed="false" title="Reduce motion">Reduce motion</button>
-      <button class="chip" id="offline-toggle" aria-pressed="false" title="Simulate offline">Offline</button>
+    <div class="control-group" role="toolbar" aria-label="Prototype controls">
+      <button type="button" class="chip lang" data-lang="en" aria-pressed="true" aria-label="English">EN</button>
+      <button type="button" class="chip lang" data-lang="fr" aria-pressed="false" aria-label="Français">FR</button>
+      <button type="button" class="chip" id="rm-toggle" aria-pressed="false" data-i18n="set_rm" title="Reduce motion">Reduce motion</button>
+      <button type="button" class="chip" id="offline-toggle" aria-pressed="false" data-i18n="t_phase_offline" title="Simulate offline">Offline</button>
+      <button type="button" class="chip" id="smoke-p4-btn" title="Run P4 smoke loop">Smoke P4</button>
     </div>
   </div>
 
   <div class="phone">
-    <div class="notch"></div>
-    <div class="screen" id="screen">
+    <div class="notch" aria-hidden="true"></div>
+    <div class="screen" id="main-screen" role="main">
       <div class="offline-banner hidden" id="offline-banner" role="status">
         <span id="offline-banner-text">Offline — server timers keep running</span>
         <button type="button" class="banner-action hidden" id="reconnect-btn" data-i18n="t_reconnect">Reconnect</button>
       </div>
       <div class="api-banner hidden" id="api-banner" role="status"></div>
       <div class="phase-strip hidden" id="phase-strip" role="status" aria-live="polite">
-        <span class="phase-dot" id="phase-dot"></span>
+        <span class="phase-dot" id="phase-dot" aria-hidden="true"></span>
         <span id="phase-label">—</span>
       </div>
-      <div class="loading-overlay hidden" id="loading-overlay" aria-live="polite" aria-busy="true">
+      <div class="loading-overlay hidden" id="loading-overlay" role="status" aria-live="polite" aria-busy="false">
         <div class="loading-spin" aria-hidden="true"></div>
         <span id="loading-text">Loading…</span>
       </div>
 
       <!-- 1. SPLASH -->
-      <section class="view active" id="v-splash" data-noflow>
+      <section class="view active" id="v-splash" data-noflow aria-hidden="false" aria-label="Splash">
         <div class="mission-mode">
-          <div class="mm-ring"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg></div>
-          <h1 class="big">Wingman</h1>
+          <div class="mm-ring" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg></div>
+          <h1 class="big" data-autofocus>Wingman</h1>
           <p class="lead center" data-i18n="splash_tag">Make the first acquaintance easy.</p>
           <p class="small muted" data-i18n="splash_love">Love is in the air.</p>
-          <button class="btn btn-primary mt" data-go="v-onboard1" data-i18n="splash_cta">Begin</button>
+          <button type="button" class="btn btn-primary mt" data-go="v-onboard1" data-i18n="splash_cta">Begin</button>
         </div>
       </section>
 
@@ -90,7 +93,7 @@
         <div class="body pad">
           <h2 class="head" data-i18n="phone_title">Enter your phone</h2>
           <p class="lead mb" data-i18n="phone_body">We send a 6-digit code. Your number is never shown to anyone.</p>
-          <div class="field"><label data-i18n="phone_label">Phone number</label><input type="tel" value="+352 621 000 000" inputmode="tel"></div>
+          <div class="field"><label for="phone-input" data-i18n="phone_label">Phone number</label><input id="phone-input" type="tel" value="+352 621 000 000" inputmode="tel" autocomplete="tel"></div>
           <button class="btn btn-primary" data-go="v-otp" data-i18n="phone_cta">Send code</button>
           <p class="small muted center mt" data-i18n="phone_note">Verification only — used to keep Wingman free of fake profiles.</p>
         </div>
@@ -113,19 +116,19 @@
         <div class="statusbar"><span class="time">21:48</span><span>Wingman</span></div>
         <div class="topbar"><div class="logo">WING<b>MAN</b></div><div class="subtitle" data-i18n="profile_sub">Your profile</div></div>
         <div class="body pad">
-          <div class="field"><label data-i18n="pf_name">First name</label><input value="Alex"></div>
-          <div class="field"><label data-i18n="pf_birth">Date of birth</label><input type="date" value="1998-05-14"></div>
-          <div class="field"><label data-i18n="pf_gender">Gender</label>
-            <div class="pillset"><button class="pill" aria-pressed="true" data-i18n="g_male">Male</button><button class="pill" aria-pressed="false" data-i18n="g_female">Female</button><button class="pill" aria-pressed="false" data-i18n="g_nb">Non-binary</button></div>
+          <div class="field"><label for="pf-name" data-i18n="pf_name">First name</label><input id="pf-name" value="Alex" autocomplete="given-name"></div>
+          <div class="field"><label for="pf-birth" data-i18n="pf_birth">Date of birth</label><input id="pf-birth" type="date" value="1998-05-14"></div>
+          <div class="field"><label id="pf-gender-label" data-i18n="pf_gender">Gender</label>
+            <div class="pillset" role="group" aria-labelledby="pf-gender-label"><button type="button" class="pill" aria-pressed="true" data-i18n="g_male">Male</button><button type="button" class="pill" aria-pressed="false" data-i18n="g_female">Female</button><button type="button" class="pill" aria-pressed="false" data-i18n="g_nb">Non-binary</button></div>
           </div>
-          <div class="field"><label data-i18n="pf_interest">Interested in</label>
-            <div class="pillset"><button class="pill" aria-pressed="false" data-i18n="t_men">Men</button><button class="pill" aria-pressed="true" data-i18n="t_women">Women</button><button class="pill" aria-pressed="false" data-i18n="t_nb">Non-binary</button></div>
+          <div class="field"><label id="pf-interest-label" data-i18n="pf_interest">Interested in</label>
+            <div class="pillset" role="group" aria-labelledby="pf-interest-label"><button type="button" class="pill" aria-pressed="false" data-i18n="t_men">Men</button><button type="button" class="pill" aria-pressed="true" data-i18n="t_women">Women</button><button type="button" class="pill" aria-pressed="false" data-i18n="t_nb">Non-binary</button></div>
           </div>
-          <div class="field"><label data-i18n="pf_height">Height (cm)</label><input type="number" value="178"></div>
-          <div class="field"><label data-i18n="pf_interests">Interests (max 5)</label>
-            <div class="pillset"><button class="pill" aria-pressed="true">🎵</button><button class="pill" aria-pressed="true">🌍</button><button class="pill" aria-pressed="true">🍕</button><button class="pill" aria-pressed="false">🏋️</button><button class="pill" aria-pressed="false">🎨</button></div>
+          <div class="field"><label for="pf-height" data-i18n="pf_height">Height (cm)</label><input id="pf-height" type="number" value="178" inputmode="numeric"></div>
+          <div class="field"><label id="pf-interests-label" data-i18n="pf_interests">Interests (max 5)</label>
+            <div class="pillset" role="group" aria-labelledby="pf-interests-label"><button type="button" class="pill" aria-pressed="true" aria-label="Music">🎵</button><button type="button" class="pill" aria-pressed="true" aria-label="Travel">🌍</button><button type="button" class="pill" aria-pressed="true" aria-label="Food">🍕</button><button type="button" class="pill" aria-pressed="false" aria-label="Fitness">🏋️</button><button type="button" class="pill" aria-pressed="false" aria-label="Art">🎨</button></div>
           </div>
-          <div class="field"><label data-i18n="pf_bio">Daily bio (150 max)</label><textarea rows="2" maxlength="150">At the festival — looking for a good encounter 🎵</textarea></div>
+          <div class="field"><label for="pf-bio" data-i18n="pf_bio">Daily bio (150 max)</label><textarea id="pf-bio" rows="2" maxlength="150">At the festival — looking for a good encounter 🎵</textarea></div>
           <button class="btn btn-primary" data-go="v-consent" data-i18n="next">Next</button>
         </div>
       </section>
@@ -138,24 +141,24 @@
           <h2 class="head" data-i18n="consent_title">What you agree to</h2>
           <p class="lead mb" data-i18n="consent_body">Each purpose is separate. You can change these anytime in Settings.</p>
           <div class="consent-item consent-required">
-            <div class="txt"><b data-i18n="c_core">Run the service</b><p data-i18n="c_core_d">Required to match you and operate the protocol.</p></div>
-            <div class="switch" role="switch" aria-checked="true" aria-disabled="true"></div>
+            <div class="txt"><b id="c-core" data-i18n="c_core">Run the service</b><p data-i18n="c_core_d">Required to match you and operate the protocol.</p></div>
+            <div class="switch" role="switch" aria-checked="true" aria-disabled="true" aria-labelledby="c-core"></div>
           </div>
           <div class="consent-item">
-            <div class="txt"><b data-i18n="c_loc">Approximate location</b><p data-i18n="c_loc_d">Coarse radius only — never your exact position.</p></div>
-            <div class="switch" role="switch" aria-checked="true" tabindex="0"></div>
+            <div class="txt"><b id="c-loc" data-i18n="c_loc">Approximate location</b><p data-i18n="c_loc_d">Coarse radius only — never your exact position.</p></div>
+            <div class="switch" role="switch" aria-checked="true" tabindex="0" aria-labelledby="c-loc"></div>
           </div>
           <div class="consent-item">
-            <div class="txt"><b data-i18n="c_destiny">Destiny Connection</b><p data-i18n="c_destiny_d">Off by default. Coarse co-presence to spot repeated paths.</p></div>
-            <div class="switch" role="switch" aria-checked="false" tabindex="0"></div>
+            <div class="txt"><b id="c-destiny" data-i18n="c_destiny">Destiny Connection</b><p data-i18n="c_destiny_d">Off by default. Coarse co-presence to spot repeated paths.</p></div>
+            <div class="switch" role="switch" aria-checked="false" tabindex="0" aria-labelledby="c-destiny"></div>
           </div>
           <div class="consent-item">
-            <div class="txt"><b data-i18n="c_push">Push notifications</b><p data-i18n="c_push_d">Signals, selfies, confirmations.</p></div>
-            <div class="switch" role="switch" aria-checked="true" tabindex="0"></div>
+            <div class="txt"><b id="c-push" data-i18n="c_push">Push notifications</b><p data-i18n="c_push_d">Signals, selfies, confirmations.</p></div>
+            <div class="switch" role="switch" aria-checked="true" tabindex="0" aria-labelledby="c-push"></div>
           </div>
           <div class="consent-item">
-            <div class="txt"><b data-i18n="c_analytics">Product analytics</b><p data-i18n="c_analytics_d">Optional. Helps improve Wingman.</p></div>
-            <div class="switch" role="switch" aria-checked="false" tabindex="0"></div>
+            <div class="txt"><b id="c-analytics" data-i18n="c_analytics">Product analytics</b><p data-i18n="c_analytics_d">Optional. Helps improve Wingman.</p></div>
+            <div class="switch" role="switch" aria-checked="false" tabindex="0" aria-labelledby="c-analytics"></div>
           </div>
           <button class="btn btn-primary mt" data-go="v-radar" data-i18n="consent_cta">Agree & activate Radar</button>
         </div>
@@ -167,17 +170,18 @@
         <div class="topbar"><div class="logo">WING<b>MAN</b></div><div class="subtitle" data-i18n="radar_sub">Real-time discovery</div></div>
         <div class="body" style="padding-bottom:96px">
           <div class="radar-shell">
-            <canvas id="radar-canvas" width="400" height="340" aria-label="Radar showing anonymous nearby mood dots"></canvas>
+            <canvas id="radar-canvas" width="400" height="340" role="img" tabindex="0" aria-label="Radar showing anonymous nearby mood dots. Press Enter when active to open the nearest person."></canvas>
+            <ul id="radar-a11y-list" class="sr-only" aria-live="polite"></ul>
             <div class="radar-hud"><span class="radar-state invisible" id="radar-state" data-i18n="radar_invisible">—  Invisible</span></div>
             <span class="radar-distance" id="radar-distance" data-i18n="radar_dist">Someone very close · Nearby</span>
             <div class="empty-state radar-empty" id="radar-empty" data-i18n="empty_radar">Go active to see who’s nearby.</div>
-            <button class="radar-toggle off" id="radar-toggle" aria-pressed="false" data-i18n="radar_activate">Go active</button>
+            <button type="button" class="radar-toggle off" id="radar-toggle" aria-pressed="false" data-i18n="radar_activate">Go active</button>
           </div>
           <div class="pad" style="padding-top:12px">
-            <div class="mood-legend">
-              <span class="li"><span class="sw" style="background:var(--mood-ready)"></span><span data-i18n="mood_ready">Super ready</span></span>
-              <span class="li"><span class="sw" style="background:var(--mood-open)"></span><span data-i18n="mood_open">Open</span></span>
-              <span class="li"><span class="sw" style="background:var(--mood-explore)"></span><span data-i18n="mood_explore">Exploring</span></span>
+            <div class="mood-legend" role="list" aria-label="Mood legend">
+              <span class="li" role="listitem"><span class="sw shape-ring" style="background:var(--mood-ready)" aria-hidden="true"></span><span data-i18n="mood_ready">Super ready</span><span class="shape-hint" data-i18n="mood_shape_ring"> · ring</span></span>
+              <span class="li" role="listitem"><span class="sw shape-solid" style="background:var(--mood-open)" aria-hidden="true"></span><span data-i18n="mood_open">Open</span><span class="shape-hint" data-i18n="mood_shape_solid"> · solid</span></span>
+              <span class="li" role="listitem"><span class="sw shape-quiet" style="background:var(--mood-explore)" aria-hidden="true"></span><span data-i18n="mood_explore">Exploring</span><span class="shape-hint" data-i18n="mood_shape_quiet"> · quiet</span></span>
             </div>
             <div class="stat-row">
               <div class="stat"><b id="stat-signals">2</b><span data-i18n="stat_signals">Signals left</span></div>
@@ -201,15 +205,15 @@
           </div>
         </div>
         <!-- 9. anonymous profile card -->
-        <div class="sheet" id="dot-sheet">
+        <div class="sheet" id="dot-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-age" aria-hidden="true">
           <div class="sheet-inner">
-            <div class="sheet-grab"></div>
+            <div class="sheet-grab" aria-hidden="true"></div>
             <div class="mood-tag" id="sheet-mood" style="color:var(--mood-ready)">● Super ready</div>
             <div class="age" id="sheet-age">26 · 168cm</div>
             <div class="bio" id="sheet-bio">Fun night out ✨</div>
             <div class="tags" id="sheet-tags"><span>🎵</span><span>🍷</span><span>🌍</span></div>
-            <button class="btn btn-primary" id="send-signal-btn" data-i18n="send_signal">Send a Signal</button>
-            <button class="btn btn-ghost mt-s" id="close-sheet" data-i18n="close">Close</button>
+            <button type="button" class="btn btn-primary" id="send-signal-btn" data-i18n="send_signal">Send a Signal</button>
+            <button type="button" class="btn btn-ghost mt-s" id="close-sheet" data-i18n="close">Close</button>
           </div>
         </div>
         <nav class="nav" data-navbar></nav>
@@ -226,7 +230,7 @@
             <div class="sig" id="sig-active-row">
               <div class="glyph signal-glyph">M</div>
               <div class="info"><b>28 · 165cm</b><p>Night at the Rock — up to meet ✨</p><p class="exp" id="sig-timer">Expires in 7:00</p></div>
-              <button class="btn btn-secondary" style="width:auto;padding:10px 16px" id="open-signal-btn" data-i18n="open">Open</button>
+              <button type="button" class="btn btn-secondary btn-compact" id="open-signal-btn" data-i18n="open">Open</button>
             </div>
             <div class="sig" style="opacity:.55" id="sig-expired-row">
               <div class="glyph">J</div>
@@ -392,9 +396,9 @@
           </div>
           <div class="card">
             <div class="eyebrow mb" data-i18n="set_controls">Controls</div>
-            <div class="row"><span data-i18n="set_destiny">Destiny Connection</span><div class="switch" role="switch" aria-checked="false" tabindex="0"></div></div>
-            <div class="row"><span data-i18n="set_rm">Reduce motion</span><div class="switch" role="switch" aria-checked="false" tabindex="0" id="rm-switch"></div></div>
-            <div class="row"><span data-i18n="set_haptics">Haptics</span><div class="switch" role="switch" aria-checked="true" tabindex="0"></div></div>
+            <div class="row"><span id="lbl-destiny" data-i18n="set_destiny">Destiny Connection</span><div class="switch" role="switch" aria-checked="false" tabindex="0" aria-labelledby="lbl-destiny"></div></div>
+            <div class="row"><span id="lbl-rm" data-i18n="set_rm">Reduce motion</span><div class="switch" role="switch" aria-checked="false" tabindex="0" id="rm-switch" aria-labelledby="lbl-rm"></div></div>
+            <div class="row"><span id="lbl-haptics" data-i18n="set_haptics">Haptics</span><div class="switch" role="switch" aria-checked="true" tabindex="0" aria-labelledby="lbl-haptics"></div></div>
           </div>
           <div class="card">
             <div class="eyebrow mb" data-i18n="set_rights">Your data (GDPR)</div>
@@ -464,7 +468,7 @@
   </div>
 </div>
 
-<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 <script src="api.js"></script>
 <script src="payments/payment-types.js"></script>
 <script src="payments/providers/disabled.js"></script>

@@ -22,7 +22,7 @@ THEN                                S26 Review (not automatic S27)
 CLIENT    Mobile-first + payments   DONE (payments DISABLED)
           Connection→Mission loop   DONE (wired to Nest)
 PAYMENTS  Architecture ready        OFF (PAYMENTS_ENABLED=false)
-CLIENT    Polish only P1–P4         ACTIVE — P1–P3 done; next P4
+CLIENT    Polish only P1–P4         DONE — next Client Polish Review (no auto P5)
 ```
 
 ## Freeze during baseline collection
