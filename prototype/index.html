@@ -26,10 +26,17 @@
   <div class="phone">
     <div class="notch"></div>
     <div class="screen" id="screen">
-      <div class="offline-banner hidden" id="offline-banner">Offline — server timers keep running</div>
-      <div class="api-banner hidden" id="api-banner"></div>
+      <div class="offline-banner hidden" id="offline-banner" role="status">
+        <span id="offline-banner-text">Offline — server timers keep running</span>
+        <button type="button" class="banner-action hidden" id="reconnect-btn" data-i18n="t_reconnect">Reconnect</button>
+      </div>
+      <div class="api-banner hidden" id="api-banner" role="status"></div>
+      <div class="phase-strip hidden" id="phase-strip" role="status" aria-live="polite">
+        <span class="phase-dot" id="phase-dot"></span>
+        <span id="phase-label">—</span>
+      </div>
       <div class="loading-overlay hidden" id="loading-overlay" aria-live="polite" aria-busy="true">
-        <div class="loading-spin"></div>
+        <div class="loading-spin" aria-hidden="true"></div>
         <span id="loading-text">Loading…</span>
       </div>
 
@@ -161,8 +168,9 @@
         <div class="body" style="padding-bottom:96px">
           <div class="radar-shell">
             <canvas id="radar-canvas" width="400" height="340" aria-label="Radar showing anonymous nearby mood dots"></canvas>
-            <div class="radar-hud"><span class="radar-state invisible" id="radar-state" data-i18n="radar_invisible">�―  Invisible</span></div>
+            <div class="radar-hud"><span class="radar-state invisible" id="radar-state" data-i18n="radar_invisible">—  Invisible</span></div>
             <span class="radar-distance" id="radar-distance" data-i18n="radar_dist">Someone very close · Nearby</span>
+            <div class="empty-state radar-empty" id="radar-empty" data-i18n="empty_radar">Go active to see who’s nearby.</div>
             <button class="radar-toggle off" id="radar-toggle" aria-pressed="false" data-i18n="radar_activate">Go active</button>
           </div>
           <div class="pad" style="padding-top:12px">
@@ -214,15 +222,18 @@
         <div class="body pad">
           <h2 class="head" data-i18n="signal_title">Someone wants to discover you</h2>
           <p class="lead mb" data-i18n="signal_body">Respond before it silently expires. No one is ever told they were declined.</p>
-          <div class="sig">
-            <div class="glyph">M</div>
-            <div class="info"><b>28 · 165cm</b><p>Night at the Rock — up to meet ✨</p><p class="exp" id="sig-timer">Expires in 7:00</p></div>
-            <button class="btn btn-secondary" style="width:auto;padding:10px 16px" id="open-signal-btn" data-i18n="open">Open</button>
+          <div id="signal-list">
+            <div class="sig" id="sig-active-row">
+              <div class="glyph signal-glyph">M</div>
+              <div class="info"><b>28 · 165cm</b><p>Night at the Rock — up to meet ✨</p><p class="exp" id="sig-timer">Expires in 7:00</p></div>
+              <button class="btn btn-secondary" style="width:auto;padding:10px 16px" id="open-signal-btn" data-i18n="open">Open</button>
+            </div>
+            <div class="sig" style="opacity:.55" id="sig-expired-row">
+              <div class="glyph">J</div>
+              <div class="info"><b>25 · 172cm</b><p>Neighborhood explorer 🗺️</p><p class="exp gone" data-i18n="sig_expired">Expired — 2 min ago</p></div>
+            </div>
           </div>
-          <div class="sig" style="opacity:.55">
-            <div class="glyph">J</div>
-            <div class="info"><b>25 · 172cm</b><p>Neighborhood explorer 🗺️</p><p class="exp gone" data-i18n="sig_expired">Expired — 2 min ago</p></div>
-          </div>
+          <div class="empty-state hidden" id="signal-empty" data-i18n="empty_signals">No Signals right now. When someone reaches out, it appears here.</div>
           <div class="silent-note" data-i18n="signal_silent">No "decline" button exists. Silent expiration is the only failure signal.</div>
         </div>
         <nav class="nav" data-navbar></nav>
@@ -453,7 +464,7 @@
   </div>
 </div>
 
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script src="api.js"></script>
 <script src="payments/payment-types.js"></script>
 <script src="payments/providers/disabled.js"></script>

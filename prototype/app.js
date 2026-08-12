@@ -13,6 +13,7 @@ const state = {
   lang: 'en',
   reduceMotion: false,
   offline: false,
+  reconnecting: false,
   radarActive: false,
   mood: 'OPEN',
   signalsLeft: 2,
@@ -24,7 +25,10 @@ const state = {
   signalId: null,
   connectionId: null,
   connectionState: null,
+  phase: 'idle',
+  viewId: 'v-splash',
   busy: false,
+  hasIncomingSignal: false,
   serverNow: () => Date.now(),
 };
 
@@ -34,25 +38,41 @@ const payments = (typeof WingmanPayments !== 'undefined' && WingmanPayments.paym
   ? WingmanPayments.paymentClient
   : { provider: { id: 'disabled', enabled: false }, showPaywallCtas: false };
 
+const SESSION_KEY = 'wingman_proto_session_v1';
+const LOADING_MAX_MS = 12000;
+
 function setApiBanner(kind, msg) {
   const el = $('#api-banner');
   if (!el) return;
   if (!msg) { el.className = 'api-banner hidden'; el.textContent = ''; return; }
-  el.className = 'api-banner ' + kind;
+  el.className = 'api-banner ' + (kind || 'info');
   el.textContent = msg;
 }
 
+let loadingTimer = null;
 function setLoading(on, label) {
   state.busy = Boolean(on);
   const ov = $('#loading-overlay');
   const tx = $('#loading-text');
   if (tx && label) tx.textContent = label;
-  if (ov) ov.classList.toggle('hidden', !on);
+  if (ov) {
+    ov.classList.toggle('hidden', !on);
+    ov.setAttribute('aria-busy', on ? 'true' : 'false');
+  }
+  clearTimeout(loadingTimer);
+  if (on) {
+    loadingTimer = setTimeout(() => {
+      if (!state.busy) return;
+      setLoading(false);
+      feedback('error', t('t_timeout'));
+      setApiBanner('error', t('t_timeout'));
+    }, LOADING_MAX_MS);
+  }
 }
 
 async function withLoading(label, fn) {
   if (state.offline) {
-    toast(state.lang === 'fr' ? 'Hors ligne — réessayez' : 'Offline — try again');
+    feedback('offline', t('t_offline_blocked'));
     return null;
   }
   setLoading(true, label);
@@ -61,7 +81,7 @@ async function withLoading(label, fn) {
   } catch (e) {
     const msg = (e && e.message) || String(e);
     setApiBanner('error', msg);
-    toast(msg);
+    feedback('error', msg);
     haptic('error');
     throw e;
   } finally {
@@ -70,7 +90,130 @@ async function withLoading(label, fn) {
 }
 
 function liveApi() {
-  return api && !api.useMock && !state.offline;
+  return api && !api.useMock && !state.offline && !state.reconnecting;
+}
+
+function persistSession() {
+  try {
+    localStorage.setItem(SESSION_KEY, JSON.stringify({
+      viewId: state.viewId,
+      signalId: state.signalId,
+      connectionId: state.connectionId,
+      connectionState: state.connectionState,
+      phase: state.phase,
+      radarActive: state.radarActive,
+      signalsLeft: state.signalsLeft,
+      hasIncomingSignal: state.hasIncomingSignal,
+      meId: state.meId,
+      peerId: state.peerId,
+    }));
+  } catch (_) { /* ignore */ }
+}
+
+function readSession() {
+  try {
+    const raw = localStorage.getItem(SESSION_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (_) {
+    return null;
+  }
+}
+
+function setPhase(phase, label) {
+  state.phase = phase;
+  const strip = $('#phase-strip');
+  const lab = $('#phase-label');
+  if (!strip) return;
+  const hide = !phase || phase === 'idle';
+  strip.classList.toggle('hidden', hide);
+  if (hide) return;
+  strip.dataset.phase = phase;
+  if (lab) lab.textContent = label || phaseLabel(phase);
+  persistSession();
+}
+
+function phaseLabel(phase) {
+  const map = {
+    available: 't_phase_available',
+    busy: 't_phase_busy',
+    unavailable: 't_phase_unavailable',
+    signal: 't_phase_signal',
+    validation: 't_phase_validation',
+    match: 't_phase_match',
+    mission: 't_phase_mission',
+    cooldown: 't_phase_cooldown',
+    offline: 't_phase_offline',
+  };
+  return t(map[phase] || 't_phase_idle');
+}
+
+function syncRadarEmpty() {
+  const shell = $('.radar-shell');
+  if (!shell) return;
+  shell.classList.toggle('is-empty', !state.radarActive);
+  const dist = $('#radar-distance');
+  if (dist) dist.classList.toggle('hidden', !state.radarActive);
+}
+
+function syncSignalEmpty() {
+  const empty = $('#signal-empty');
+  const list = $('#signal-list');
+  const showEmpty = !state.hasIncomingSignal && !state.signalId;
+  if (empty) empty.classList.toggle('hidden', !showEmpty);
+  if (list) list.classList.toggle('hidden', showEmpty);
+}
+
+function setOfflineUi(offline, reconnecting) {
+  state.offline = Boolean(offline);
+  state.reconnecting = Boolean(reconnecting);
+  const ban = $('#offline-banner');
+  const txt = $('#offline-banner-text');
+  const btn = $('#reconnect-btn');
+  if (!ban) return;
+  if (!state.offline && !state.reconnecting) {
+    ban.classList.add('hidden');
+    ban.classList.remove('reconnecting');
+    if (btn) btn.classList.add('hidden');
+    return;
+  }
+  ban.classList.remove('hidden');
+  ban.classList.toggle('reconnecting', state.reconnecting);
+  if (txt) {
+    txt.textContent = state.reconnecting
+      ? t('t_reconnecting')
+      : t('t_offline_banner');
+  }
+  if (btn) btn.classList.toggle('hidden', state.reconnecting || !state.offline);
+  if (state.offline) setPhase('offline', t('t_phase_offline'));
+}
+
+async function tryReconnect() {
+  if (state.reconnecting) return;
+  setOfflineUi(true, true);
+  feedback('busy', t('t_reconnecting'));
+  try {
+    if (!api) api = await WingmanApi.bootstrapApi({ userId: state.meId });
+    else {
+      const ok = await Promise.race([
+        api.live(),
+        new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 2000)),
+      ]);
+      api.setUseMock(!ok);
+    }
+    if (api.useMock) throw new Error('offline');
+    state.apiLive = true;
+    state.offline = false;
+    setOfflineUi(false, false);
+    $('#offline-toggle').setAttribute('aria-pressed', 'false');
+    setApiBanner('live', t('t_api_live'));
+    feedback('success', t('t_reconnected'));
+    setPhase(state.radarActive ? 'available' : 'idle');
+  } catch (_) {
+    state.apiLive = false;
+    setOfflineUi(true, false);
+    setApiBanner('offline', t('t_api_mock'));
+    feedback('error', t('t_reconnect_fail'));
+  }
 }
 
 /* ---------------------------------------------------------------- i18n ---- */
@@ -121,6 +264,15 @@ const I18N = {
     t_api_mock: 'API offline — demo mode', t_api_live: 'Connected to Wingman API',
     t_loading: 'Loading…', t_accepting: 'Opening connection…', t_selfie: 'Sending selfie…', t_approving: 'Confirming…',
     t_meet: 'Opening Mission Meet…', t_ticket: 'Holding ticket…', t_chat: 'Sending…', t_outcome: 'Saving outcome…',
+    t_timeout: 'Taking too long — try again', t_offline_blocked: 'Offline — try again', t_offline_banner: 'Offline — timers keep running on the server',
+    t_reconnecting: 'Reconnecting…', t_reconnected: 'Back online', t_reconnect_fail: 'Still offline', t_reconnect: 'Reconnect',
+    empty_radar: 'Go active to see who’s nearby.', empty_signals: 'No Signals right now. When someone reaches out, it appears here.',
+    t_phase_idle: 'Ready', t_phase_available: 'Available on Radar', t_phase_busy: 'Busy', t_phase_unavailable: 'Unavailable',
+    t_phase_signal: 'Signal in progress', t_phase_validation: 'Validation pending', t_phase_match: 'Match created',
+    t_phase_mission: 'Mission active', t_phase_cooldown: 'Cooldown', t_phase_offline: 'Offline',
+    t_signal_received: 'Signal received', t_validation: 'Validation pending', t_match: 'Connection confirmed',
+    t_mission_active: 'Mission Meet open', t_mission_done: 'Mission complete', t_cooldown_on: 'Cooldown started',
+    t_session_restored: 'Session restored',
   },
   fr: {
     brandtag: 'Facilitez la première rencontre', splash_tag: "Facilitez la première rencontre.", splash_love: "L'amour est dans l'air.", splash_cta: 'Commencer',
@@ -168,6 +320,15 @@ const I18N = {
     t_api_mock: 'API hors ligne — mode démo', t_api_live: 'Connecté à l\'API Wingman',
     t_loading: 'Chargement…', t_accepting: 'Ouverture de la connexion…', t_selfie: 'Envoi du selfie…', t_approving: 'Confirmation…',
     t_meet: 'Ouverture Mission Meet…', t_ticket: 'Ticket en cours…', t_chat: 'Envoi…', t_outcome: 'Enregistrement…',
+    t_timeout: 'Trop long — réessayez', t_offline_blocked: 'Hors ligne — réessayez', t_offline_banner: 'Hors ligne — les timers continuent côté serveur',
+    t_reconnecting: 'Reconnexion…', t_reconnected: 'De retour en ligne', t_reconnect_fail: 'Toujours hors ligne', t_reconnect: 'Reconnecter',
+    empty_radar: 'Activez le Radar pour voir qui est à proximité.', empty_signals: 'Aucun Signal pour l’instant. Ils apparaîtront ici.',
+    t_phase_idle: 'Prêt', t_phase_available: 'Disponible sur le Radar', t_phase_busy: 'Occupé', t_phase_unavailable: 'Indisponible',
+    t_phase_signal: 'Signal en cours', t_phase_validation: 'Validation en cours', t_phase_match: 'Match créé',
+    t_phase_mission: 'Mission active', t_phase_cooldown: 'Cooldown', t_phase_offline: 'Hors ligne',
+    t_signal_received: 'Signal reçu', t_validation: 'Validation en cours', t_match: 'Connexion confirmée',
+    t_mission_active: 'Mission Meet ouverte', t_mission_done: 'Mission terminée', t_cooldown_on: 'Cooldown démarré',
+    t_session_restored: 'Session restaurée',
   },
 };
 
@@ -184,9 +345,16 @@ const t = k => I18N[state.lang][k] || k;
 
 /* ------------------------------------------------------------ toast/haptic */
 let toastTimer;
-function toast(msg) {
-  const el = $('#toast'); el.textContent = msg; el.classList.add('show');
-  clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 2400);
+function toast(msg, kind) {
+  feedback(kind || 'info', msg);
+}
+function feedback(kind, msg) {
+  const el = $('#toast');
+  if (!el || !msg) return;
+  el.textContent = msg;
+  el.className = 'toast show kind-' + (kind || 'info');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.classList.remove('show'); }, 2600);
 }
 // Haptics policy — doubleSoft reserved for connectionConfirmed.
 function haptic(kind) {
@@ -200,9 +368,11 @@ function show(id) {
   $$('.view').forEach(v => v.classList.remove('active'));
   const v = $('#' + id); if (!v) return;
   v.classList.add('active');
+  state.viewId = id;
   $('#screen').scrollTop = 0;
   const body = $('.body', v); if (body) body.scrollTop = 0;
   onEnter(id);
+  persistSession();
 }
 const NAV = [
   ['v-radar', 'radar', 'M12 12m-2 0a2 2 0 104 0 2 2 0 10-4 0 M12 12m-6 0a6 6 0 1012 0 6 6 0 10-12 0'],
@@ -344,17 +514,21 @@ $('#send-signal-btn').addEventListener('click', async () => {
         state.signalsLeft = Math.max(0, state.signalsLeft - 1);
         $('#stat-signals').textContent = state.signalsLeft;
       });
-      toast(t('t_signal_sent'));
+      state.hasIncomingSignal = true;
+      setPhase('signal', t('t_phase_signal'));
+      feedback('signal', t('t_signal_sent'));
       setTimeout(() => show('v-signal'), 800);
       return;
     } catch (_) {
       /* fall through to demo */
     }
   }
-  state.signalId = null;
+  state.signalId = state.signalId || ('demo-sig-' + Date.now());
+  state.hasIncomingSignal = true;
   state.signalsLeft--; $('#stat-signals').textContent = state.signalsLeft;
-  toast(t('t_signal_sent'));
-  setTimeout(() => show('v-signal'), 800);
+  setPhase('signal', t('t_phase_signal'));
+  feedback('signal', t('t_signal_sent'));
+  setTimeout(() => { state.hasIncomingSignal = true; show('v-signal'); }, 800);
 });
 
 /* ------------------------------------------------------- radar toggle/mood */
@@ -389,7 +563,9 @@ $('#radar-toggle').addEventListener('click', async () => {
   st.textContent = state.radarActive ? t('radar_active') : t('radar_invisible');
   st.classList.toggle('invisible', !state.radarActive);
   haptic('selection'); startRadar();
-  toast(state.radarActive ? t('t_active') : t('t_invisible'));
+  syncRadarEmpty();
+  setPhase(state.radarActive ? 'available' : 'idle');
+  feedback(state.radarActive ? 'success' : 'offline', state.radarActive ? t('t_active') : t('t_invisible'));
 });
 $('#mood-select').addEventListener('click', e => {
   const b = e.target.closest('.mood-btn'); if (!b) return;
@@ -425,35 +601,65 @@ function makeTimer({ durationSec, textEl, barEl, onWarn, onExpire }) {
 /* -------------------------------------------------------------- per-screen */
 let stopSelfie, stopMM, sigStop;
 function onEnter(id) {
-  if (id === 'v-radar') { sizeCanvas(); startRadar(); }
+  if (id === 'v-radar') {
+    sizeCanvas(); startRadar(); syncRadarEmpty();
+    if (!state.offline) setPhase(state.radarActive ? 'available' : 'idle');
+  }
   if (id === 'v-signal') {
-    // Signal received countdown (10 min shown compressed as 7:00 demo)
+    state.hasIncomingSignal = Boolean(state.signalId) || state.hasIncomingSignal;
+    syncSignalEmpty();
+    if (state.hasIncomingSignal || state.signalId) setPhase('signal', t('t_phase_signal'));
     if (sigStop) sigStop();
     let s = 420; const el = $('#sig-timer');
-    const iv = setInterval(() => { s--; const m = Math.floor(s / 60), ss = String(s % 60).padStart(2, '0'); el.textContent = (state.lang === 'fr' ? 'Expire dans ' : 'Expires in ') + `${m}:${ss}`; if (s <= 0) clearInterval(iv); }, 1000);
+    const iv = setInterval(() => {
+      s--;
+      const m = Math.floor(s / 60), ss = String(s % 60).padStart(2, '0');
+      if (el) el.textContent = (state.lang === 'fr' ? 'Expire dans ' : 'Expires in ') + `${m}:${ss}`;
+      if (s <= 0) {
+        clearInterval(iv);
+        state.hasIncomingSignal = false;
+        syncSignalEmpty();
+        feedback('busy', t('sig_expired'));
+      }
+    }, 1000);
     sigStop = () => clearInterval(iv);
   }
   if (id === 'v-selfie') {
+    setPhase('validation', t('t_phase_validation'));
     $('#selfie-validate').classList.add('hidden'); $('#selfie-send').classList.remove('hidden');
-    // live timestamp
     const stamp = $('#selfie-stamp');
     const now = new Date();
     stamp.textContent = `2026-07-10 · ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
     if (stopSelfie) stopSelfie();
     stopSelfie = makeTimer({ durationSec: 300, textEl: $('#selfie-timer'), barEl: $('#selfie-bar'),
-      onExpire: () => { toast(state.lang === 'fr' ? 'Expiré silencieusement' : 'Silently expired'); show('v-radar'); } });
+      onExpire: () => { feedback('busy', state.lang === 'fr' ? 'Expiré silencieusement' : 'Silently expired'); show('v-radar'); } });
   }
   if (id === 'v-confirmed') {
+    setPhase('match', t('t_phase_match'));
     const stage = $('#confirm-stage'); stage.classList.remove('fused'); void stage.offsetWidth; stage.classList.add('fused');
     haptic('connectionConfirmed');
+    feedback('match', t('t_match'));
     setTimeout(() => show('v-ticket'), state.reduceMotion ? 600 : 1800);
   }
+  if (id === 'v-ticket') setPhase('match', t('t_phase_match'));
   if (id === 'v-mission-meet') {
+    setPhase('mission', t('t_phase_mission'));
+    $('#v-mission-mode') && $('#v-mission-mode').classList.remove('is-active');
     if (stopMM) stopMM();
     stopMM = makeTimer({ durationSec: 900, textEl: $('#mm-timer'), barEl: $('#mm-bar'),
-      onExpire: () => { toast(state.lang === 'fr' ? 'Chat expiré' : 'Chat expired'); show('v-outcome'); } });
+      onExpire: () => { feedback('busy', state.lang === 'fr' ? 'Chat expiré' : 'Chat expired'); show('v-outcome'); } });
+    feedback('mission', t('t_mission_active'));
   }
-  if (id === 'v-cooldown') { /* number already set by outcome */ }
+  if (id === 'v-mission-mode') {
+    setPhase('mission', t('t_phase_mission'));
+    const mm = $('#v-mission-mode');
+    if (mm) mm.classList.add('is-active');
+  }
+  if (id === 'v-outcome') setPhase('busy', t('t_phase_busy'));
+  if (id === 'v-cooldown') {
+    setPhase('cooldown', t('t_phase_cooldown'));
+    feedback('busy', t('t_cooldown_on'));
+  }
 }
 
 /* selfie send -> dual selfie on API (demo both sides) then reveal approve */
@@ -471,7 +677,8 @@ $('#selfie-send').addEventListener('click', async () => {
   }
   $('#selfie-send').classList.add('hidden');
   $('#selfie-validate').classList.remove('hidden');
-  toast(state.lang === 'fr' ? 'Selfie envoyé — en attente' : 'Selfie sent — waiting');
+  setPhase('validation', t('t_phase_validation'));
+  feedback('busy', t('t_validation'));
 });
 
 $('#selfie-expire').addEventListener('click', () => show('v-radar'));
@@ -502,6 +709,8 @@ $('#open-signal-btn').addEventListener('click', async () => {
   } else {
     state.connectionId = state.connectionId || 'demo-conn';
   }
+  feedback('signal', t('t_signal_received'));
+  setPhase('validation', t('t_phase_validation'));
   show('v-selfie');
 });
 
@@ -515,6 +724,7 @@ $('#ticket-open-btn').addEventListener('click', async () => {
       });
     } catch (_) { return; }
   }
+  feedback('mission', t('t_mission_active'));
   show('v-mission-meet');
 });
 
@@ -528,6 +738,7 @@ $('#ticket-later-btn').addEventListener('click', async () => {
       });
     } catch (_) { /* still leave */ }
   }
+  feedback('busy', t('t_ticket'));
   show('v-radar');
 });
 
@@ -541,6 +752,7 @@ $('#mm-meet-btn').addEventListener('click', async () => {
       });
     } catch (_) { return; }
   }
+  feedback('mission', t('t_mission_active'));
   show('v-mission-mode');
 });
 
@@ -626,6 +838,7 @@ async function submitOutcome(kind) {
       });
     } catch (_) { return; }
   }
+  feedback('success', t('t_mission_done'));
   show('v-cooldown');
 }
 $('#outcome-yes-btn').addEventListener('click', () => submitOutcome('yes'));
@@ -670,12 +883,25 @@ if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').m
 
 /* offline simulation — timers keep running server-side; API calls blocked */
 $('#offline-toggle').addEventListener('click', () => {
-  state.offline = !state.offline;
-  $('#offline-toggle').setAttribute('aria-pressed', String(state.offline));
-  $('#offline-banner').classList.toggle('hidden', !state.offline);
-  if (state.offline) setApiBanner('error', state.lang === 'fr' ? 'Mode hors ligne' : 'Offline mode');
-  else if (state.apiLive) setApiBanner('live', t('t_api_live'));
-  else setApiBanner('mock', t('t_api_mock'));
+  const next = !state.offline;
+  $('#offline-toggle').setAttribute('aria-pressed', String(next));
+  if (next) {
+    setOfflineUi(true, false);
+    setApiBanner('offline', t('t_phase_offline'));
+    feedback('offline', t('t_offline_banner'));
+  } else {
+    tryReconnect();
+  }
+});
+$('#reconnect-btn') && $('#reconnect-btn').addEventListener('click', () => tryReconnect());
+
+window.addEventListener('online', () => {
+  if (state.offline) tryReconnect();
+});
+window.addEventListener('offline', () => {
+  setOfflineUi(true, false);
+  setApiBanner('offline', t('t_phase_offline'));
+  feedback('offline', t('t_offline_banner'));
 });
 
 function applyEntitlements(e) {
@@ -710,7 +936,7 @@ async function bootApi() {
     state.apiLive = !api.useMock;
     if (!state.apiLive) {
       setApiBanner('mock', t('t_api_mock'));
-      toast(t('t_api_mock'));
+      feedback('busy', t('t_api_mock'));
       applyEntitlements({ plan: 'FREE', capabilities: { dailySignals: 2, activeConnectionTickets: 1 } });
       return;
     }
@@ -731,15 +957,52 @@ async function bootApi() {
       if (ps && ps.paymentsEnabled) console.warn('[wingman] payments unexpectedly enabled');
     } catch (_) { /* ignore */ }
     setApiBanner('live', t('t_api_live'));
-    toast(t('t_api_live'));
+    feedback('success', t('t_api_live'));
   } catch (_) {
     if (api) api.setUseMock(true);
     state.apiLive = false;
     setApiBanner('mock', t('t_api_mock'));
-    toast(t('t_api_mock'));
+    feedback('busy', t('t_api_mock'));
     applyEntitlements({ plan: 'FREE', capabilities: { dailySignals: 2, activeConnectionTickets: 1 } });
   } finally {
     setLoading(false);
+  }
+}
+
+function restoreSessionIfAny() {
+  const saved = readSession();
+  if (!saved) return;
+  if (saved.signalId) state.signalId = saved.signalId;
+  if (saved.connectionId) state.connectionId = saved.connectionId;
+  if (saved.connectionState) state.connectionState = saved.connectionState;
+  if (typeof saved.signalsLeft === 'number') {
+    state.signalsLeft = saved.signalsLeft;
+    const sig = $('#stat-signals'); if (sig) sig.textContent = String(state.signalsLeft);
+  }
+  state.hasIncomingSignal = Boolean(saved.hasIncomingSignal || saved.signalId);
+  if (saved.radarActive) {
+    state.radarActive = true;
+    const btn = $('#radar-toggle'), st = $('#radar-state');
+    if (btn) {
+      btn.classList.remove('off');
+      btn.setAttribute('aria-pressed', 'true');
+      btn.textContent = t('radar_deactivate');
+    }
+    if (st) {
+      st.textContent = t('radar_active');
+      st.classList.remove('invisible');
+    }
+  }
+  syncRadarEmpty();
+  syncSignalEmpty();
+  const resumeViews = new Set([
+    'v-radar', 'v-signal', 'v-selfie', 'v-ticket', 'v-mission-meet', 'v-mission-mode', 'v-outcome', 'v-cooldown',
+  ]);
+  if (saved.viewId && resumeViews.has(saved.viewId) && saved.viewId !== 'v-splash') {
+    show(saved.viewId);
+    feedback('info', t('t_session_restored'));
+  } else if (saved.phase) {
+    setPhase(saved.phase);
   }
 }
 
@@ -767,5 +1030,7 @@ window.addEventListener('resize', () => { sizeCanvas(); startRadar(); syncVisual
 applyLang();
 sizeCanvas();
 startRadar();
+syncRadarEmpty();
+syncSignalEmpty();
 applyEntitlements({ plan: 'FREE', capabilities: { dailySignals: 2, activeConnectionTickets: 1 } });
-bootApi();
+bootApi().then(() => restoreSessionIfAny());

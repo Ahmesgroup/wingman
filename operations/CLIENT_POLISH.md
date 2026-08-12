@@ -73,7 +73,19 @@ Rose (`--love`) remains reserved for Connection Confirmed. Do not recolor moods 
 - [x] Primary buttons / nav / chips ≥ 44px (`--touch-min`)
 - [x] Hover enhancements only under `@media (hover:hover)` — tap remains primary
 
-**P1 shipped in polish pass** — continue P2 (states & feedback).
+**P1 shipped** — responsive / safe-area / keyboard.
+
+## P2 exit checklist
+
+- [x] Loading with hard timeout (12s) — no infinite spinner
+- [x] Empty: Radar inactive hint + Signal list empty state
+- [x] Offline / reconnecting banners + Reconnect CTA + `online`/`offline` events
+- [x] Toast kinds mapped to `--proto-*` (success / error / signal / match / mission / busy / offline)
+- [x] Phase strip for Signal / validation / match / mission / cooldown
+- [x] Feedback after Signal, Match, Mission, Cooldown actions
+- [x] Session restore after refresh (`localStorage` wingman_proto_session_v1)
+
+**P2 shipped** — next: **P3 motion + micro-interactions** only.
 
 ## Run
 
