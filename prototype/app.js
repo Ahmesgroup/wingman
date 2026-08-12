@@ -744,7 +744,26 @@ async function bootApi() {
 }
 
 /* boot */
-window.addEventListener('resize', () => { sizeCanvas(); startRadar(); });
+function syncVisualViewport() {
+  const vv = window.visualViewport;
+  if (!vv) {
+    document.documentElement.style.setProperty('--vv-offset', '0px');
+    document.body.classList.remove('keyboard-open');
+    return;
+  }
+  const inset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+  document.documentElement.style.setProperty('--vv-offset', inset + 'px');
+  document.body.classList.toggle('keyboard-open', inset > 80);
+  sizeCanvas();
+}
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', syncVisualViewport);
+  window.visualViewport.addEventListener('scroll', syncVisualViewport);
+}
+window.addEventListener('orientationchange', () => setTimeout(syncVisualViewport, 200));
+syncVisualViewport();
+
+window.addEventListener('resize', () => { sizeCanvas(); startRadar(); syncVisualViewport(); });
 applyLang();
 sizeCanvas();
 startRadar();

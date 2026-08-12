@@ -22,6 +22,7 @@ THEN                                S26 Review (not automatic S27)
 CLIENT    Mobile-first + payments   DONE (payments DISABLED)
           Connection→Mission loop   DONE (wired to Nest)
 PAYMENTS  Architecture ready        OFF (PAYMENTS_ENABLED=false)
+CLIENT    Polish only P1–P4         ACTIVE — see CLIENT_POLISH.md
 ```
 
 ## Freeze during baseline collection
@@ -32,12 +33,15 @@ Until **S26 Review** closes with an A/B/C decision:
 - Do **not** turn `MEASUREMENT_LEARNING_ENABLED` on.
 - Do **not** feed measurement outputs back into ranking / Destiny / geo / anti-abuse.
 - Keep `MEASUREMENT_ENABLED=true` so the baseline stays continuous and **uncontaminated** by mid-flight engine changes.
+- Do **not** enable payments (`PAYMENTS_ENABLED` stays `false`).
 
-Bugfixes / infra / ops / **client UX** that do not change V1.1 decision logic remain allowed when objectified.
+Bugfixes / infra / ops / **client polish (P1–P4)** that do not change V1.1 decision logic remain allowed when objectified.
 
-## Client track (parallel, closed)
+## Client track
 
-See [`CLIENT_MOBILE_PAYMENT_READINESS.md`](./CLIENT_MOBILE_PAYMENT_READINESS.md).
+**Shipped:** [`CLIENT_MOBILE_PAYMENT_READINESS.md`](./CLIENT_MOBILE_PAYMENT_READINESS.md) — mobile-first + payment-ready disabled + loop wired.
+
+**Active:** [`CLIENT_POLISH.md`](./CLIENT_POLISH.md) — UI/UX + robustness only (P1 responsive → P2 states → P3 motion → P4 a11y/QA).
 
 - Web prototype is the mobile-first client against Nest (`AUTH_ALLOW_DEV` / `x-user-id`).
 - S19 remains the **only** entitlement authority; client never self-promotes.

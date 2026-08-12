@@ -15,6 +15,7 @@
 |-------|--------|
 | Backend V1 (S0–S20) | **GO / frozen** |
 | V1.1 engines S21–S26 | **Done** — engine sprints **stopped**; baseline collection |
-| Client mobile-first + payment readiness | **Done** — payments **disabled** until credentials ([`CLIENT_MOBILE_PAYMENT_READINESS.md`](../operations/CLIENT_MOBILE_PAYMENT_READINESS.md)) |
+| Client mobile-first + payment readiness | **Done** — payments **disabled** ([`CLIENT_MOBILE_PAYMENT_READINESS.md`](../operations/CLIENT_MOBILE_PAYMENT_READINESS.md)) |
+| Client polish P1–P4 | **Active** — [`CLIENT_POLISH.md`](../operations/CLIENT_POLISH.md) (no engines, no payments) |
 | Next (engines) | Real baseline → **S26 Review** → A/B/C |
 | Payments go-live | Sandbox cert → then `PAYMENTS_ENABLED=true` only |

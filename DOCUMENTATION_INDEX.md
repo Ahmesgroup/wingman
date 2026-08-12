@@ -183,6 +183,7 @@ Start with `README.md`, then `docs/PRD.md`, `architecture/STATE_MACHINES.md`, `d
 - [`operations/S18_PROVIDERS.md`](operations/S18_PROVIDERS.md) — SMS + FCM/APNs providers
 - [`operations/S19_BILLING_ENTITLEMENTS.md`](operations/S19_BILLING_ENTITLEMENTS.md) — Billing → Entitlements + payment-ready fail-closed
 - [`operations/CLIENT_MOBILE_PAYMENT_READINESS.md`](operations/CLIENT_MOBILE_PAYMENT_READINESS.md) — mobile-first client + payments disabled
+- [`operations/CLIENT_POLISH.md`](operations/CLIENT_POLISH.md) — **active** polish-only P1–P4 (no engines, no payments)
 - [`operations/S20_PRODUCTION_CERTIFICATION.md`](operations/S20_PRODUCTION_CERTIFICATION.md) — **Backend V1 certification GO**
 - [`operations/V1.1_ADVANCED_ENGINE.md`](operations/V1.1_ADVANCED_ENGINE.md) — V1.1 advanced engines roadmap
 - [`operations/S21_RADAR_INTELLIGENCE.md`](operations/S21_RADAR_INTELLIGENCE.md) — Radar Intelligence (flagged ranking)

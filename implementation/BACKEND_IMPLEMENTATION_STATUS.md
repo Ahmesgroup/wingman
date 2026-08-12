@@ -514,7 +514,7 @@ V1.1 engines S21–S26 + **S24.1** are implemented. Staging load is **GO**.
 
 Do **not** open S27 by default. The next advantage is knowing whether existing engines improve human encounters.
 
-**Client** (independent): further UX polish / OTP session auth — not payment enablement without credentials.
+| **Client** (independent) | **Polish only P1–P4** — [`CLIENT_POLISH.md`](../operations/CLIENT_POLISH.md); no payment enablement without credentials |
 
 ---
 
