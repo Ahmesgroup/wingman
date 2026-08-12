@@ -1,8 +1,8 @@
 # Project state — locked 2026-08-11 · client track updated 2026-08-12
 
 **Reference commit (engines / baseline):** `ccbb7a3`  
-**Client track commits:** `928512f` (mobile-first + payment-ready disabled), `3aaab02` (Connection→Mission loop)  
-**Related:** [`V1.1_ADVANCED_ENGINE.md`](./V1.1_ADVANCED_ENGINE.md), [`S26_MEASUREMENT.md`](./S26_MEASUREMENT.md), [`STAGING_LOAD_CERTIFICATION.md`](./STAGING_LOAD_CERTIFICATION.md), [`CLIENT_MOBILE_PAYMENT_READINESS.md`](./CLIENT_MOBILE_PAYMENT_READINESS.md)
+**Client track:** polish P1–P4 closed at `bb9bb13` · next = real-phone Client Polish Review  
+**Related:** [`V1.1_ADVANCED_ENGINE.md`](./V1.1_ADVANCED_ENGINE.md), [`S26_MEASUREMENT.md`](./S26_MEASUREMENT.md), [`STAGING_LOAD_CERTIFICATION.md`](./STAGING_LOAD_CERTIFICATION.md), [`CLIENT_MOBILE_PAYMENT_READINESS.md`](./CLIENT_MOBILE_PAYMENT_READINESS.md), [`CLIENT_POLISH_REVIEW.md`](./CLIENT_POLISH_REVIEW.md)
 
 ```text
 S0–S20    Backend V1                FROZEN / GO
@@ -22,7 +22,8 @@ THEN                                S26 Review (not automatic S27)
 CLIENT    Mobile-first + payments   DONE (payments DISABLED)
           Connection→Mission loop   DONE (wired to Nest)
 PAYMENTS  Architecture ready        OFF (PAYMENTS_ENABLED=false)
-CLIENT    Polish only P1–P4         DONE — next Client Polish Review (no auto P5)
+CLIENT    Polish P1–P4 impl         DONE (`bb9bb13`)
+CLIENT    Polish Review (phone)     OPEN → FREEZE V1 or P5 only if repro defects
 ```
 
 ## Freeze during baseline collection
@@ -35,13 +36,13 @@ Until **S26 Review** closes with an A/B/C decision:
 - Keep `MEASUREMENT_ENABLED=true` so the baseline stays continuous and **uncontaminated** by mid-flight engine changes.
 - Do **not** enable payments (`PAYMENTS_ENABLED` stays `false`).
 
-Bugfixes / infra / ops / **client polish (P1–P4)** that do not change V1.1 decision logic remain allowed when objectified.
+Bugfixes / infra / ops / **client polish** that do not change V1.1 decision logic remain allowed when objectified. **P5 is not automatic** — only after Client Polish Review lists reproducible defects.
 
 ## Client track
 
-**Shipped:** [`CLIENT_MOBILE_PAYMENT_READINESS.md`](./CLIENT_MOBILE_PAYMENT_READINESS.md) — mobile-first + payment-ready disabled + loop wired.
-
-**Active:** [`CLIENT_POLISH.md`](./CLIENT_POLISH.md) — UI/UX + robustness only (P1 responsive → P2 states → P3 motion → P4 a11y/QA).
+**Shipped:** [`CLIENT_MOBILE_PAYMENT_READINESS.md`](./CLIENT_MOBILE_PAYMENT_READINESS.md) — mobile-first + payment-ready disabled + loop wired.  
+**Shipped:** [`CLIENT_POLISH.md`](./CLIENT_POLISH.md) — P1–P4 implementation closed.  
+**Open:** [`CLIENT_POLISH_REVIEW.md`](./CLIENT_POLISH_REVIEW.md) — real-phone review → **FREEZE V1** or **P5 ciblé** (no P5 by principle).
 
 - Web prototype is the mobile-first client against Nest (`AUTH_ALLOW_DEV` / `x-user-id`).
 - S19 remains the **only** entitlement authority; client never self-promotes.

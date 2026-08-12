@@ -1,41 +1,94 @@
-# Client Polish Review — after P1–P4
+# Client Polish Review — real-phone verdict
 
-**Status:** Pending (do not open P5 automatically)  
-**When:** After P4 gate is closed on a real phone  
-**Forbidden during review:** engines (S27+), `PAYMENTS_ENABLED=true`, domain/architecture refactors
+**Status:** OPEN — next action (no code sprint)  
+**Implements closed:** P1–P4 (`bb9bb13`) — polish *implementation* phase done  
+**Forbidden:** engines (S27+), `PAYMENTS_ENABLED=true`, domain/architecture refactors, **P5 by habit**
 
-## Purpose
+## Sequence (locked)
 
-Objectify residual client quality before any freeze or optional P5:
+```text
+Client Polish Review (real phone)
+        │
+        ├─► FREEZE client V1     if loop is fluid & clear
+        └─► P5 targeted only     if review lists reproducible defects
+```
 
-1. Residual bugs (reproducible)
-2. Visual coherence (`--proto-*` + mood language)
-3. UX friction on the full loop
-4. Accessibility (keyboard, SR, contrast, touch)
-5. Stability on a real device (iOS/Android)
+No P5 “par principe”. Hypotheses do not open tickets.
+
+## Verdict rule (simple)
+
+| Verdict | When | Next |
+|---------|------|------|
+| **FREEZE V1** | Full loop stays fluid and clear on a real device; no blocking defect from the list below | Document freeze; stop client polish |
+| **P5 ciblé** | Review produces **reproducible** defects (device, OS, steps, expected vs actual) | Scoped polish tickets only — still no engines/payments |
+
+### Defect classes that can justify P5 (examples)
+
+- Overflow / clipped UI on real viewport
+- Keyboard masking a primary CTA
+- Insufficient contrast / unreadable in motion
+- Confusing reconnect / offline recovery
+- Ambiguous protocol state (Signal / Match / Mission / Cooldown)
+- Perceptible UI latency that breaks trust
+- Inaccessible interaction (touch, focus, SR)
+
+Smoke (`Smoke P4` / `?smoke=1`) is **necessary but not sufficient** — this review catches fluidity, state comprehension, real touch size, and readability in motion.
+
+## Real-device observation protocol
+
+Record **device / OS / browser** once, then walk:
+
+1. **Cold start** — launch → Splash readable, primary CTA obvious  
+2. **Auth** — phone → OTP → profile → consent (no dead screen)  
+3. **Radar** — invisible → go active; mood meaning without color alone  
+4. **Signal** — send / receive; feedback immediate and blue-coded  
+5. **Validation** — selfie / pending; timer + actions clear  
+6. **Match** — Connection confirmed → ticket (not ambiguous with Mission)  
+7. **Mission** — Meet + Mode; only active mission may “breathe”  
+8. **Outcome** — private answer; advance works  
+9. **Cooldown** — calm; back to Radar  
+10. **Refresh** mid-loop — coherent restore (no mute / wrong phase)  
+11. **Offline → reconnect** — banner + CTA; usable again  
+12. **Rotation** — landscape / return; no trapped CTA  
+13. **Background → foreground** — app usable; no infinite spinner  
+
+Also note: reduced-motion path if the tester enables it.
 
 ## Entry criteria
 
-- P1–P4 checklists in [`CLIENT_POLISH.md`](./CLIENT_POLISH.md) are checked
-- Prototype smoke (`Smoke P4` chip or `?smoke=1`) passes in mock mode
-- Loop path exercised: Splash → Auth → Radar → Signal → Validation → Match → Mission → Outcome → Cooldown → Radar
+- [x] P1–P4 checklists in [`CLIENT_POLISH.md`](./CLIENT_POLISH.md)  
+- [x] Prototype smoke passes in mock mode  
+- [ ] Review session completed on at least one real phone  
 
-## Decision outcomes (evidence before tickets)
+## Review log (fill on device)
 
-| Outcome | Meaning | Next |
-|---------|---------|------|
-| **Freeze client V1** | Loop clean enough; no blocking a11y/UX defects | Document freeze; no P5 |
-| **P5 (optional)** | Only if review lists objectified residual defects | Scoped polish tickets only — still no engines/payments |
+| Field | Value |
+|-------|--------|
+| Date | |
+| Device | |
+| OS / browser | |
+| Tester | |
+| Verdict | `FREEZE V1` / `P5` |
+| Evidence (links / notes) | |
 
-Hypotheses do not open tickets. Measures / reproducible observations do.
+### Checklist
 
-## Review checklist (fill during review)
+- [ ] Cold start → Cooldown → Radar fluid end-to-end  
+- [ ] Protocol states immediately understandable (not color-only)  
+- [ ] Touch targets feel usable in hand (not only CSS ≥44)  
+- [ ] Refresh mid-loop coherent  
+- [ ] Offline / reconnect clear  
+- [ ] Rotation + background resume OK  
+- [ ] Keyboard does not hide primary CTA  
+- [ ] No infinite spinner / dead screen  
 
-- [ ] Full loop on 360 / 375 / 390 / 412 without overflow or dead screens
-- [ ] Offline → reconnect restores usable UI
-- [ ] Refresh mid-loop restores a coherent view (session)
-- [ ] Landscape / keyboard do not trap CTAs
-- [ ] No primary action requires hover
-- [ ] Mood / protocol meaning not by color alone
-- [ ] Reduced-motion path fully usable
-- [ ] Real-phone notes (device, OS, browser) attached
+### Reproducible findings (P5 candidates only)
+
+| ID | Observation (repro steps) | Severity | Opens P5? |
+|----|---------------------------|----------|-----------|
+| | | | Y/N |
+
+## After verdict
+
+- **FREEZE V1** → update [`PROJECT_STATE.md`](./PROJECT_STATE.md) client line to frozen; no further polish sprint unless new objectified evidence.  
+- **P5** → open only tickets tied to rows above; keep scope polish-only.
