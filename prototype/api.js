@@ -18,13 +18,18 @@
       try { localStorage.setItem('wingman_user_id', id); } catch (_) { /* ignore */ }
     }
 
-    async function request(method, path, body) {
+    async function request(method, path, body, opts) {
+      opts = opts || {};
       if (useMock) {
         const err = new Error('MOCK_MODE');
         err.code = 'MOCK_MODE';
         throw err;
       }
-      const headers = { Accept: 'application/json', 'x-user-id': userId };
+      const headers = {
+        Accept: 'application/json',
+        'x-user-id': opts.userId || userId,
+      };
+      if (opts.idempotencyKey) headers['idempotency-key'] = opts.idempotencyKey;
       if (body !== undefined) headers['Content-Type'] = 'application/json';
       const res = await fetch(baseUrl + path, {
         method: method,
@@ -38,9 +43,21 @@
         const err = new Error((data && data.error && data.error.message) || res.statusText);
         err.status = res.status;
         err.body = data;
+        err.code = data && data.error && data.error.code;
         throw err;
       }
       return data;
+    }
+
+    /** Run a callback with a temporary x-user-id (demo dual-user loop). */
+    async function asUser(tempUserId, fn) {
+      const prev = userId;
+      userId = tempUserId;
+      try {
+        return await fn();
+      } finally {
+        userId = prev;
+      }
     }
 
     return {
@@ -49,6 +66,8 @@
       get useMock() { return useMock; },
       setUserId: setUserId,
       setUseMock: function (v) { useMock = Boolean(v); },
+      asUser: asUser,
+      request: request,
 
       live: async function () {
         const res = await fetch(baseUrl + '/internal/live', { headers: { Accept: 'application/json' } });
@@ -60,27 +79,30 @@
       paymentsStatus: function () { return request('GET', '/billing/payments/status'); },
       checkout: function (urls) { return request('POST', '/billing/checkout', urls); },
 
-      radarActivate: function (body) { return request('POST', '/radar/activate', body); },
-      radarDeactivate: function () { return request('POST', '/radar/deactivate', {}); },
-      radarCandidates: function (near, around) {
-        return request('GET', '/radar/candidates?nearRadiusM=' + (near || 50) + '&aroundRadiusM=' + (around || 200));
+      radarActivate: function (body, opts) { return request('POST', '/radar/activate', body, opts); },
+      radarDeactivate: function (opts) { return request('POST', '/radar/deactivate', {}, opts); },
+      radarCandidates: function (near, around, opts) {
+        return request('GET', '/radar/candidates?nearRadiusM=' + (near || 50) + '&aroundRadiusM=' + (around || 200), undefined, opts);
       },
 
-      sendSignal: function (body) { return request('POST', '/signals', body); },
-      openSignal: function (id) { return request('POST', '/signals/' + id + '/open', {}); },
-      acceptSignal: function (id) { return request('POST', '/signals/' + id + '/accept', {}); },
+      sendSignal: function (body, opts) { return request('POST', '/signals', body, opts); },
+      openSignal: function (id, opts) { return request('POST', '/signals/' + id + '/open', {}, opts); },
+      acceptSignal: function (id, opts) { return request('POST', '/signals/' + id + '/accept', {}, opts); },
 
-      connection: function (id) { return request('GET', '/connections/' + id); },
-      selfie: function (id, body) { return request('POST', '/connections/' + id + '/selfie', body); },
-      approve: function (id) { return request('POST', '/connections/' + id + '/approve', {}); },
-      meetNow: function (id) { return request('POST', '/connections/' + id + '/meet-now', {}); },
-      ticket: function (id) { return request('POST', '/connections/' + id + '/ticket', {}); },
-      ticketAvailable: function (id) { return request('POST', '/connections/' + id + '/ticket/available', {}); },
-      letsMeet: function (id) { return request('POST', '/connections/' + id + '/lets-meet', {}); },
-      notThisTime: function (id) { return request('POST', '/connections/' + id + '/not-this-time', {}); },
-      message: function (id, body) { return request('POST', '/connections/' + id + '/messages', body); },
-      outcome: function (id, body) { return request('POST', '/connections/' + id + '/outcome', body); },
-      block: function (body) { return request('POST', '/safety/block', body); },
+      connection: function (id, opts) { return request('GET', '/connections/' + id, undefined, opts); },
+      selfie: function (id, body, opts) { return request('POST', '/connections/' + id + '/selfie', body, opts); },
+      approve: function (id, opts) { return request('POST', '/connections/' + id + '/approve', {}, opts); },
+      meetNow: function (id, opts) { return request('POST', '/connections/' + id + '/meet-now', {}, opts); },
+      ticket: function (id, opts) { return request('POST', '/connections/' + id + '/ticket', {}, opts); },
+      ticketAvailable: function (id, opts) { return request('POST', '/connections/' + id + '/ticket/available', {}, opts); },
+      ticketConfirm: function (id, opts) { return request('POST', '/connections/' + id + '/ticket/confirm', {}, opts); },
+      letsMeet: function (id, opts) { return request('POST', '/connections/' + id + '/lets-meet', {}, opts); },
+      finishMeet: function (id, opts) { return request('POST', '/connections/' + id + '/finish', {}, opts); },
+      notThisTime: function (id, opts) { return request('POST', '/connections/' + id + '/not-this-time', {}, opts); },
+      message: function (id, body, opts) { return request('POST', '/connections/' + id + '/messages', body, opts); },
+      outcome: function (id, body, opts) { return request('POST', '/connections/' + id + '/outcome', body, opts); },
+      cooldownSkip: function (id, opts) { return request('POST', '/connections/' + id + '/cooldown/skip', {}, opts); },
+      block: function (body, opts) { return request('POST', '/safety/block', body, opts); },
     };
   }
 

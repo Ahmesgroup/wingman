@@ -203,6 +203,12 @@ export class ConnectionsController {
     return { connection: await this.connections.apply(id, "lets_meet", userId) };
   }
 
+  /** Close mission chat → OUTCOME_PENDING (MISSION_CONFIRMED only). */
+  @Post(":id/finish")
+  async finish(@CurrentUser() userId: string, @Param("id") id: string) {
+    return { connection: await this.connections.apply(id, "chat_closed", userId) };
+  }
+
   @Post(":id/not-this-time")
   async notThisTime(@CurrentUser() userId: string, @Param("id") id: string) {
     return { connection: await this.connections.apply(id, "not_this_time", userId) };

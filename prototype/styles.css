@@ -61,10 +61,16 @@ button:focus-visible,[tabindex]:focus-visible,.dot:focus-visible{outline:2px sol
   .statusbar{padding-top:calc(12px + env(safe-area-inset-top,0px))}
   .nav{padding-bottom:calc(14px + env(safe-area-inset-bottom,0px))}
   .toast{bottom:calc(88px + env(safe-area-inset-bottom,0px))}
+  .body{padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}
+  #radar-canvas{height:min(42dvh,340px)}
+  .selfie-frame{width:min(220px,70vw);height:min(260px,36dvh)}
+  .chat{padding-bottom:calc(8px + env(safe-area-inset-bottom,0px))}
 }
-@media (min-width:361px) and (max-width:412px){
+@media (min-width:360px) and (max-width:412px){
   .body.pad,.pad{padding-left:16px;padding-right:16px}
   h1.big{font-size:clamp(26px,7vw,30px)}
+  .stat b{font-size:18px}
+  .plan-chip{font-size:11px}
 }
 
 /* ---- generic screen scaffolding ---- */
@@ -287,6 +293,22 @@ p.lead{color:var(--t-secondary);font-size:14px;line-height:1.5}
 
 /* offline banner */
 .offline-banner{background:var(--warning);color:var(--night);font-size:12px;font-weight:700;text-align:center;padding:6px}
+.api-banner{font-size:11px;font-weight:700;text-align:center;padding:6px 10px}
+.api-banner.mock{background:rgba(255,191,105,.18);color:var(--warning)}
+.api-banner.live{background:rgba(64,211,156,.14);color:var(--success)}
+.api-banner.error{background:rgba(255,92,114,.16);color:var(--error)}
+.loading-overlay{
+  position:absolute;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;
+  background:rgba(4,7,15,.72);backdrop-filter:blur(6px);color:var(--t-primary);font-size:13px;font-weight:600
+}
+.loading-overlay.hidden{display:none!important}
+.loading-spin{
+  width:28px;height:28px;border-radius:50%;border:2px solid rgba(185,167,255,.25);border-top-color:var(--wingman);
+  animation:spin .7s linear infinite
+}
+.reduce-motion .loading-spin{animation:none;border-top-color:var(--air)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.btn[disabled],.act-primary[disabled],.act-secondary[disabled]{opacity:.45;pointer-events:none}
 
 /* toast */
 .toast{position:absolute;bottom:88px;left:50%;transform:translateX(-50%) translateY(16px);background:var(--elevated);border:1px solid var(--border);color:var(--t-primary);padding:11px 18px;border-radius:var(--r-btn);font-size:13px;opacity:0;transition:var(--d-normal) var(--ease);z-index:40;pointer-events:none;max-width:88%;text-align:center}

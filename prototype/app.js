@@ -19,8 +19,12 @@ const state = {
   ticketsActive: 1,
   plan: 'FREE',
   apiLive: false,
-  connectionId: null,
+  meId: 'proto-alex',
   peerId: 'proto-peer',
+  signalId: null,
+  connectionId: null,
+  connectionState: null,
+  busy: false,
   serverNow: () => Date.now(),
 };
 
@@ -29,6 +33,45 @@ let api = null;
 const payments = (typeof WingmanPayments !== 'undefined' && WingmanPayments.paymentClient)
   ? WingmanPayments.paymentClient
   : { provider: { id: 'disabled', enabled: false }, showPaywallCtas: false };
+
+function setApiBanner(kind, msg) {
+  const el = $('#api-banner');
+  if (!el) return;
+  if (!msg) { el.className = 'api-banner hidden'; el.textContent = ''; return; }
+  el.className = 'api-banner ' + kind;
+  el.textContent = msg;
+}
+
+function setLoading(on, label) {
+  state.busy = Boolean(on);
+  const ov = $('#loading-overlay');
+  const tx = $('#loading-text');
+  if (tx && label) tx.textContent = label;
+  if (ov) ov.classList.toggle('hidden', !on);
+}
+
+async function withLoading(label, fn) {
+  if (state.offline) {
+    toast(state.lang === 'fr' ? 'Hors ligne — réessayez' : 'Offline — try again');
+    return null;
+  }
+  setLoading(true, label);
+  try {
+    return await fn();
+  } catch (e) {
+    const msg = (e && e.message) || String(e);
+    setApiBanner('error', msg);
+    toast(msg);
+    haptic('error');
+    throw e;
+  } finally {
+    setLoading(false);
+  }
+}
+
+function liveApi() {
+  return api && !api.useMock && !state.offline;
+}
 
 /* ---------------------------------------------------------------- i18n ---- */
 const I18N = {
@@ -76,6 +119,8 @@ const I18N = {
     nav_radar: 'Radar', nav_signal: 'Signal', nav_pulse: 'Pulse', nav_settings: 'Settings',
     t_signal_sent: 'Signal sent · silent expiry in 10 min', t_mood: 'Mood updated', t_blocked: 'Blocked: contact details are not allowed', t_active: "You're visible on the Radar", t_invisible: "You're invisible",
     t_api_mock: 'API offline — demo mode', t_api_live: 'Connected to Wingman API',
+    t_loading: 'Loading…', t_accepting: 'Opening connection…', t_selfie: 'Sending selfie…', t_approving: 'Confirming…',
+    t_meet: 'Opening Mission Meet…', t_ticket: 'Holding ticket…', t_chat: 'Sending…', t_outcome: 'Saving outcome…',
   },
   fr: {
     brandtag: 'Facilitez la première rencontre', splash_tag: "Facilitez la première rencontre.", splash_love: "L'amour est dans l'air.", splash_cta: 'Commencer',
@@ -121,6 +166,8 @@ const I18N = {
     nav_radar: 'Radar', nav_signal: 'Signal', nav_pulse: 'Pulse', nav_settings: 'Réglages',
     t_signal_sent: 'Signal envoyé · expiration silencieuse dans 10 min', t_mood: 'Humeur mise à jour', t_blocked: 'Bloqué : les coordonnées ne sont pas autorisées', t_active: 'Vous êtes visible sur le Radar', t_invisible: 'Vous êtes invisible',
     t_api_mock: 'API hors ligne — mode démo', t_api_live: 'Connecté à l\'API Wingman',
+    t_loading: 'Chargement…', t_accepting: 'Ouverture de la connexion…', t_selfie: 'Envoi du selfie…', t_approving: 'Confirmation…',
+    t_meet: 'Ouverture Mission Meet…', t_ticket: 'Ticket en cours…', t_chat: 'Envoi…', t_outcome: 'Enregistrement…',
   },
 };
 
@@ -274,23 +321,37 @@ function openSheet(d) {
 }
 $('#close-sheet').addEventListener('click', () => $('#dot-sheet').classList.remove('open'));
 $('#send-signal-btn').addEventListener('click', async () => {
+  if (state.busy) return;
   if (state.signalsLeft <= 0) { toast(state.lang === 'fr' ? 'Plus de signaux aujourd\'hui' : 'No signals left today'); return; }
   const w = canvas.clientWidth || 400; signalWave = { x: w / 2, y: 170, t: performance.now() };
   startRadar(); haptic('signalSent');
   $('#dot-sheet').classList.remove('open');
 
-  if (api && !api.useMock) {
+  if (liveApi()) {
     try {
-      await api.sendSignal({ receiverId: state.peerId, source: 'RADAR' });
-      state.signalsLeft = Math.max(0, state.signalsLeft - 1);
-      $('#stat-signals').textContent = state.signalsLeft;
+      await withLoading(t('t_loading'), async () => {
+        // Ensure peer is on radar so signal is valid.
+        await api.radarActivate(
+          { lat: 49.6117, lng: 6.1320, visibility: 'ACTIVE' },
+          { userId: state.peerId },
+        );
+        await api.radarActivate({ lat: 49.6116, lng: 6.1319, visibility: 'ACTIVE' });
+        const res = await api.sendSignal(
+          { receiverId: state.peerId, source: 'RADAR' },
+          { idempotencyKey: 'proto-' + Date.now() },
+        );
+        state.signalId = res && res.signal && res.signal.id;
+        state.signalsLeft = Math.max(0, state.signalsLeft - 1);
+        $('#stat-signals').textContent = state.signalsLeft;
+      });
       toast(t('t_signal_sent'));
       setTimeout(() => show('v-signal'), 800);
       return;
-    } catch (e) {
-      // Fall through to demo flow if peer missing / quota — keep UX moving
+    } catch (_) {
+      /* fall through to demo */
     }
   }
+  state.signalId = null;
   state.signalsLeft--; $('#stat-signals').textContent = state.signalsLeft;
   toast(t('t_signal_sent'));
   setTimeout(() => show('v-signal'), 800);
@@ -298,21 +359,27 @@ $('#send-signal-btn').addEventListener('click', async () => {
 
 /* ------------------------------------------------------- radar toggle/mood */
 $('#radar-toggle').addEventListener('click', async () => {
+  if (state.busy) return;
   const next = !state.radarActive;
-  if (api && !api.useMock) {
+  if (liveApi()) {
     try {
       if (next) {
-        await api.radarActivate({ lat: 49.6116, lng: 6.1319, visibility: 'ACTIVE' });
-        const cands = await api.radarCandidates();
-        const n = (cands && (cands.candidates || cands.near || cands.items)) || [];
-        const count = Array.isArray(n) ? n.length : (cands && cands.count) || dots.length;
-        const el = $('#stat-nearby'); if (el) el.textContent = String(count || dots.length);
+        await withLoading(t('t_loading'), async () => {
+          await api.radarActivate({ lat: 49.6116, lng: 6.1319, visibility: 'ACTIVE' });
+          await api.radarActivate(
+            { lat: 49.6117, lng: 6.1320, visibility: 'ACTIVE' },
+            { userId: state.peerId },
+          );
+          const cands = await api.radarCandidates();
+          const list = (cands && cands.candidates) || [];
+          const el = $('#stat-nearby'); if (el) el.textContent = String(list.length || dots.length);
+        });
       } else {
-        await api.radarDeactivate();
+        await withLoading(t('t_loading'), async () => {
+          await api.radarDeactivate();
+        });
       }
-    } catch (_) {
-      /* keep UI responsive */
-    }
+    } catch (_) { return; }
   }
   state.radarActive = next;
   const btn = $('#radar-toggle'), st = $('#radar-state');
@@ -389,21 +456,154 @@ function onEnter(id) {
   if (id === 'v-cooldown') { /* number already set by outcome */ }
 }
 
-/* selfie send -> reveal approve/expire (quiet, no red X) */
-$('#selfie-send').addEventListener('click', () => {
+/* selfie send -> dual selfie on API (demo both sides) then reveal approve */
+$('#selfie-send').addEventListener('click', async () => {
+  if (state.busy) return;
+  if (liveApi() && state.connectionId) {
+    try {
+      await withLoading(t('t_selfie'), async () => {
+        await api.selfie(state.connectionId, { mediaId: 'media-' + state.meId });
+        await api.selfie(state.connectionId, { mediaId: 'media-' + state.peerId }, { userId: state.peerId });
+        const c = await api.connection(state.connectionId);
+        state.connectionState = c.connection && c.connection.state;
+      });
+    } catch (_) { return; }
+  }
   $('#selfie-send').classList.add('hidden');
   $('#selfie-validate').classList.remove('hidden');
   toast(state.lang === 'fr' ? 'Selfie envoyé — en attente' : 'Selfie sent — waiting');
 });
 
+$('#selfie-expire').addEventListener('click', () => show('v-radar'));
+$('#selfie-approve').addEventListener('click', async () => {
+  if (state.busy) return;
+  if (liveApi() && state.connectionId) {
+    try {
+      await withLoading(t('t_approving'), async () => {
+        const res = await api.approve(state.connectionId);
+        state.connectionState = res.connection && res.connection.state;
+      });
+    } catch (_) { return; }
+  }
+  show('v-confirmed');
+});
+
+$('#open-signal-btn').addEventListener('click', async () => {
+  if (state.busy) return;
+  if (liveApi() && state.signalId) {
+    try {
+      await withLoading(t('t_accepting'), async () => {
+        await api.openSignal(state.signalId, { userId: state.peerId });
+        const accept = await api.acceptSignal(state.signalId, { userId: state.peerId });
+        state.connectionId = accept.connection && accept.connection.id;
+        state.connectionState = accept.connection && accept.connection.state;
+      });
+    } catch (_) { return; }
+  } else {
+    state.connectionId = state.connectionId || 'demo-conn';
+  }
+  show('v-selfie');
+});
+
+$('#ticket-open-btn').addEventListener('click', async () => {
+  if (state.busy) return;
+  if (liveApi() && state.connectionId) {
+    try {
+      await withLoading(t('t_meet'), async () => {
+        const res = await api.meetNow(state.connectionId);
+        state.connectionState = res.connection && res.connection.state;
+      });
+    } catch (_) { return; }
+  }
+  show('v-mission-meet');
+});
+
+$('#ticket-later-btn').addEventListener('click', async () => {
+  if (state.busy) return;
+  if (liveApi() && state.connectionId) {
+    try {
+      await withLoading(t('t_ticket'), async () => {
+        const res = await api.ticket(state.connectionId);
+        state.connectionState = res.connection && res.connection.state;
+      });
+    } catch (_) { /* still leave */ }
+  }
+  show('v-radar');
+});
+
+$('#mm-meet-btn').addEventListener('click', async () => {
+  if (state.busy) return;
+  if (liveApi() && state.connectionId) {
+    try {
+      await withLoading(t('t_meet'), async () => {
+        const res = await api.letsMeet(state.connectionId);
+        state.connectionState = res.connection && res.connection.state;
+      });
+    } catch (_) { return; }
+  }
+  show('v-mission-mode');
+});
+
+$('#mm-not-btn').addEventListener('click', async () => {
+  if (state.busy) return;
+  if (liveApi() && state.connectionId) {
+    try {
+      await withLoading(t('t_loading'), async () => {
+        const res = await api.notThisTime(state.connectionId);
+        state.connectionState = res.connection && res.connection.state;
+      });
+    } catch (_) { return; }
+  }
+  show('v-outcome');
+});
+
+$('#mode-continue-btn').addEventListener('click', async () => {
+  if (state.busy) return;
+  if (liveApi() && state.connectionId) {
+    try {
+      await withLoading(t('t_loading'), async () => {
+        const cur = await api.connection(state.connectionId);
+        const st = cur.connection && cur.connection.state;
+        if (st === 'MISSION_CONFIRMED') {
+          const res = await api.finishMeet(state.connectionId);
+          state.connectionState = res.connection && res.connection.state;
+        } else if (st === 'MISSION_MEET_ACTIVE') {
+          const res = await api.notThisTime(state.connectionId);
+          state.connectionState = res.connection && res.connection.state;
+        } else {
+          state.connectionState = st;
+        }
+      });
+    } catch (_) { return; }
+  }
+  show('v-outcome');
+});
+
 /* mission meet chat + anti-contact filter */
 const CONTACT_RE = /(\+?\d[\d\s().-]{6,}\d)|(@[A-Za-z0-9_.]{2,})|(\b\w+\.(com|net|io|fr|be|lu)\b)|(snap|insta|whatsapp|tiktok|telegram)/i;
-function sendChat() {
+async function sendChat() {
+  if (state.busy) return;
   const f = $('#chat-field'), v = f.value.trim(); if (!v) return;
   const log = $('#chat-log');
   if (CONTACT_RE.test(v)) {
     const b = document.createElement('div'); b.className = 'msg blocked'; b.textContent = t('t_blocked');
     log.appendChild(b); haptic('error'); f.value = ''; log.scrollTop = log.scrollHeight; return;
+  }
+  if (liveApi() && state.connectionId) {
+    try {
+      await withLoading(t('t_chat'), async () => {
+        const res = await api.message(state.connectionId, { text: v });
+        if (res && res.message && res.message.filtered) {
+          const b = document.createElement('div'); b.className = 'msg blocked'; b.textContent = t('t_blocked');
+          log.appendChild(b); haptic('error');
+          return;
+        }
+        const m = document.createElement('div'); m.className = 'msg me'; m.textContent = v;
+        log.appendChild(m);
+      });
+      f.value = ''; log.scrollTop = log.scrollHeight;
+      return;
+    } catch (_) { return; }
   }
   const m = document.createElement('div'); m.className = 'msg me'; m.textContent = v;
   log.appendChild(m); f.value = ''; log.scrollTop = log.scrollHeight;
@@ -411,10 +611,25 @@ function sendChat() {
 $('#chat-send').addEventListener('click', sendChat);
 $('#chat-field').addEventListener('keydown', e => { if (e.key === 'Enter') sendChat(); });
 
-/* outcome sets cooldown length */
-$$('[data-outcome]').forEach(b => b.addEventListener('click', () => {
-  $('#cd-num').textContent = b.dataset.outcome === 'yes' ? '30' : '15';
-}));
+/* outcome → both sides on API → cooldown */
+async function submitOutcome(kind) {
+  if (state.busy) return;
+  $('#cd-num').textContent = kind === 'yes' ? '30' : '15';
+  if (liveApi() && state.connectionId) {
+    try {
+      await withLoading(t('t_outcome'), async () => {
+        const o = kind === 'yes' ? 'YES' : 'NO';
+        await api.outcome(state.connectionId, { outcome: o });
+        await api.outcome(state.connectionId, { outcome: o }, { userId: state.peerId });
+        const c = await api.connection(state.connectionId);
+        state.connectionState = c.connection && c.connection.state;
+      });
+    } catch (_) { return; }
+  }
+  show('v-cooldown');
+}
+$('#outcome-yes-btn').addEventListener('click', () => submitOutcome('yes'));
+$('#outcome-no-btn').addEventListener('click', () => submitOutcome('no'));
 
 /* generic data-go + destiny card keyboard */
 document.addEventListener('click', e => {
@@ -453,11 +668,14 @@ function setReduceMotion(on) {
 $('#rm-toggle').addEventListener('click', () => setReduceMotion(!state.reduceMotion));
 if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) setReduceMotion(true);
 
-/* offline simulation — timers keep running server-side */
+/* offline simulation — timers keep running server-side; API calls blocked */
 $('#offline-toggle').addEventListener('click', () => {
   state.offline = !state.offline;
   $('#offline-toggle').setAttribute('aria-pressed', String(state.offline));
   $('#offline-banner').classList.toggle('hidden', !state.offline);
+  if (state.offline) setApiBanner('error', state.lang === 'fr' ? 'Mode hors ligne' : 'Offline mode');
+  else if (state.apiLive) setApiBanner('live', t('t_api_live'));
+  else setApiBanner('mock', t('t_api_mock'));
 });
 
 function applyEntitlements(e) {
@@ -483,41 +701,45 @@ function applyEntitlements(e) {
 async function bootApi() {
   if (!globalThis.WingmanApi) {
     state.apiLive = false;
+    setApiBanner('mock', t('t_api_mock'));
     return;
   }
-  api = await WingmanApi.bootstrapApi({ userId: 'proto-alex' });
-  state.apiLive = !api.useMock;
-  if (!state.apiLive) {
-    toast(t('t_api_mock'));
-    applyEntitlements({ plan: 'FREE', capabilities: { dailySignals: 2, activeConnectionTickets: 1 } });
-    return;
-  }
+  setLoading(true, t('t_loading'));
   try {
+    api = await WingmanApi.bootstrapApi({ userId: state.meId });
+    state.apiLive = !api.useMock;
+    if (!state.apiLive) {
+      setApiBanner('mock', t('t_api_mock'));
+      toast(t('t_api_mock'));
+      applyEntitlements({ plan: 'FREE', capabilities: { dailySignals: 2, activeConnectionTickets: 1 } });
+      return;
+    }
     await api.seed({
-      id: 'proto-alex',
+      id: state.meId,
       gender: 'MALE',
       interestedIn: ['WOMEN'],
     });
     await api.seed({
-      id: 'proto-peer',
+      id: state.peerId,
       gender: 'FEMALE',
       interestedIn: ['MEN'],
     });
     const ents = await api.entitlements();
     applyEntitlements(ents);
-    // Prove payments stay disabled — never call checkout from UI.
     try {
       const ps = await api.paymentsStatus();
-      if (ps && ps.paymentsEnabled) {
-        console.warn('[wingman] payments unexpectedly enabled');
-      }
+      if (ps && ps.paymentsEnabled) console.warn('[wingman] payments unexpectedly enabled');
     } catch (_) { /* ignore */ }
+    setApiBanner('live', t('t_api_live'));
     toast(t('t_api_live'));
   } catch (_) {
-    api.setUseMock(true);
+    if (api) api.setUseMock(true);
     state.apiLive = false;
+    setApiBanner('mock', t('t_api_mock'));
     toast(t('t_api_mock'));
     applyEntitlements({ plan: 'FREE', capabilities: { dailySignals: 2, activeConnectionTickets: 1 } });
+  } finally {
+    setLoading(false);
   }
 }
 
