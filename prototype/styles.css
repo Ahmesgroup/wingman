@@ -22,6 +22,8 @@
   --glow-ready:rgba(255,77,103,.34); --glow-open:rgba(255,200,87,.30); --glow-explore:rgba(244,245,247,.20);
   --r-sm:10px; --r-badge:12px; --r-btn:18px; --r-card:24px; --r-modal:28px;
   --d-fast:180ms; --d-normal:280ms; --d-slow:500ms; --d-emotional:900ms;
+  /* P3 — short, state-explaining motion only */
+  --motion-enter:220ms; --motion-tap:110ms; --motion-proto:320ms; --motion-mission:2.4s;
   --ease:cubic-bezier(.2,0,0,1); --ease-in:cubic-bezier(0,0,.2,1); --ease-out:cubic-bezier(.4,0,1,1);
   --font-ui:'Manrope',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   --font-display:'Sora',var(--font-ui);
@@ -152,10 +154,10 @@ body.keyboard-open .nav{opacity:.35;pointer-events:none}
 body.keyboard-open .top-controls{display:none}
 
 /* ---- generic screen scaffolding ---- */
-.view{display:none;flex-direction:column;height:100%;animation:fade var(--d-normal) var(--ease-in)}
-.view.active{display:flex}
+.view{display:none;flex-direction:column;height:100%}
+.view.active{display:flex;animation:view-enter var(--motion-enter) var(--ease-in)}
 .reduce-motion .view.active{animation:none}
-@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes view-enter{from{opacity:0}to{opacity:1}}
 
 .statusbar{display:flex;justify-content:space-between;padding:20px 22px 6px;font-size:12px;color:var(--t-muted)}
 .statusbar .time{color:var(--air);font-weight:700}
@@ -174,24 +176,34 @@ p.lead{color:var(--t-secondary);font-size:14px;line-height:1.5}
 .small{font-size:12px}
 
 /* ---- buttons ---- */
+.btn,.act-primary,.act-secondary,.chip,.mood-btn,.radar-toggle,.nav button,.banner-action,.report-opt{
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation
+}
 .btn{
   display:flex;align-items:center;justify-content:center;gap:8px;width:100%;
   min-height:var(--touch-min);padding:15px;border-radius:var(--r-btn);
   font-weight:700;font-size:15px;
-  transition:transform var(--d-fast) var(--ease),box-shadow var(--d-fast) var(--ease)
+  transition:transform var(--motion-tap) var(--ease),opacity var(--motion-tap) var(--ease),box-shadow var(--d-fast) var(--ease),filter var(--d-fast) var(--ease)
 }
-.btn:active{transform:scale(.98)}
+.btn:active,.act-primary:active,.act-secondary:active,.radar-toggle:active{transform:scale(.97);opacity:.92}
+.btn.is-tapped{filter:brightness(1.08)}
 .btn-primary{background:var(--wingman);color:#fff;box-shadow:0 8px 24px var(--glow-signal)}
 .btn-secondary{background:var(--elevated);color:var(--t-primary);border:1px solid var(--border)}
 .btn-ghost{background:transparent;color:var(--t-secondary);border:1px solid var(--border)}
 .btn-love{background:linear-gradient(120deg,var(--wingman),var(--love));color:#fff}
 .btn-row{display:flex;gap:10px;margin-top:12px}
 .btn-row .btn{margin-top:0}
-.act-secondary,.act-primary{min-height:var(--touch-min)}
+.act-secondary,.act-primary{min-height:var(--touch-min);transition:transform var(--motion-tap) var(--ease),opacity var(--motion-tap) var(--ease),border-color var(--d-fast) var(--ease),box-shadow var(--d-fast) var(--ease)}
 .pill{min-height:36px}
 .mood-btn{min-height:var(--touch-min)}
 .report-opt{min-height:var(--touch-min)}
 .switch{min-width:44px;min-height:26px}
+/* Protocol CTA press — color explains action kind */
+#send-signal-btn:active,#open-signal-btn:active{box-shadow:0 0 0 3px rgba(124,156,255,.35)}
+#selfie-approve:active{box-shadow:0 0 0 3px rgba(124,92,252,.35)}
+#ticket-open-btn:active,#mm-meet-btn:active,#mode-continue-btn:active{box-shadow:0 0 0 3px rgba(255,159,67,.4)}
+#outcome-yes-btn:active{box-shadow:0 0 0 3px rgba(64,211,156,.35)}
 /* ---- cards ---- */
 .card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-card);padding:16px;margin-bottom:12px}
 .card.elevated{background:var(--elevated)}
@@ -331,10 +343,14 @@ p.lead{color:var(--t-secondary);font-size:14px;line-height:1.5}
 
 /* mission mode */
 .mission-mode{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px;text-align:center;gap:14px}
-.mm-ring{width:96px;height:96px;border-radius:50%;border:2px solid var(--wingman);display:flex;align-items:center;justify-content:center;box-shadow:0 0 30px var(--glow-signal)}
+.mm-ring{
+  width:96px;height:96px;border-radius:50%;border:2px solid var(--wingman);
+  display:flex;align-items:center;justify-content:center;box-shadow:0 0 30px var(--glow-signal);
+  will-change:transform,box-shadow
+}
 .mm-ring svg{width:40px;height:40px;stroke:var(--air);fill:none;stroke-width:1.6}
 
-/* cooldown */
+/* cooldown — calm, no pulse */
 .cooldown{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px;text-align:center;gap:14px}
 .cd-num{font-family:var(--font-display);font-size:52px;font-weight:700}
 .pill-badge{background:rgba(64,211,156,.12);color:var(--success);padding:8px 16px;border-radius:999px;font-size:13px;font-weight:600}
@@ -385,7 +401,16 @@ p.lead{color:var(--t-secondary);font-size:14px;line-height:1.5}
   border-bottom:1px solid var(--border);background:rgba(23,31,53,.92)
 }
 .phase-strip.hidden{display:none!important}
-.phase-dot{width:8px;height:8px;border-radius:50%;background:var(--proto-offline);flex-shrink:0}
+.phase-dot{
+  width:8px;height:8px;border-radius:50%;background:var(--proto-offline);flex-shrink:0;
+  transition:background-color var(--motion-proto) var(--ease),box-shadow var(--motion-proto) var(--ease)
+}
+.phase-strip.phase-flash .phase-dot{animation:proto-flash var(--motion-proto) var(--ease) 1}
+@keyframes proto-flash{
+  0%{transform:scale(1)}
+  40%{transform:scale(1.35)}
+  100%{transform:scale(1)}
+}
 .phase-strip[data-phase="available"] .phase-dot{background:var(--proto-available)}
 .phase-strip[data-phase="busy"] .phase-dot{background:var(--proto-busy)}
 .phase-strip[data-phase="unavailable"] .phase-dot{background:var(--proto-unavailable)}
@@ -430,11 +455,29 @@ p.lead{color:var(--t-secondary);font-size:14px;line-height:1.5}
 .radar-shell.is-empty .radar-distance{opacity:0}
 
 .sig .glyph.signal-glyph{background:rgba(124,156,255,.18);color:var(--proto-signal);border:1px solid rgba(124,156,255,.35)}
-.mission-mode.is-active .mm-ring{border-color:var(--proto-mission);box-shadow:0 0 30px rgba(255,159,67,.35)}
-.mission-mode.is-active .eyebrow{color:var(--proto-mission)}
+.sig.is-arriving{animation:sig-arrive var(--motion-proto) var(--ease) both}
+@keyframes sig-arrive{from{opacity:0}to{opacity:1}}
+.mission-mode.is-active .mm-ring,
+#v-mission-mode.is-active .mm-ring{
+  border-color:var(--proto-mission);box-shadow:0 0 24px rgba(255,159,67,.35);
+  animation:mission-breathe var(--motion-mission) var(--ease) infinite
+}
+.mission-mode.is-active .eyebrow,
+#v-mission-mode.is-active .eyebrow{color:var(--proto-mission)}
+@keyframes mission-breathe{
+  0%,100%{box-shadow:0 0 16px rgba(255,159,67,.28);transform:scale(1)}
+  50%{box-shadow:0 0 28px rgba(255,159,67,.45);transform:scale(1.03)}
+}
+#v-mission-meet .chat-obj,#v-mission-meet #mm-timer{color:var(--proto-mission)}
+#v-mission-meet .timer-bar i{background:var(--proto-mission)}
 .cooldown .eyebrow{color:var(--proto-busy)}
+.cooldown .cd-num{animation:cool-in var(--d-slow) var(--ease) both}
+@keyframes cool-in{from{opacity:.35}to{opacity:1}}
 .confirm-title{color:var(--t-primary)}
 .view#v-confirmed .confirm-title{color:var(--love)}
+#v-ticket .pill-badge{background:rgba(124,92,252,.14);color:var(--proto-match)}
+#v-selfie .timer-text{color:var(--proto-busy)}
+#v-selfie .timer-bar i{background:var(--proto-busy)}
 
 .toast{
   position:absolute;bottom:88px;left:50%;transform:translateX(-50%) translateY(16px);
@@ -466,6 +509,36 @@ p.lead{color:var(--t-secondary);font-size:14px;line-height:1.5}
 
 /* expiry / silent */
 .silent-note{text-align:center;color:var(--t-muted);font-size:12px;padding:12px;background:var(--card);border:1px solid var(--border);border-radius:var(--r-sm)}
+
+/* ---- P3 reduced-motion (class + OS preference) ---- */
+.reduce-motion .mission-mode.is-active .mm-ring,
+.reduce-motion #v-mission-mode.is-active .mm-ring,
+.reduce-motion .phase-strip.phase-flash .phase-dot,
+.reduce-motion .sig.is-arriving,
+.reduce-motion .cooldown .cd-num,
+.reduce-motion .confirm-stage.fused .confirm-title,
+.reduce-motion .loading-spin{animation:none!important}
+.reduce-motion .btn:active,.reduce-motion .act-primary:active,.reduce-motion .act-secondary:active,.reduce-motion .radar-toggle:active{
+  transform:none;opacity:.85
+}
+.reduce-motion .confirm-stage.fused .confirm-title{opacity:1}
+@media (prefers-reduced-motion:reduce){
+  .view.active{animation:none}
+  .mission-mode.is-active .mm-ring,
+  #v-mission-mode.is-active .mm-ring,
+  .phase-strip.phase-flash .phase-dot,
+  .sig.is-arriving,
+  .cooldown .cd-num,
+  .confirm-stage.fused .halo.left,
+  .confirm-stage.fused .halo.right,
+  .confirm-stage.fused .confirm-title,
+  .loading-spin,
+  .sheet{animation:none!important;transition:none!important}
+  .confirm-stage.fused .halo.left{left:calc(50% - 70px);background:radial-gradient(circle,var(--glow-love),transparent 70%)}
+  .confirm-stage.fused .halo.right{right:calc(50% - 70px);background:radial-gradient(circle,var(--glow-love),transparent 70%)}
+  .confirm-stage.fused .confirm-title{opacity:1}
+  .btn:active,.act-primary:active,.act-secondary:active,.radar-toggle:active{transform:none}
+}
 
 /* utility */
 .center{text-align:center}

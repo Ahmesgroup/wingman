@@ -87,6 +87,18 @@ Rose (`--love`) remains reserved for Connection Confirmed. Do not recolor moods 
 
 **P2 shipped** — next: **P3 motion + micro-interactions** only.
 
+## P3 exit checklist
+
+- [x] View enter: short opacity only (`--motion-enter` 220ms) — no layout shift
+- [x] CTA tap feedback immediate (`:active` + `is-tapped`); never blocks actions
+- [x] Protocol motion: Radar go-active burst, Signal blue wave, Match fuse (one-shot), Mission breathe (only infinite), Cooldown calm fade
+- [x] No infinite canvas pulses; SUPER_READY = static second ring
+- [x] Signal / Match / Mission visually distinct (blue / violet / orange)
+- [x] `prefers-reduced-motion` + Reduce motion toggle: no breathe, no enter anim, instant navigation delays
+- [x] Timings short (`--motion-tap` / `--motion-proto`); Match→ticket ≤900ms (200ms reduced)
+
+**P3 shipped** — next: **P4 accessibility + QA** only.
+
 ## Run
 
 ```bash

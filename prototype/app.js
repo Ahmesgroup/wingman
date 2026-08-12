@@ -127,9 +127,31 @@ function setPhase(phase, label) {
   const hide = !phase || phase === 'idle';
   strip.classList.toggle('hidden', hide);
   if (hide) return;
+  const changed = strip.dataset.phase !== phase;
   strip.dataset.phase = phase;
   if (lab) lab.textContent = label || phaseLabel(phase);
+  if (changed && !state.reduceMotion) {
+    strip.classList.remove('phase-flash');
+    void strip.offsetWidth;
+    strip.classList.add('phase-flash');
+    clearTimeout(setPhase._flash);
+    setPhase._flash = setTimeout(() => strip.classList.remove('phase-flash'), 360);
+  }
   persistSession();
+}
+
+function motionMs(full, reduced) {
+  return state.reduceMotion ? (reduced ?? 0) : full;
+}
+
+function markSignalArrive() {
+  const row = $('#sig-active-row');
+  if (!row || state.reduceMotion) return;
+  row.classList.remove('is-arriving');
+  void row.offsetWidth;
+  row.classList.add('is-arriving');
+  clearTimeout(markSignalArrive._t);
+  markSignalArrive._t = setTimeout(() => row.classList.remove('is-arriving'), 400);
 }
 
 function phaseLabel(phase) {
@@ -410,8 +432,9 @@ const dots = [
   { x: .40, y: .70, mood: 'SUPER_READY', age: '31 · 180cm', ageFr: '31 · 180cm', bio: 'Up for a real meet', bioFr: 'Envie de vraie rencontre', tags: ['🎸', '🍕'] },
   { x: .24, y: .55, mood: 'OPEN', age: '27 · 170cm', ageFr: '27 · 170cm', bio: 'New in town 🌆', bioFr: 'Nouvelle en ville 🌆', tags: ['📷', '🍜'] },
 ];
-let signalWave = null; // {x,y,t}
-let rafId = null, pulsePhase = 0;
+let signalWave = null; // {x,y,t} — one-shot Signal (blue)
+let activateBurst = null; // {t} — one-shot Radar go-active
+let rafId = null;
 
 function buildingShapes(w, h) {
   // deterministic abstract urban masses (no real geography)
@@ -420,7 +443,7 @@ function buildingShapes(w, h) {
     [.08, .60, .18, .26], [.44, .18, .12, .12], [.30, .78, .22, .14], [.58, .70, .18, .18],
   ].map(([x, y, bw, bh]) => ({ x: x * w, y: y * h, w: bw * w, h: bh * h }));
 }
-function drawRadar(ts) {
+function drawRadar() {
   const w = canvas.clientWidth || 400, h = 340, cx = w / 2, cy = h / 2;
   ctx.clearRect(0, 0, w, h);
   ctx.fillStyle = '#080D1A'; ctx.fillRect(0, 0, w, h);
@@ -430,42 +453,58 @@ function drawRadar(ts) {
   // concentric rings
   ctx.strokeStyle = 'rgba(124,92,252,.10)'; ctx.lineWidth = 1;
   [50, 100, 150].forEach(r => { ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke(); });
-  // your position (violet, slow pulse)
-  if (!state.reduceMotion) pulsePhase = (ts % 3000) / 3000;
-  const pr = state.reduceMotion ? 0.5 : (0.5 + 0.5 * Math.sin(pulsePhase * Math.PI * 2));
-  const grd = ctx.createRadialGradient(cx, cy, 2, cx, cy, 26 + pr * 10);
-  grd.addColorStop(0, 'rgba(155,135,255,.5)'); grd.addColorStop(1, 'rgba(155,135,255,0)');
-  ctx.fillStyle = grd; ctx.beginPath(); ctx.arc(cx, cy, 26 + pr * 10, 0, Math.PI * 2); ctx.fill();
+  // your position — static glow (no infinite pulse; Mission alone may breathe in CSS)
+  const grd = ctx.createRadialGradient(cx, cy, 2, cx, cy, 30);
+  grd.addColorStop(0, 'rgba(155,135,255,.45)'); grd.addColorStop(1, 'rgba(155,135,255,0)');
+  ctx.fillStyle = grd; ctx.beginPath(); ctx.arc(cx, cy, 30, 0, Math.PI * 2); ctx.fill();
   ctx.fillStyle = '#9B87FF'; ctx.beginPath(); ctx.arc(cx, cy, 7, 0, Math.PI * 2); ctx.fill();
+  // go-active burst — explains Available transition once
+  if (activateBurst && !state.reduceMotion) {
+    const age = (performance.now() - activateBurst.t) / 700;
+    if (age >= 1) activateBurst = null;
+    else {
+      const rad = 16 + age * 90, alpha = 0.28 * (1 - age);
+      ctx.strokeStyle = `rgba(64,211,156,${alpha})`; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(cx, cy, rad, 0, Math.PI * 2); ctx.stroke();
+    }
+  } else if (activateBurst && state.reduceMotion) {
+    activateBurst = null;
+  }
   // other people's mood dots (only when radar active)
   if (state.radarActive) {
     dots.forEach(d => {
       const x = d.x * w, y = d.y * h, col = MOOD_COLORS[d.mood];
-      // glow
       const g = ctx.createRadialGradient(x, y, 1, x, y, 16);
       g.addColorStop(0, MOOD_GLOW[d.mood]); g.addColorStop(1, 'rgba(0,0,0,0)');
       ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, 16, 0, Math.PI * 2); ctx.fill();
-      // super ready gets a subtle second ring
-      if (d.mood === 'SUPER_READY' && !state.reduceMotion) {
-        const rr = 8 + (pulsePhase * 10);
-        ctx.strokeStyle = `rgba(255,77,103,${0.4 * (1 - pulsePhase)})`;
-        ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, rr, 0, Math.PI * 2); ctx.stroke();
+      // Super ready: static second ring (shape language — not infinite pulse)
+      if (d.mood === 'SUPER_READY') {
+        ctx.strokeStyle = 'rgba(255,77,103,0.4)';
+        ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, 12, 0, Math.PI * 2); ctx.stroke();
       }
       ctx.fillStyle = col; ctx.beginPath(); ctx.arc(x, y, 6.5, 0, Math.PI * 2); ctx.fill();
       ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 1.5; ctx.stroke();
     });
   }
-  // diffuse Signal wave (Refinement: omnidirectional, no straight targeting line)
+  // Signal wave — one-shot, blue (--proto-signal), not Match violet
   if (signalWave) {
-    const age = (performance.now() - signalWave.t) / 900;
+    const dur = state.reduceMotion ? 1 : 900;
+    const age = (performance.now() - signalWave.t) / dur;
     if (age >= 1) { signalWave = null; }
-    else {
-      const rad = 20 + age * 120, alpha = 0.35 * (1 - age);
-      ctx.strokeStyle = `rgba(124,92,252,${alpha})`; ctx.lineWidth = 2;
+    else if (!state.reduceMotion) {
+      const rad = 20 + age * 120, alpha = 0.4 * (1 - age);
+      ctx.strokeStyle = `rgba(124,156,255,${alpha})`; ctx.lineWidth = 2;
       ctx.beginPath(); ctx.arc(signalWave.x, signalWave.y, rad, 0, Math.PI * 2); ctx.stroke();
+    } else {
+      signalWave = null;
     }
   }
-  if (!state.reduceMotion || signalWave) rafId = requestAnimationFrame(drawRadar);
+  // RAF only while a one-shot protocol motion is running
+  if ((signalWave || activateBurst) && !state.reduceMotion) {
+    rafId = requestAnimationFrame(drawRadar);
+  } else {
+    rafId = null;
+  }
 }
 function roundRect(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
 function startRadar() { cancelAnimationFrame(rafId); rafId = requestAnimationFrame(drawRadar); }
@@ -517,7 +556,7 @@ $('#send-signal-btn').addEventListener('click', async () => {
       state.hasIncomingSignal = true;
       setPhase('signal', t('t_phase_signal'));
       feedback('signal', t('t_signal_sent'));
-      setTimeout(() => show('v-signal'), 800);
+      setTimeout(() => show('v-signal'), motionMs(320, 0));
       return;
     } catch (_) {
       /* fall through to demo */
@@ -528,7 +567,7 @@ $('#send-signal-btn').addEventListener('click', async () => {
   state.signalsLeft--; $('#stat-signals').textContent = state.signalsLeft;
   setPhase('signal', t('t_phase_signal'));
   feedback('signal', t('t_signal_sent'));
-  setTimeout(() => { state.hasIncomingSignal = true; show('v-signal'); }, 800);
+  setTimeout(() => { state.hasIncomingSignal = true; show('v-signal'); }, motionMs(320, 0));
 });
 
 /* ------------------------------------------------------- radar toggle/mood */
@@ -562,6 +601,7 @@ $('#radar-toggle').addEventListener('click', async () => {
   btn.textContent = state.radarActive ? t('radar_deactivate') : t('radar_activate');
   st.textContent = state.radarActive ? t('radar_active') : t('radar_invisible');
   st.classList.toggle('invisible', !state.radarActive);
+  if (state.radarActive && !state.reduceMotion) activateBurst = { t: performance.now() };
   haptic('selection'); startRadar();
   syncRadarEmpty();
   setPhase(state.radarActive ? 'available' : 'idle');
@@ -608,7 +648,10 @@ function onEnter(id) {
   if (id === 'v-signal') {
     state.hasIncomingSignal = Boolean(state.signalId) || state.hasIncomingSignal;
     syncSignalEmpty();
-    if (state.hasIncomingSignal || state.signalId) setPhase('signal', t('t_phase_signal'));
+    if (state.hasIncomingSignal || state.signalId) {
+      setPhase('signal', t('t_phase_signal'));
+      markSignalArrive();
+    }
     if (sigStop) sigStop();
     let s = 420; const el = $('#sig-timer');
     const iv = setInterval(() => {
@@ -639,12 +682,15 @@ function onEnter(id) {
     const stage = $('#confirm-stage'); stage.classList.remove('fused'); void stage.offsetWidth; stage.classList.add('fused');
     haptic('connectionConfirmed');
     feedback('match', t('t_match'));
-    setTimeout(() => show('v-ticket'), state.reduceMotion ? 600 : 1800);
+    setTimeout(() => show('v-ticket'), motionMs(900, 200));
   }
   if (id === 'v-ticket') setPhase('match', t('t_phase_match'));
   if (id === 'v-mission-meet') {
     setPhase('mission', t('t_phase_mission'));
-    $('#v-mission-mode') && $('#v-mission-mode').classList.remove('is-active');
+    const modeView = $('#v-mission-mode');
+    if (modeView) modeView.classList.remove('is-active');
+    const modeInner = modeView && modeView.querySelector('.mission-mode');
+    if (modeInner) modeInner.classList.remove('is-active');
     if (stopMM) stopMM();
     stopMM = makeTimer({ durationSec: 900, textEl: $('#mm-timer'), barEl: $('#mm-bar'),
       onExpire: () => { feedback('busy', state.lang === 'fr' ? 'Chat expiré' : 'Chat expired'); show('v-outcome'); } });
@@ -652,8 +698,10 @@ function onEnter(id) {
   }
   if (id === 'v-mission-mode') {
     setPhase('mission', t('t_phase_mission'));
-    const mm = $('#v-mission-mode');
-    if (mm) mm.classList.add('is-active');
+    const modeView = $('#v-mission-mode');
+    if (modeView) modeView.classList.add('is-active');
+    const modeInner = modeView && modeView.querySelector('.mission-mode');
+    if (modeInner) modeInner.classList.add('is-active');
   }
   if (id === 'v-outcome') setPhase('busy', t('t_phase_busy'));
   if (id === 'v-cooldown') {
@@ -876,10 +924,27 @@ function setReduceMotion(on) {
   document.body.classList.toggle('reduce-motion', on);
   $('#rm-toggle').setAttribute('aria-pressed', String(on));
   const sw = $('#rm-switch'); if (sw) sw.setAttribute('aria-checked', String(on));
+  signalWave = null;
+  activateBurst = null;
   startRadar();
 }
 $('#rm-toggle').addEventListener('click', () => setReduceMotion(!state.reduceMotion));
-if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) setReduceMotion(true);
+if (window.matchMedia) {
+  const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const syncRm = () => { if (mq.matches) setReduceMotion(true); };
+  syncRm();
+  if (mq.addEventListener) mq.addEventListener('change', syncRm);
+  else if (mq.addListener) mq.addListener(syncRm);
+}
+
+/* Immediate tap feedback — never blocks actions */
+document.addEventListener('pointerdown', e => {
+  const el = e.target.closest('.btn, .act-primary, .act-secondary, .radar-toggle, .chip, .nav button');
+  if (!el || state.reduceMotion) return;
+  el.classList.add('is-tapped');
+  clearTimeout(el._tapT);
+  el._tapT = setTimeout(() => el.classList.remove('is-tapped'), 140);
+}, { passive: true });
 
 /* offline simulation — timers keep running server-side; API calls blocked */
 $('#offline-toggle').addEventListener('click', () => {
