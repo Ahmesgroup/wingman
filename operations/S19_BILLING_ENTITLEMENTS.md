@@ -65,10 +65,16 @@ Enable Nest `rawBody: true` for signature verification in production.
 
 | Variable | Role |
 |----------|------|
-| `STRIPE_SECRET_KEY` | Optional — without it, `FakeStripeBillingPort` |
+| `PAYMENTS_ENABLED` | Default `false` — no checkout |
+| `PAYMENT_PROVIDER` | `disabled` \| `stripe` \| `paddle` |
+| `STRIPE_SECRET_KEY` | Required only when payments enabled + stripe |
 | `STRIPE_WEBHOOK_SECRET` | Webhook HMAC secret (`whsec_…`) |
-| `STRIPE_PRICE_ID` | Checkout line item (live port) |
+| `STRIPE_PUBLISHABLE_KEY` | Client publishable key (never secret) |
+| `WINGMAN_PLUS_PRODUCT_ID` / `WINGMAN_PLUS_PRICE_ID` | Server-side product/price |
+| `PADDLE_*` | Required only when payments enabled + paddle |
 | `DATABASE_URL` | Durable `BillingAccount` / `BillingWebhookEvent` when Prisma is up |
+
+Fail-closed: `PAYMENTS_ENABLED=false` → `DisabledPaymentProvider`. Enabled without credentials → `PAYMENT_NOT_CONFIGURED` (no Fake checkout fallback).
 
 ## Gates
 

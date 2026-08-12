@@ -1,36 +1,44 @@
-import { Inject, Injectable, OnModuleInit } from "@nestjs/common";
-import { ModuleRef } from "@nestjs/core";
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  OnModuleInit,
+  ServiceUnavailableException,
+} from "@nestjs/common";
 import type { WingmanEngine } from "@wingman/domain";
 import type {
   BillingReconciler,
   CachedBillingStateStore,
   EntitlementService,
+  PaymentProvider,
   StripeBillingPort,
+} from "@wingman/billing";
+import {
+  PaymentNotConfiguredError,
+  PaymentsDisabledError,
 } from "@wingman/billing";
 import { WINGMAN_ENGINE } from "../../engine/engine.tokens.js";
 import {
   BILLING_RECONCILER,
   BILLING_STATE_STORE,
   ENTITLEMENT_SERVICE,
+  PAYMENT_PROVIDER,
   STRIPE_BILLING_PORT,
 } from "./billing.tokens.js";
 
 @Injectable()
 export class BillingAppService implements OnModuleInit {
   constructor(
+    @Inject(WINGMAN_ENGINE) private readonly wingman: WingmanEngine,
     @Inject(ENTITLEMENT_SERVICE) private readonly entitlements: EntitlementService,
     @Inject(BILLING_RECONCILER) private readonly reconciler: BillingReconciler,
     @Inject(BILLING_STATE_STORE) private readonly store: CachedBillingStateStore,
     @Inject(STRIPE_BILLING_PORT) private readonly stripe: StripeBillingPort,
-    private readonly moduleRef: ModuleRef,
+    @Inject(PAYMENT_PROVIDER) private readonly payments: PaymentProvider,
   ) {}
 
-  private engine(): WingmanEngine {
-    return this.moduleRef.get<WingmanEngine>(WINGMAN_ENGINE, { strict: false });
-  }
-
   async onModuleInit(): Promise<void> {
-    const engine = this.engine();
+    const engine = this.wingman;
     engine.setEntitlementsForUser((userId, now) => this.entitlements.forUserSync(userId, now));
 
     try {
@@ -52,14 +60,21 @@ export class BillingAppService implements OnModuleInit {
   }
 
   async entitlementsFor(userId: string) {
-    return this.entitlements.forUser(userId, this.engine().clock.now());
+    return this.entitlements.forUser(userId, this.wingman.clock.now());
+  }
+
+  paymentStatus() {
+    return {
+      paymentsEnabled: this.payments.enabled,
+      provider: this.payments.id,
+    };
   }
 
   async handleWebhook(rawBody: Buffer | string, signature: string) {
     try {
       const result = await this.reconciler.handleWebhook(rawBody, signature);
       if (result.ok && !result.duplicate && result.userId) {
-        const engine = this.engine();
+        const engine = this.wingman;
         const snap = await this.entitlements.forUser(result.userId, engine.clock.now());
         engine.setWingmanPlus(result.userId, snap.wingmanPlus);
       }
@@ -73,28 +88,55 @@ export class BillingAppService implements OnModuleInit {
   }
 
   async createCheckout(userId: string, successUrl: string, cancelUrl: string) {
-    if (!this.stripe.createCheckoutSession) {
-      return { ok: false as const, error: "checkout_unavailable" };
-    }
     const state = await this.store.get(userId);
-    const session = await this.stripe.createCheckoutSession({
-      userId,
-      customerId: state?.stripeCustomerId,
-      successUrl,
-      cancelUrl,
-    });
-    return { ok: true as const, ...session };
+    try {
+      const session = await this.payments.createCheckoutSession({
+        userId,
+        customerId: state?.stripeCustomerId,
+        successUrl,
+        cancelUrl,
+      });
+      return { ok: true as const, ...session };
+    } catch (e) {
+      this.mapPaymentError(e);
+    }
   }
 
   async createPortal(userId: string, returnUrl: string) {
     const state = await this.store.get(userId);
-    if (!state?.stripeCustomerId || !this.stripe.createCustomerPortalSession) {
-      return { ok: false as const, error: "portal_unavailable" };
+    if (!state?.stripeCustomerId) {
+      throw new BadRequestException({
+        error: { code: "PORTAL_UNAVAILABLE", message: "No billing customer for user" },
+      });
     }
-    const session = await this.stripe.createCustomerPortalSession({
-      customerId: state.stripeCustomerId,
-      returnUrl,
-    });
-    return { ok: true as const, ...session };
+    try {
+      const session = await this.payments.createCustomerPortalSession({
+        customerId: state.stripeCustomerId,
+        returnUrl,
+      });
+      return { ok: true as const, ...session };
+    } catch (e) {
+      this.mapPaymentError(e);
+    }
+  }
+
+  private mapPaymentError(e: unknown): never {
+    if (e instanceof PaymentsDisabledError) {
+      throw new ServiceUnavailableException({
+        error: { code: "PAYMENTS_DISABLED", message: e.message },
+      });
+    }
+    if (e instanceof PaymentNotConfiguredError) {
+      throw new ServiceUnavailableException({
+        error: { code: "PAYMENT_NOT_CONFIGURED", message: e.message },
+      });
+    }
+    throw e instanceof Error
+      ? new ServiceUnavailableException({
+          error: { code: "PAYMENT_ERROR", message: e.message },
+        })
+      : new ServiceUnavailableException({
+          error: { code: "PAYMENT_ERROR", message: "payment_failed" },
+        });
   }
 }

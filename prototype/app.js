@@ -16,8 +16,19 @@ const state = {
   radarActive: false,
   mood: 'OPEN',
   signalsLeft: 2,
-  serverNow: () => Date.now(), // server-authoritative clock (simulated)
+  ticketsActive: 1,
+  plan: 'FREE',
+  apiLive: false,
+  connectionId: null,
+  peerId: 'proto-peer',
+  serverNow: () => Date.now(),
 };
+
+/** @type {ReturnType<typeof WingmanApi.createApiClient> | null} */
+let api = null;
+const payments = (typeof WingmanPayments !== 'undefined' && WingmanPayments.paymentClient)
+  ? WingmanPayments.paymentClient
+  : { provider: { id: 'disabled', enabled: false }, showPaywallCtas: false };
 
 /* ---------------------------------------------------------------- i18n ---- */
 const I18N = {
@@ -37,7 +48,7 @@ const I18N = {
     c_analytics: 'Product analytics', c_analytics_d: 'Optional. Helps improve Wingman.', consent_cta: 'Agree & activate Radar',
     radar_sub: 'Real-time discovery', radar_invisible: '—  Invisible', radar_active: '●  Active', radar_dist: 'Someone very close · Nearby', radar_activate: 'Go active', radar_deactivate: 'Go invisible',
     mood_ready: 'Super ready', mood_open: 'Open', mood_explore: 'Exploring', mood_ready_d: 'Meet now', mood_open_d: "If it's right", mood_explore_d: 'Just looking', mood_title: 'Your mood',
-    stat_signals: 'Signals left', stat_nearby: 'Nearby', stat_zone: 'Active zone',
+    stat_signals: 'Signals left', stat_nearby: 'Nearby', stat_tickets: 'Active ticket',
     destiny_eyebrow: '✦ Destiny Connection', destiny_card_t: 'You keep crossing paths', destiny_card_d: 'Someone compatible keeps crossing your path — even off your radar.',
     send_signal: 'Send a Signal', close: 'Close',
     signal_sub: 'Signals received', signal_title: 'Someone wants to discover you', signal_body: 'Respond before it silently expires. No one is ever told they were declined.', open: 'Open', sig_expired: 'Expired — 2 min ago',
@@ -45,24 +56,26 @@ const I18N = {
     s_live: 'Liveness verified', s_stamp: 'Timestamped', s_gallery: 'Gallery blocked', s_send: 'Take & send selfie', s_letexpire: 'Let it expire', s_approve: 'Approve',
     s_note: 'The app blocks saving and sharing through its own interface; it cannot prevent every external capture.',
     confirmed: 'Connection confirmed',
-    ticket_sub: 'Connection Ticket', ticket_badge: '🎟 Ticket active', ticket_title: "Can't meet right now?", ticket_body: 'Hold this opportunity — up to 2 hours (Free) or 24 hours (Wingman+). No chat until you both open Mission Meet.', ticket_open: "I'm available now", ticket_later: 'Later',
+    ticket_sub: 'Connection Ticket', ticket_badge: '🎟 Ticket active', ticket_title: "Can't meet right now?", ticket_body: 'Hold this opportunity — up to 2 hours on Free. No chat until you both open Mission Meet.', ticket_open: "I'm available now", ticket_later: 'Later',
     mm_sub: 'Mission Meet', mm_obj: 'Decide where to meet', mm_ph: 'Terrace side sounds good…', mm_note: '📵 Phone numbers and social handles are blocked automatically.', mm_meet: "Let's meet", mm_not: 'Not this time',
     mode_eyebrow: 'MISSION MODE', mode_title: 'Focus on this connection', mode_body: '"Great meetings deserve your full attention."', mode_invisible: "● You're invisible on the Radar", mode_cta: 'We met — continue',
     outcome_title: 'Did you meet?', outcome_body: 'Your answer stays private. The other person never sees it.', outcome_yes: 'Yes, we met', outcome_no: 'Not this time',
-    cd_eyebrow: 'COOLDOWN', cd_min: 'minutes', cd_title: 'Take your time.', cd_body: '"Great conversations don\'t need another match immediately."', cd_skip: 'Skip · €0.99', cd_ok: 'Back to Radar',
+    cd_eyebrow: 'COOLDOWN', cd_min: 'minutes', cd_title: 'Take your time.', cd_body: '"Great conversations don\'t need another match immediately."', cd_ok: 'Back to Radar',
     destiny_title: 'Fate keeps nudging.', destiny_body: "You've crossed paths with someone compatible several times, in public places, on different days. No location, date, or address is shown.", destiny_try: 'Send a Destiny Signal', destiny_ignore: 'Ignore', destiny_off: 'Destiny is off by default and can be paused anytime in Settings.',
-    pulse_sub: 'Compatible activity zones', pulse_anon: 'Aggregated · Anonymized', pz1: 'Strong compatible activity · 200 m', pz2: 'Exceptional event · 1.2 km', pz3: 'Moderate activity · 800 m', pulse_plus: '⚡ Wingman+ : real-time notifications for Electric zones',
-    settings_sub: 'Settings & privacy', set_privacy: 'Privacy', set_photo: 'Public photo', set_none: '✗ None', set_loc: 'Precise location', set_never: '✗ Never shared', set_consent: 'Data consent', set_accepted: '✓ Managed', set_gdpr: 'GDPR compliance', set_designed: '✓ Designed for',
+    pulse_sub: 'Compatible activity zones', pulse_anon: 'Aggregated · Anonymized', pz1: 'Strong compatible activity · 200 m', pz2: 'Exceptional event · 1.2 km', pz3: 'Moderate activity · 800 m', pulse_note: 'Zones are aggregated and anonymized.',
+    settings_sub: 'Settings & privacy', set_plan: 'Your plan', set_plan_name: 'Plan', set_plan_signals: 'Signals / day', set_plan_tickets: 'Active tickets', set_plan_note: 'Payments are not available in this build.',
+    set_privacy: 'Privacy', set_photo: 'Public photo', set_none: '✗ None', set_loc: 'Precise location', set_never: '✗ Never shared', set_consent: 'Data consent', set_accepted: '✓ Managed', set_gdpr: 'GDPR compliance', set_designed: '✓ Designed for',
     set_controls: 'Controls', set_destiny: 'Destiny Connection', set_rm: 'Reduce motion', set_haptics: 'Haptics', set_rights: 'Your data (GDPR)', set_export: 'Export my data (JSON)', set_delete: 'Delete my account', set_admin: 'Admin moderation preview →',
     report_sub: 'Report & block', report_title: 'What happened?', report_body: 'Blocking is instant and silent. The other person is never notified.',
     rc_harass: 'Harassment', rc_threat: 'Threat', rc_imp: 'Impersonation', rc_sexual: 'Sexual content', rc_minor: 'Minor safety', rc_contact: 'Off-platform contact',
     report_done_badge: '✓ Blocked & reported', report_done_t: "You won't see each other again.", report_done_b: 'Repeated independent reports trigger human review — not an automatic permanent ban.', report_done_cta: 'Back to Radar',
-    pw_sub: 'Wingman+', pw_free: 'Free', pw_f1: '2 Signals / day', pw_f2: '1 Ticket — up to 2h', pw_f3: 'Destiny Connection included', pw_f4: 'Mission Meet 15 min',
-    pw_reco: 'RECOMMENDED', pw_p1: '20–25 Signals / day', pw_p2: '2 Tickets — up to 24h — 1 renewal', pw_p3: 'Verified selfie cache — 24h', pw_p4: 'Discovery priority + Pulse notifs', pw_p5: 'Mission Meet 20 min', pw_cta: 'Upgrade to Wingman+', pw_note: 'No boosted profiles. No ads in the meeting flow. No selling of behavioral data.',
+    plan_sub: 'Your plan', plan_active: 'Active', plan_payments_off: 'Payments are disabled. No checkout in this build.', plan_back: 'Back to Settings',
+    pw_f1: '2 Signals / day', pw_f2: '1 Ticket — up to 2h', pw_f3: 'Destiny Connection included', pw_f4: 'Mission Meet 15 min',
     admin_sub: 'Moderation queue', admin_body: 'Evidence is only created when a user reports during a session, and is stored encrypted outside the main database. Every access is audit-logged.',
     admin_pending: 'PENDING', admin_review: 'UNDER REVIEW', admin_resolved: 'RESOLVED', admin_c1: '3 independent reports · category: Off-platform contact', admin_c2: '1 report · Harassment · evidence sealed', admin_c3: 'Dismissed — coordinated false reports detected', admin_back: '← Back to app',
-    nav_radar: 'Radar', nav_signal: 'Signal', nav_pulse: 'Pulse', nav_plus: 'Wingman+', nav_settings: 'Settings',
+    nav_radar: 'Radar', nav_signal: 'Signal', nav_pulse: 'Pulse', nav_settings: 'Settings',
     t_signal_sent: 'Signal sent · silent expiry in 10 min', t_mood: 'Mood updated', t_blocked: 'Blocked: contact details are not allowed', t_active: "You're visible on the Radar", t_invisible: "You're invisible",
+    t_api_mock: 'API offline — demo mode', t_api_live: 'Connected to Wingman API',
   },
   fr: {
     brandtag: 'Facilitez la première rencontre', splash_tag: "Facilitez la première rencontre.", splash_love: "L'amour est dans l'air.", splash_cta: 'Commencer',
@@ -80,7 +93,7 @@ const I18N = {
     c_analytics: 'Analytique produit', c_analytics_d: 'Optionnel. Aide à améliorer Wingman.', consent_cta: 'Accepter & activer le Radar',
     radar_sub: 'Découverte en temps réel', radar_invisible: '—  Invisible', radar_active: '●  Actif', radar_dist: 'Quelqu\'un très proche · À proximité', radar_activate: 'Devenir actif', radar_deactivate: 'Devenir invisible',
     mood_ready: 'Prêt·e', mood_open: 'Ouvert·e', mood_explore: 'Explore', mood_ready_d: 'Se voir maintenant', mood_open_d: 'Si c\'est le bon', mood_explore_d: 'Juste explorer', mood_title: 'Mon humeur',
-    stat_signals: 'Signaux restants', stat_nearby: 'À proximité', stat_zone: 'Zone active',
+    stat_signals: 'Signaux restants', stat_nearby: 'À proximité', stat_tickets: 'Ticket actif',
     destiny_eyebrow: '✦ Destiny Connection', destiny_card_t: 'Vous vous croisez souvent', destiny_card_d: 'Quelqu\'un de compatible croise votre route — même hors de votre radar.',
     send_signal: 'Envoyer un Signal', close: 'Fermer',
     signal_sub: 'Signaux reçus', signal_title: 'Quelqu\'un veut vous découvrir', signal_body: 'Répondez avant l\'expiration silencieuse. Personne n\'est jamais informé d\'un refus.', open: 'Ouvrir', sig_expired: 'Expiré — il y a 2 min',
@@ -88,24 +101,26 @@ const I18N = {
     s_live: 'Vivacité vérifiée', s_stamp: 'Horodaté', s_gallery: 'Galerie bloquée', s_send: 'Prendre & envoyer', s_letexpire: 'Laisser expirer', s_approve: 'Approuver',
     s_note: 'L\'app empêche l\'enregistrement et le partage via ses propres interfaces ; elle ne peut empêcher toute capture externe.',
     confirmed: 'Connexion confirmée',
-    ticket_sub: 'Connection Ticket', ticket_badge: '🎟 Ticket actif', ticket_title: 'Pas dispo maintenant ?', ticket_body: 'Gardez cette opportunité — jusqu\'à 2 h (Gratuit) ou 24 h (Wingman+). Pas de chat avant d\'ouvrir Mission Meet à deux.', ticket_open: 'Je suis dispo', ticket_later: 'Plus tard',
+    ticket_sub: 'Connection Ticket', ticket_badge: '🎟 Ticket actif', ticket_title: 'Pas dispo maintenant ?', ticket_body: 'Gardez cette opportunité — jusqu\'à 2 h en Gratuit. Pas de chat avant d\'ouvrir Mission Meet à deux.', ticket_open: 'Je suis dispo', ticket_later: 'Plus tard',
     mm_sub: 'Mission Meet', mm_obj: 'Décidez d\'un lieu', mm_ph: 'Côté terrasse, ça marche…', mm_note: '📵 Numéros et réseaux sociaux bloqués automatiquement.', mm_meet: 'On se retrouve', mm_not: 'Pas cette fois',
     mode_eyebrow: 'MODE MISSION', mode_title: 'Concentrez-vous sur cette connexion', mode_body: '« Les vraies rencontres méritent toute votre attention. »', mode_invisible: '● Vous êtes invisible sur le Radar', mode_cta: 'On s\'est vus — continuer',
     outcome_title: 'Vous êtes-vous rencontrés ?', outcome_body: 'Votre réponse reste privée. L\'autre ne la voit jamais.', outcome_yes: 'Oui, on s\'est vus', outcome_no: 'Pas cette fois',
-    cd_eyebrow: 'COOLDOWN', cd_min: 'minutes', cd_title: 'Prenez le temps.', cd_body: '« Les bonnes rencontres n\'ont pas besoin d\'un nouveau match immédiatement. »', cd_skip: 'Passer · 0,99 €', cd_ok: 'Retour au Radar',
+    cd_eyebrow: 'COOLDOWN', cd_min: 'minutes', cd_title: 'Prenez le temps.', cd_body: '« Les bonnes rencontres n\'ont pas besoin d\'un nouveau match immédiatement. »', cd_ok: 'Retour au Radar',
     destiny_title: 'Le destin insiste.', destiny_body: 'Vous avez croisé quelqu\'un de compatible plusieurs fois, dans des lieux publics, à des jours différents. Aucun lieu, date ou adresse n\'est montré.', destiny_try: 'Envoyer un Signal Destiny', destiny_ignore: 'Ignorer', destiny_off: 'Destiny est désactivé par défaut et peut être mis en pause dans Réglages.',
-    pulse_sub: 'Zones d\'activité compatibles', pulse_anon: 'Agrégé · Anonymisé', pz1: 'Forte activité compatible · 200 m', pz2: 'Événement exceptionnel · 1,2 km', pz3: 'Activité modérée · 800 m', pulse_plus: '⚡ Wingman+ : notifications en temps réel des zones Électriques',
-    settings_sub: 'Réglages & vie privée', set_privacy: 'Vie privée', set_photo: 'Photo publique', set_none: '✗ Aucune', set_loc: 'Localisation précise', set_never: '✗ Jamais partagée', set_consent: 'Consentement données', set_accepted: '✓ Géré', set_gdpr: 'Conformité RGPD', set_designed: '✓ Conçu pour',
+    pulse_sub: 'Zones d\'activité compatibles', pulse_anon: 'Agrégé · Anonymisé', pz1: 'Forte activité compatible · 200 m', pz2: 'Événement exceptionnel · 1,2 km', pz3: 'Activité modérée · 800 m', pulse_note: 'Zones agrégées et anonymisées.',
+    settings_sub: 'Réglages & vie privée', set_plan: 'Votre offre', set_plan_name: 'Offre', set_plan_signals: 'Signaux / jour', set_plan_tickets: 'Tickets actifs', set_plan_note: 'Les paiements ne sont pas disponibles dans cette version.',
+    set_privacy: 'Vie privée', set_photo: 'Photo publique', set_none: '✗ Aucune', set_loc: 'Localisation précise', set_never: '✗ Jamais partagée', set_consent: 'Consentement données', set_accepted: '✓ Géré', set_gdpr: 'Conformité RGPD', set_designed: '✓ Conçu pour',
     set_controls: 'Contrôles', set_destiny: 'Destiny Connection', set_rm: 'Réduire les animations', set_haptics: 'Retour haptique', set_rights: 'Vos données (RGPD)', set_export: 'Exporter mes données (JSON)', set_delete: 'Supprimer mon compte', set_admin: 'Aperçu modération admin →',
     report_sub: 'Signaler & bloquer', report_title: 'Que s\'est-il passé ?', report_body: 'Le blocage est instantané et silencieux. L\'autre personne n\'est jamais notifiée.',
     rc_harass: 'Harcèlement', rc_threat: 'Menace', rc_imp: 'Usurpation', rc_sexual: 'Contenu sexuel', rc_minor: 'Sécurité mineurs', rc_contact: 'Contact hors plateforme',
     report_done_badge: '✓ Bloqué & signalé', report_done_t: 'Vous ne vous reverrez plus.', report_done_b: 'Des signalements indépendants répétés déclenchent une revue humaine — pas un bannissement automatique définitif.', report_done_cta: 'Retour au Radar',
-    pw_sub: 'Wingman+', pw_free: 'Gratuit', pw_f1: '2 Signaux / jour', pw_f2: '1 Ticket — jusqu\'à 2 h', pw_f3: 'Destiny Connection incluse', pw_f4: 'Mission Meet 15 min',
-    pw_reco: 'RECOMMANDÉ', pw_p1: '20–25 Signaux / jour', pw_p2: '2 Tickets — jusqu\'à 24 h — 1 renouvellement', pw_p3: 'Cache selfie vérifié — 24 h', pw_p4: 'Priorité découverte + notifs Pulse', pw_p5: 'Mission Meet 20 min', pw_cta: 'Passer à Wingman+', pw_note: 'Aucun profil boosté. Aucune pub dans le flux. Aucune revente de données comportementales.',
+    plan_sub: 'Votre offre', plan_active: 'Active', plan_payments_off: 'Paiements désactivés. Aucun checkout dans cette version.', plan_back: 'Retour aux réglages',
+    pw_f1: '2 Signaux / jour', pw_f2: '1 Ticket — jusqu\'à 2 h', pw_f3: 'Destiny Connection incluse', pw_f4: 'Mission Meet 15 min',
     admin_sub: 'File de modération', admin_body: 'La preuve n\'est créée que si un utilisateur signale pendant une session, et stockée chiffrée hors de la base principale. Chaque accès est journalisé.',
     admin_pending: 'EN ATTENTE', admin_review: 'EN REVUE', admin_resolved: 'RÉSOLU', admin_c1: '3 signalements indépendants · catégorie : Contact hors plateforme', admin_c2: '1 signalement · Harcèlement · preuve scellée', admin_c3: 'Rejeté — faux signalements coordonnés détectés', admin_back: '← Retour à l\'app',
-    nav_radar: 'Radar', nav_signal: 'Signal', nav_pulse: 'Pulse', nav_plus: 'Wingman+', nav_settings: 'Réglages',
+    nav_radar: 'Radar', nav_signal: 'Signal', nav_pulse: 'Pulse', nav_settings: 'Réglages',
     t_signal_sent: 'Signal envoyé · expiration silencieuse dans 10 min', t_mood: 'Humeur mise à jour', t_blocked: 'Bloqué : les coordonnées ne sont pas autorisées', t_active: 'Vous êtes visible sur le Radar', t_invisible: 'Vous êtes invisible',
+    t_api_mock: 'API hors ligne — mode démo', t_api_live: 'Connecté à l\'API Wingman',
   },
 };
 
@@ -146,7 +161,6 @@ const NAV = [
   ['v-radar', 'radar', 'M12 12m-2 0a2 2 0 104 0 2 2 0 10-4 0 M12 12m-6 0a6 6 0 1012 0 6 6 0 10-12 0'],
   ['v-signal', 'signal', 'M13 2L4 14h7l-1 8 9-12h-7z'],
   ['v-pulse', 'pulse', 'M3 12h4l2-7 4 14 2-7h6'],
-  ['v-paywall', 'plus', 'M12 3l2.5 5 5.5.8-4 4 1 5.5L12 20l-5 2.8 1-5.5-4-4 5.5-.8z'],
   ['v-settings', 'settings', 'M12 15a3 3 0 100-6 3 3 0 000 6z M19 12a7 7 0 00-.1-1l2-1.6-2-3.4-2.4 1a7 7 0 00-1.7-1L14.5 3h-4l-.3 2.6a7 7 0 00-1.7 1l-2.4-1-2 3.4L4.1 11a7 7 0 000 2l-2 1.6 2 3.4 2.4-1a7 7 0 001.7 1L9.5 21h4l.3-2.6a7 7 0 001.7-1l2.4 1 2-3.4-2-1.6a7 7 0 00.1-1z'],
 ];
 function buildNav() {
@@ -259,20 +273,48 @@ function openSheet(d) {
   $('#dot-sheet').classList.add('open');
 }
 $('#close-sheet').addEventListener('click', () => $('#dot-sheet').classList.remove('open'));
-$('#send-signal-btn').addEventListener('click', () => {
+$('#send-signal-btn').addEventListener('click', async () => {
   if (state.signalsLeft <= 0) { toast(state.lang === 'fr' ? 'Plus de signaux aujourd\'hui' : 'No signals left today'); return; }
-  state.signalsLeft--; $('#stat-signals').textContent = state.signalsLeft;
-  // diffuse wave from centre
   const w = canvas.clientWidth || 400; signalWave = { x: w / 2, y: 170, t: performance.now() };
   startRadar(); haptic('signalSent');
   $('#dot-sheet').classList.remove('open');
+
+  if (api && !api.useMock) {
+    try {
+      await api.sendSignal({ receiverId: state.peerId, source: 'RADAR' });
+      state.signalsLeft = Math.max(0, state.signalsLeft - 1);
+      $('#stat-signals').textContent = state.signalsLeft;
+      toast(t('t_signal_sent'));
+      setTimeout(() => show('v-signal'), 800);
+      return;
+    } catch (e) {
+      // Fall through to demo flow if peer missing / quota — keep UX moving
+    }
+  }
+  state.signalsLeft--; $('#stat-signals').textContent = state.signalsLeft;
   toast(t('t_signal_sent'));
   setTimeout(() => show('v-signal'), 800);
 });
 
 /* ------------------------------------------------------- radar toggle/mood */
-$('#radar-toggle').addEventListener('click', () => {
-  state.radarActive = !state.radarActive;
+$('#radar-toggle').addEventListener('click', async () => {
+  const next = !state.radarActive;
+  if (api && !api.useMock) {
+    try {
+      if (next) {
+        await api.radarActivate({ lat: 49.6116, lng: 6.1319, visibility: 'ACTIVE' });
+        const cands = await api.radarCandidates();
+        const n = (cands && (cands.candidates || cands.near || cands.items)) || [];
+        const count = Array.isArray(n) ? n.length : (cands && cands.count) || dots.length;
+        const el = $('#stat-nearby'); if (el) el.textContent = String(count || dots.length);
+      } else {
+        await api.radarDeactivate();
+      }
+    } catch (_) {
+      /* keep UI responsive */
+    }
+  }
+  state.radarActive = next;
   const btn = $('#radar-toggle'), st = $('#radar-state');
   btn.classList.toggle('off', !state.radarActive);
   btn.setAttribute('aria-pressed', String(state.radarActive));
@@ -389,7 +431,8 @@ document.addEventListener('click', e => {
 $$('.switch[role="switch"]').forEach(sw => sw.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sw.click(); } }));
 
 /* report entry (from mission meet note / settings could link) */
-$('#pw-cta') && $('#pw-cta').addEventListener('click', () => toast(state.lang === 'fr' ? 'Simulation — pas de paiement réel' : 'Simulation — no real payment'));
+/* Payments: no CTA — DisabledPaymentProvider only. */
+void payments;
 
 /* language */
 $$('.chip.lang').forEach(b => b.addEventListener('click', () => {
@@ -417,8 +460,71 @@ $('#offline-toggle').addEventListener('click', () => {
   $('#offline-banner').classList.toggle('hidden', !state.offline);
 });
 
+function applyEntitlements(e) {
+  if (!e) return;
+  state.plan = e.plan || 'FREE';
+  const caps = e.capabilities || {};
+  if (typeof caps.dailySignals === 'number') state.signalsLeft = caps.dailySignals;
+  if (typeof caps.activeConnectionTickets === 'number') state.ticketsActive = caps.activeConnectionTickets;
+  const sig = $('#stat-signals'); if (sig) sig.textContent = String(state.signalsLeft);
+  const tk = $('#stat-tickets'); if (tk) tk.textContent = String(state.ticketsActive);
+  const pl = $('#plan-label'); if (pl) pl.textContent = state.plan === 'WINGMAN_PLUS' ? 'PLUS' : 'FREE';
+  const pd = $('#plan-detail');
+  if (pd) {
+    pd.textContent = state.lang === 'fr'
+      ? `${state.signalsLeft} Signaux · ${state.ticketsActive} ticket`
+      : `${state.signalsLeft} Signals today · ${state.ticketsActive} ticket`;
+  }
+  const sp = $('#settings-plan'); if (sp) sp.textContent = state.plan === 'WINGMAN_PLUS' ? 'Wingman+' : 'FREE';
+  const ss = $('#settings-signals'); if (ss) ss.textContent = String(caps.dailySignals ?? state.signalsLeft);
+  const st = $('#settings-tickets'); if (st) st.textContent = String(caps.activeConnectionTickets ?? state.ticketsActive);
+}
+
+async function bootApi() {
+  if (!globalThis.WingmanApi) {
+    state.apiLive = false;
+    return;
+  }
+  api = await WingmanApi.bootstrapApi({ userId: 'proto-alex' });
+  state.apiLive = !api.useMock;
+  if (!state.apiLive) {
+    toast(t('t_api_mock'));
+    applyEntitlements({ plan: 'FREE', capabilities: { dailySignals: 2, activeConnectionTickets: 1 } });
+    return;
+  }
+  try {
+    await api.seed({
+      id: 'proto-alex',
+      gender: 'MALE',
+      interestedIn: ['WOMEN'],
+    });
+    await api.seed({
+      id: 'proto-peer',
+      gender: 'FEMALE',
+      interestedIn: ['MEN'],
+    });
+    const ents = await api.entitlements();
+    applyEntitlements(ents);
+    // Prove payments stay disabled — never call checkout from UI.
+    try {
+      const ps = await api.paymentsStatus();
+      if (ps && ps.paymentsEnabled) {
+        console.warn('[wingman] payments unexpectedly enabled');
+      }
+    } catch (_) { /* ignore */ }
+    toast(t('t_api_live'));
+  } catch (_) {
+    api.setUseMock(true);
+    state.apiLive = false;
+    toast(t('t_api_mock'));
+    applyEntitlements({ plan: 'FREE', capabilities: { dailySignals: 2, activeConnectionTickets: 1 } });
+  }
+}
+
 /* boot */
 window.addEventListener('resize', () => { sizeCanvas(); startRadar(); });
 applyLang();
 sizeCanvas();
 startRadar();
+applyEntitlements({ plan: 'FREE', capabilities: { dailySignals: 2, activeConnectionTickets: 1 } });
+bootApi();

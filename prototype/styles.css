@@ -19,13 +19,14 @@
   --font-display:'Sora',var(--font-ui);
 }
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%}
+html,body{height:100%;height:100dvh}
 body{
   font-family:var(--font-ui);
   background:radial-gradient(circle at 50% -10%,#141a33 0%,#05070f 70%);
   color:var(--t-primary);
   display:flex;align-items:center;justify-content:center;
-  min-height:100vh;padding:20px 12px;
+  min-height:100vh;min-height:100dvh;padding:20px 12px;
+  overflow-x:hidden;
 }
 button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
 button:focus-visible,[tabindex]:focus-visible,.dot:focus-visible{outline:2px solid var(--air);outline-offset:2px;border-radius:6px}
@@ -41,7 +42,30 @@ button:focus-visible,[tabindex]:focus-visible,.dot:focus-visible{outline:2px sol
 
 .phone{background:#03060e;border-radius:44px;padding:8px;box-shadow:0 40px 90px rgba(0,0,0,.6),0 0 0 1px rgba(124,92,252,.14)}
 .notch{width:130px;height:24px;background:#03060e;border-radius:0 0 16px 16px;margin:0 auto -24px;position:relative;z-index:30}
-.screen{position:relative;background:var(--bg-primary);border-radius:36px;overflow:hidden;height:720px}
+.screen{position:relative;background:var(--bg-primary);border-radius:36px;overflow:hidden;height:720px;max-height:min(720px,85dvh)}
+
+/* Mobile-first: real phones = full-bleed (375 iPhone 13 mini, 360–412 S24) */
+@media (max-width:430px){
+  body{padding:0;align-items:stretch;justify-content:stretch;background:var(--bg-primary)}
+  .stage{max-width:none;width:100%;height:100%;height:100dvh;display:flex;flex-direction:column}
+  .top-controls{
+    padding:calc(6px + env(safe-area-inset-top,0px)) 12px 6px;
+    margin:0;flex-shrink:0;background:rgba(11,16,32,.92);border-bottom:1px solid var(--border);z-index:50
+  }
+  .phone{border-radius:0;padding:0;box-shadow:none;flex:1;min-height:0;display:flex;flex-direction:column}
+  .notch{display:none}
+  .screen{
+    border-radius:0;height:auto;max-height:none;flex:1;min-height:0;
+    padding-bottom:env(safe-area-inset-bottom,0px)
+  }
+  .statusbar{padding-top:calc(12px + env(safe-area-inset-top,0px))}
+  .nav{padding-bottom:calc(14px + env(safe-area-inset-bottom,0px))}
+  .toast{bottom:calc(88px + env(safe-area-inset-bottom,0px))}
+}
+@media (min-width:361px) and (max-width:412px){
+  .body.pad,.pad{padding-left:16px;padding-right:16px}
+  h1.big{font-size:clamp(26px,7vw,30px)}
+}
 
 /* ---- generic screen scaffolding ---- */
 .view{display:none;flex-direction:column;height:100%;animation:fade var(--d-normal) var(--ease-in)}
@@ -133,6 +157,7 @@ p.lead{color:var(--t-secondary);font-size:14px;line-height:1.5}
 .stat{flex:1;background:var(--card);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px;text-align:center}
 .stat b{display:block;font-size:20px;font-family:var(--font-display)}
 .stat span{font-size:10px;color:var(--t-muted)}
+.plan-chip{margin:8px 0 12px;padding:8px 12px;border-radius:var(--r-badge);background:rgba(124,92,252,.12);border:1px solid rgba(124,92,252,.28);font-size:12px;color:var(--air);font-weight:600}
 
 /* mood selector */
 .mood-select{display:flex;gap:10px;margin-top:8px}

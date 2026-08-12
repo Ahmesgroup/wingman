@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Wingman — Interactive Prototype</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Wingman</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Sora:wght@600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
@@ -165,9 +165,10 @@
             </div>
             <div class="stat-row">
               <div class="stat"><b id="stat-signals">2</b><span data-i18n="stat_signals">Signals left</span></div>
-              <div class="stat"><b>5</b><span data-i18n="stat_nearby">Nearby</span></div>
-              <div class="stat"><b>🔥</b><span data-i18n="stat_zone">Active zone</span></div>
+              <div class="stat"><b id="stat-nearby">5</b><span data-i18n="stat_nearby">Nearby</span></div>
+              <div class="stat"><b id="stat-tickets">1</b><span data-i18n="stat_tickets">Active ticket</span></div>
             </div>
+            <div class="plan-chip" id="plan-chip"><span id="plan-label">FREE</span> · <span id="plan-detail">2 Signals today · 1 ticket</span></div>
             <div class="card">
               <div class="eyebrow" data-i18n="mood_title">Your mood</div>
               <div class="mood-select" id="mood-select">
@@ -259,7 +260,7 @@
         <div class="body pad" style="display:flex;flex-direction:column;justify-content:center;text-align:center;flex:1">
           <div class="pill-badge" style="align-self:center" data-i18n="ticket_badge">🎟 Ticket active</div>
           <h2 class="head mt" data-i18n="ticket_title">Can't meet right now?</h2>
-          <p class="lead mt-s" data-i18n="ticket_body">Hold this opportunity — up to 2 hours (Free) or 24 hours (Wingman+). No chat until you both open Mission Meet.</p>
+          <p class="lead mt-s" data-i18n="ticket_body">Hold this opportunity — up to 2 hours on Free. No chat until you both open Mission Meet.</p>
           <div class="cd-num mt" style="font-size:34px" id="ticket-time">2:00:00</div>
           <button class="btn btn-primary mt" data-go="v-mission-meet" data-i18n="ticket_open">I'm available now</button>
           <button class="btn btn-ghost mt-s" data-go="v-radar" data-i18n="ticket_later">Later</button>
@@ -319,7 +320,6 @@
           <h2 class="head center" data-i18n="cd_title">Take your time.</h2>
           <p class="lead center" data-i18n="cd_body">"Great conversations don't need another match immediately."</p>
           <div class="btn-row" style="max-width:320px">
-            <button class="btn btn-ghost" data-go="v-radar" data-i18n="cd_skip">Skip · €0.99</button>
             <button class="btn btn-primary" data-go="v-radar" data-i18n="cd_ok">Back to Radar</button>
           </div>
         </div>
@@ -347,7 +347,7 @@
           <div class="pzone"><div class="lvl" style="background:rgba(255,77,103,.15)">🔥</div><div class="z"><b>Rocher du Grund</b><p data-i18n="pz1">Strong compatible activity · 200 m</p></div><span class="tag" style="background:rgba(255,77,103,.15);color:var(--mood-ready)">HOT</span></div>
           <div class="pzone"><div class="lvl" style="background:rgba(255,200,87,.15)">⚡</div><div class="z"><b>City Festival</b><p data-i18n="pz2">Exceptional event · 1.2 km</p></div><span class="tag" style="background:rgba(255,200,87,.15);color:var(--mood-open)">ELECTRIC</span></div>
           <div class="pzone"><div class="lvl" style="background:rgba(124,92,252,.15)">🌿</div><div class="z"><b>Merl Park</b><p data-i18n="pz3">Moderate activity · 800 m</p></div><span class="tag" style="background:rgba(124,92,252,.15);color:var(--air)">ACTIVE</span></div>
-          <div class="card center small muted" data-i18n="pulse_plus">⚡ Wingman+ : real-time notifications for Electric zones</div>
+          <div class="card center small muted" data-i18n="pulse_note">Zones are aggregated and anonymized.</div>
         </div>
         <nav class="nav" data-navbar></nav>
       </section>
@@ -357,6 +357,13 @@
         <div class="statusbar"><span class="time">21:47</span><span>Wingman</span></div>
         <div class="topbar"><div class="logo">WING<b>MAN</b></div><div class="subtitle" data-i18n="settings_sub">Settings & privacy</div></div>
         <div class="body pad">
+          <div class="card">
+            <div class="eyebrow mb" data-i18n="set_plan">Your plan</div>
+            <div class="row"><span data-i18n="set_plan_name">Plan</span><span class="v" id="settings-plan">FREE</span></div>
+            <div class="row"><span data-i18n="set_plan_signals">Signals / day</span><span class="v" id="settings-signals">2</span></div>
+            <div class="row"><span data-i18n="set_plan_tickets">Active tickets</span><span class="v" id="settings-tickets">1</span></div>
+            <p class="small muted mt-s" data-i18n="set_plan_note">Payments are not available in this build.</p>
+          </div>
           <div class="card">
             <div class="eyebrow mb" data-i18n="set_privacy">Privacy</div>
             <div class="row"><span data-i18n="set_photo">Public photo</span><span class="v no" data-i18n="set_none">✗ None</span></div>
@@ -404,31 +411,21 @@
         </div>
       </section>
 
-      <!-- 24. PAYWALL -->
-      <section class="view" id="v-paywall" data-nav="plus">
+      <!-- Dormant plan view — not in nav; no checkout / upgrade CTA -->
+      <section class="view" id="v-plan" data-noflow>
         <div class="statusbar"><span class="time">21:47</span><span>Wingman</span></div>
-        <div class="topbar"><div class="logo">WING<b>MAN</b></div><div class="subtitle" data-i18n="pw_sub">Wingman+</div></div>
+        <div class="topbar"><div class="logo">WING<b>MAN</b></div><div class="subtitle" data-i18n="plan_sub">Your plan</div></div>
         <div class="body pad">
           <div class="tier">
-            <div class="th"><span class="tn" data-i18n="pw_free">Free</span><span class="tp">€0</span></div>
-            <div class="feat"><svg class="ck" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg><span data-i18n="pw_f1">2 Signals / day</span></div>
-            <div class="feat"><svg class="ck" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg><span data-i18n="pw_f2">1 Ticket — up to 2h</span></div>
+            <div class="th"><span class="tn" id="plan-view-name">FREE</span><span class="tp" data-i18n="plan_active">Active</span></div>
+            <div class="feat"><svg class="ck" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg><span id="plan-view-signals" data-i18n="pw_f1">2 Signals / day</span></div>
+            <div class="feat"><svg class="ck" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg><span id="plan-view-tickets" data-i18n="pw_f2">1 Ticket — up to 2h</span></div>
             <div class="feat"><svg class="ck" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg><span data-i18n="pw_f3">Destiny Connection included</span></div>
             <div class="feat"><svg class="ck" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg><span data-i18n="pw_f4">Mission Meet 15 min</span></div>
           </div>
-          <div class="tier pro">
-            <span class="tag-reco" data-i18n="pw_reco">RECOMMENDED</span>
-            <div class="th"><span class="tn">Wingman+</span><span class="tp">€9.99/mo</span></div>
-            <div class="feat"><svg class="ck" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg><span data-i18n="pw_p1">20–25 Signals / day</span></div>
-            <div class="feat"><svg class="ck" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg><span data-i18n="pw_p2">2 Tickets — up to 24h — 1 renewal</span></div>
-            <div class="feat"><svg class="ck" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg><span data-i18n="pw_p3">Verified selfie cache — 24h</span></div>
-            <div class="feat"><svg class="ck" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg><span data-i18n="pw_p4">Discovery priority + Pulse notifs</span></div>
-            <div class="feat"><svg class="ck" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg><span data-i18n="pw_p5">Mission Meet 20 min</span></div>
-          </div>
-          <button class="btn btn-primary" data-i18n="pw_cta" id="pw-cta">Upgrade to Wingman+</button>
-          <p class="small muted center mt" data-i18n="pw_note">No boosted profiles. No ads in the meeting flow. No selling of behavioral data.</p>
+          <p class="small muted center mt" data-i18n="plan_payments_off">Payments are disabled. No checkout in this build.</p>
+          <button class="btn btn-ghost mt" data-go="v-settings" data-i18n="plan_back">Back to Settings</button>
         </div>
-        <nav class="nav" data-navbar></nav>
       </section>
 
       <!-- 25. ADMIN MODERATION PREVIEW -->
@@ -449,6 +446,12 @@
 </div>
 
 <div class="toast" id="toast"></div>
+<script src="api.js"></script>
+<script src="payments/payment-types.js"></script>
+<script src="payments/providers/disabled.js"></script>
+<script src="payments/providers/stripe.js"></script>
+<script src="payments/providers/paddle.js"></script>
+<script src="payments/payment-client.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

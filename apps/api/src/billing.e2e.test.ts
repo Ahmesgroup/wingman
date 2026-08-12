@@ -106,4 +106,36 @@ describe("S19 billing → entitlements e2e", () => {
 
     await app.close();
   });
+
+  it("checkout is fail-closed when payments disabled (default)", async () => {
+    const engine = new WingmanEngine({ clock: new FakeClock(new Date("2026-08-08T18:00:00.000Z")) });
+    const app = await createNestApp({
+      engine,
+      ephemeral: new MemoryEphemeralStore(),
+      stripePort: new FakeStripeBillingPort("whsec_test"),
+      billingStore: new CachedBillingStateStore(),
+    });
+    const server = app.getHttpServer();
+
+    await request(server)
+      .post("/dev/seed")
+      .send({ id: "u3", gender: "MALE", interestedIn: ["WOMEN"] })
+      .expect(201);
+
+    const status = await request(server)
+      .get("/billing/payments/status")
+      .set("x-user-id", "u3")
+      .expect(200);
+    expect(status.body.paymentsEnabled).toBe(false);
+    expect(status.body.provider).toBe("disabled");
+
+    const checkout = await request(server)
+      .post("/billing/checkout")
+      .set("x-user-id", "u3")
+      .send({ successUrl: "https://example.com/ok", cancelUrl: "https://example.com/cancel" })
+      .expect(503);
+    expect(checkout.body.error.code).toBe("PAYMENTS_DISABLED");
+
+    await app.close();
+  });
 });

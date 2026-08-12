@@ -3,12 +3,15 @@ import {
   BillingReconciler,
   CachedBillingStateStore,
   CachedProcessedEventStore,
+  createPaymentProviderFromEnv,
+  createStripeBillingPortFromEnv,
+  DisabledPaymentProvider,
   EntitlementService,
   FakeStripeBillingPort,
   MemoryProcessedEventStore,
   PrismaBillingStateStore,
   PrismaProcessedEventStore,
-  createStripeBillingPortFromEnv,
+  type PaymentProvider,
   type StripeBillingPort,
 } from "@wingman/billing";
 import type { PrismaClient } from "@wingman/database";
@@ -19,12 +22,14 @@ import {
   BILLING_RECONCILER,
   BILLING_STATE_STORE,
   ENTITLEMENT_SERVICE,
+  PAYMENT_PROVIDER,
   STRIPE_BILLING_PORT,
 } from "./billing.tokens.js";
 
 export type BillingOverrides = {
   stripePort?: StripeBillingPort;
   billingStore?: CachedBillingStateStore;
+  paymentProvider?: PaymentProvider;
 };
 
 let billingOverrides: BillingOverrides = {};
@@ -53,9 +58,35 @@ const stripeProvider: Provider = {
     try {
       return await createStripeBillingPortFromEnv();
     } catch {
+      // Webhook port only — checkout is gated by PaymentProvider.
       return new FakeStripeBillingPort(process.env.STRIPE_WEBHOOK_SECRET ?? "whsec_test");
     }
   },
+};
+
+const paymentProviderFactory: Provider = {
+  provide: PAYMENT_PROVIDER,
+  useFactory: async (stripe: StripeBillingPort): Promise<PaymentProvider> => {
+    if (billingOverrides.paymentProvider) return billingOverrides.paymentProvider;
+    try {
+      return await createPaymentProviderFromEnv({
+        stripePort:
+          stripe.createCheckoutSession || stripe.createCustomerPortalSession
+            ? {
+                createCheckoutSession: stripe.createCheckoutSession!.bind(stripe),
+                createCustomerPortalSession: stripe.createCustomerPortalSession?.bind(stripe),
+              }
+            : undefined,
+      });
+    } catch (e) {
+      // Fail closed: never fall back to a checkout-capable Fake.
+      if (process.env.PAYMENTS_ENABLED === "true") {
+        throw e;
+      }
+      return new DisabledPaymentProvider();
+    }
+  },
+  inject: [STRIPE_BILLING_PORT],
 };
 
 const entitlementsProvider: Provider = {
@@ -83,10 +114,18 @@ const reconcilerProvider: Provider = {
   providers: [
     storeProvider,
     stripeProvider,
+    paymentProviderFactory,
     entitlementsProvider,
     reconcilerProvider,
     BillingAppService,
   ],
-  exports: [ENTITLEMENT_SERVICE, BILLING_RECONCILER, BILLING_STATE_STORE, STRIPE_BILLING_PORT, BillingAppService],
+  exports: [
+    ENTITLEMENT_SERVICE,
+    BILLING_RECONCILER,
+    BILLING_STATE_STORE,
+    STRIPE_BILLING_PORT,
+    PAYMENT_PROVIDER,
+    BillingAppService,
+  ],
 })
 export class BillingModule {}

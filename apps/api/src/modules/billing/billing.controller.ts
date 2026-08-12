@@ -45,7 +45,13 @@ export class BillingController {
         missionMeetDurationMs: e.missionMeetDurationMs,
         selfieWindowMs: e.selfieWindowMs,
       },
+      payments: this.billing.paymentStatus(),
     };
+  }
+
+  @Get("payments/status")
+  paymentsStatus() {
+    return this.billing.paymentStatus();
   }
 
   @Post("checkout")

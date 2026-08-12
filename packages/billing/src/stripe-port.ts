@@ -186,13 +186,18 @@ function normalizeFakeEvent(parsed: VerifiedStripeEvent & { data?: { object?: Re
 }
 
 /**
- * Production-shaped Stripe port: uses Stripe SDK only when STRIPE_SECRET_KEY is set.
+ * Production-shaped Stripe port: uses Stripe SDK only when STRIPE_SECRET_KEY is set
+ * AND PAYMENTS_ENABLED=true (payment-ready fail-closed).
  * Loaded dynamically so domain/protocol never pull in stripe (optional peer).
+ *
+ * When payments are disabled, returns FakeStripe for webhook tests only —
+ * checkout must go through PaymentProvider (Disabled by default).
  */
 export async function createStripeBillingPortFromEnv(): Promise<StripeBillingPort> {
   const secret = process.env.STRIPE_WEBHOOK_SECRET ?? "whsec_test";
+  const paymentsOn = process.env.PAYMENTS_ENABLED === "true";
   const apiKey = process.env.STRIPE_SECRET_KEY;
-  if (!apiKey) {
+  if (!paymentsOn || !apiKey) {
     return new FakeStripeBillingPort(secret);
   }
   try {
@@ -203,7 +208,8 @@ export async function createStripeBillingPortFromEnv(): Promise<StripeBillingPor
     const stripe = new Stripe(apiKey, { apiVersion: "2024-11-20.acacia" });
     return new LiveStripeBillingPort(stripe, secret);
   } catch {
-    return new FakeStripeBillingPort(secret);
+    // Fail closed for live checkout path: do not pretend Fake is live Stripe.
+    throw new Error("PAYMENT_NOT_CONFIGURED: Stripe SDK unavailable while PAYMENTS_ENABLED=true");
   }
 }
 
@@ -243,7 +249,12 @@ export class LiveStripeBillingPort implements StripeBillingPort {
       customer: input.customerId,
       client_reference_id: input.userId,
       metadata: { userId: input.userId },
-      line_items: [{ price: process.env.STRIPE_PRICE_ID, quantity: 1 }],
+      line_items: [
+        {
+          price: process.env.WINGMAN_PLUS_PRICE_ID || process.env.STRIPE_PRICE_ID,
+          quantity: 1,
+        },
+      ],
     });
     return { url: session.url ?? "", sessionId: session.id };
   }

@@ -39,7 +39,11 @@ export type AppModuleOptions = InfraOptions &
 export class AppModule {
   static register(opts: AppModuleOptions = {}): DynamicModule {
     setInfraOverrides(opts);
-    setBillingOverrides({ stripePort: opts.stripePort, billingStore: opts.billingStore });
+    setBillingOverrides({
+      stripePort: opts.stripePort,
+      billingStore: opts.billingStore,
+      paymentProvider: opts.paymentProvider,
+    });
     process.env.AUTH_ALLOW_DEV = opts.useDevAuth === false ? "false" : "true";
 
     const engineProvider: Provider = {

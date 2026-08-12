@@ -33,11 +33,20 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
   private offHub: (() => void) | null = null;
 
   constructor(
-    private readonly realtime: RealtimeAppService,
+    @Inject(RealtimeAppService) private readonly realtime: RealtimeAppService,
     @Inject(AUTH_SERVICE_TOKEN) private readonly auth: AuthService,
   ) {}
 
   afterInit(): void {
+    if (!this.realtime?.onEnvelope) {
+      console.error(
+        JSON.stringify({
+          level: "error",
+          msg: "realtime.gateway_missing_service",
+        }),
+      );
+      return;
+    }
     this.offHub = this.realtime.onEnvelope((envelope) => this.fanOut(envelope));
   }
 
