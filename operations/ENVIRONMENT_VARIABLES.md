@@ -1,7 +1,40 @@
 # Environment Variables
 
-**Status:** Decided (V4.1) · Part of the Wingman product & engineering spec.
+**Status:** Decided (V4.1) · Extended for payment readiness (2026-08-12).
 
-`DATABASE_URL`, `REDIS_URL`, `PHONE_LOOKUP_PEPPER`, `PHONE_ENC_KEY` (+ `PHONE_KEY_VERSION`), `MEDIA_BUCKET`,
-`MEDIA_KMS_KEY`, `SESSION_SIGNING_KEY`, push provider keys, PSP keys, `POLICY_VERSION`. Secrets are managed via a
+Core secrets: `DATABASE_URL`, `REDIS_URL`, `PHONE_LOOKUP_PEPPER`, `PHONE_ENC_KEY` (+ `PHONE_KEY_VERSION`), `MEDIA_BUCKET`,
+`MEDIA_KMS_KEY`, `SESSION_SIGNING_KEY`, push provider keys, `POLICY_VERSION`. Secrets are managed via a
 secret store, never committed; peppers/keys rotate via versioning.
+
+## Payments (fail-closed defaults)
+
+| Variable | Default | Notes |
+|----------|---------|-------|
+| `PAYMENTS_ENABLED` | `false` | Must stay false until sandbox cert + credentials |
+| `PAYMENT_PROVIDER` | `disabled` | `disabled` \| `stripe` \| `paddle` |
+| `STRIPE_SECRET_KEY` | empty | Server only; required if stripe enabled |
+| `STRIPE_WEBHOOK_SECRET` | empty | Webhook HMAC |
+| `STRIPE_PUBLISHABLE_KEY` | empty | Client publishable only |
+| `PADDLE_API_KEY` | empty | Server only |
+| `PADDLE_WEBHOOK_SECRET` | empty | |
+| `PADDLE_CLIENT_TOKEN` | empty | Client token only |
+| `PADDLE_ENVIRONMENT` | `sandbox` | |
+| `WINGMAN_PLUS_PRODUCT_ID` | empty | Server-determined product |
+| `WINGMAN_PLUS_PRICE_ID` | empty | Server-determined price |
+
+See [`S19_BILLING_ENTITLEMENTS.md`](./S19_BILLING_ENTITLEMENTS.md) and [`CLIENT_MOBILE_PAYMENT_READINESS.md`](./CLIENT_MOBILE_PAYMENT_READINESS.md).
+
+## Measurement (baseline)
+
+| Variable | Default | Notes |
+|----------|---------|-------|
+| `MEASUREMENT_ENABLED` | ops choice | Observe-only when `true` |
+| `MEASUREMENT_LEARNING_ENABLED` | `false` | Must stay false until S26 Review |
+
+See [`PROJECT_STATE.md`](./PROJECT_STATE.md).
+
+## Dev client
+
+| Variable | Default | Notes |
+|----------|---------|-------|
+| `AUTH_ALLOW_DEV` | e2e `true` | Allows `x-user-id` for prototype / smoke |

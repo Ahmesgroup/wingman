@@ -35,8 +35,9 @@ Start here, then follow the links:
 8. `architecture/STATE_MACHINES.md` — the heart of the product: the connection protocol.
 9. `database/schema.prisma` + `database/DATABASE_INVARIANTS.md` — the data model and its guarantees.
 10. `design/DESIGN_SYSTEM.md` + `design/design-tokens.json` — the visual language.
-11. `prototype/index.html` — the interactive prototype (see below).
+11. `prototype/index.html` — mobile-first web client (wired to Nest; payments disabled) — [`operations/CLIENT_MOBILE_PAYMENT_READINESS.md`](operations/CLIENT_MOBILE_PAYMENT_READINESS.md).
 12. `implementation/REPOSITORY_BOOTSTRAP_PROMPT.md` — original bootstrap prompt for greenfield coding agents.
+13. `operations/PROJECT_STATE.md` — locked board (engines frozen during baseline; client track status).
 
 ## Reading order by role
 
@@ -51,18 +52,22 @@ Start here, then follow the links:
 | QA | `testing/*` |
 | DevOps | `operations/*` |
 
-## Opening the prototype
+## Opening the mobile-first client
 
-No build step, no backend. Open the file directly:
+Serve the prototype against the Nest API (dev auth):
 
+```bash
+AUTH_ALLOW_DEV=true pnpm --filter @wingman/api dev
+npx serve prototype -l 5173
+# → http://localhost:5173/
 ```
-prototype/index.html
-```
 
-Then: switch EN/FR (top right), toggle **Reduce motion** and **Offline**, activate the Radar, tap a
-mood dot, send a Signal, run the selfie exchange, reach *Connection confirmed*, open Mission Meet
-(try typing a phone number or `@handle` to see the anti-contact filter), confirm the outcome, and land
-in Cooldown. A hidden **Admin moderation preview** link lives at the bottom of Settings.
+Then: switch EN/FR, toggle **Reduce motion** / **Offline**, activate the Radar, send a Signal,
+run selfie → ticket → Mission Meet (try a phone number / `@handle` for anti-contact), outcome,
+Cooldown. Entitlements FREE are read-only; **payments are disabled** (no checkout CTAs).
+Details: [`operations/CLIENT_MOBILE_PAYMENT_READINESS.md`](operations/CLIENT_MOBILE_PAYMENT_READINESS.md).
+
+A hidden **Admin moderation preview** link lives at the bottom of Settings.
 
 ## Key decisions at a glance
 

@@ -25,7 +25,9 @@ This checklist proves the backend is operable as a production-shaped service env
 | OTP SMS port | `providers` + auth OTP path | SMS queued via port; phone/OTP body redacted in logs |
 | Push reliability | orchestrator + mobile transport tests | Idempotent; invalid tokens deactivated; outage ≠ protocol failure |
 | Billing → entitlements | `packages/billing` + `billing.e2e.test.ts` | Free/Plus caps; webhook idempotence; no client self-promote; Stripe outage ≠ core failure |
+| Payment readiness fail-closed | `payment-provider.test.ts` + billing e2e checkout | Defaults: `PAYMENTS_DISABLED`; no Fake checkout fallback when enabled without creds |
 | Billing architecture | S19 architecture gate | No Stripe SDK in domain/signals/connections/mission/destiny |
+| Client loop smoke | `client-loop.smoke.test.ts` | Prototype path Radar→…→Cooldown; payments stay off |
 | S20 multi-instance / chaos / load | `s20.certification.test.ts` | G1–G3 PASS |
 | S20 observability | live/ready/metrics + requestId | G4 PASS |
 | S20 go/no-go | [`S20_PRODUCTION_CERTIFICATION.md`](./S20_PRODUCTION_CERTIFICATION.md) | **GO** |
@@ -56,7 +58,10 @@ curl -s localhost:3000/internal/metrics
 | `DATABASE_URL` | Yes for durable restart | Live `LivePrismaProtocolRepository` |
 | `SMS_PROVIDER` | Prefer real adapter | `console` / `noop` are stubs |
 | `PUSH_PROVIDER` | Prefer APNs/FCM | `logging` / `memory` are stubs |
-| `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` | For live billing | FakeStripe without keys |
+| `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` / `STRIPE_PUBLISHABLE_KEY` | Only if enabling Stripe | Require `PAYMENTS_ENABLED=true` + full creds |
+| `PAYMENTS_ENABLED` | Default **false** | Fail-closed; see [`CLIENT_MOBILE_PAYMENT_READINESS.md`](./CLIENT_MOBILE_PAYMENT_READINESS.md) |
+| `PAYMENT_PROVIDER` | Default `disabled` | `disabled` \| `stripe` \| `paddle` |
+| `WINGMAN_PLUS_PRICE_ID` / `WINGMAN_PLUS_PRODUCT_ID` | With live provider | Server-side only |
 | `DESTINY_ENABLED` | Default false | DPIA before enabling |
 | `PORT` | As needed | Default 3000 |
 
@@ -66,7 +71,7 @@ Covered by S20 G2 + prior gates: API restart/hydrate, ephemeral down → readine
 
 ## Explicit gaps (ops / V1.1 — not V1 blockers)
 
-- Staging credentials for Twilio + FCM HTTP v1 + APNs JWT + Stripe price
+- Staging credentials for Twilio + FCM HTTP v1 + APNs JWT + Stripe/Paddle (payments stay disabled until cert)
 - Multi-region, autoscaling runbooks beyond compose
 - Large-scale load campaign in real Redis/Postgres (S20 certifies invariants under concurrency, not millions of users)
 

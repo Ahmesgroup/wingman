@@ -15,7 +15,8 @@
 
 ```mermaid
 flowchart TD
-  M[Expo mobile app<br/>iOS / Android] -- HTTPS + WebSocket --> E[Edge / WAF / rate limit]
+  C[Mobile-first web client<br/>prototype/ · interim] -- HTTPS --> E[Edge / WAF / rate limit]
+  M[Expo mobile app<br/>iOS / Android · target] -- HTTPS + WebSocket --> E
   E --> API[NestJS modular monolith]
   subgraph API modules
     A1[Auth] --- A2[Profile] --- A3[Radar] --- A4[Signals]
@@ -31,7 +32,10 @@ flowchart TD
 
 ## Components
 
-**Expo React Native app** — the only client that speaks the real-time protocol. Renders `expiresAt − serverTime`;
+**Mobile-first web client (`prototype/`)** — current executable UI for the protocol loop against Nest (dev
+`x-user-id`). Payments disabled. See `operations/CLIENT_MOBILE_PAYMENT_READINESS.md`.
+
+**Expo React Native app** — target native client for the real-time protocol. Renders `expiresAt − serverTime`;
 never authoritative over timers.
 
 **NestJS modular monolith** — REST for business operations, WebSocket for real-time events. Internally split into

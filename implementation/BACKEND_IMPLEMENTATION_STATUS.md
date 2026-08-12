@@ -442,9 +442,10 @@ See [`operations/S18_PROVIDERS.md`](../operations/S18_PROVIDERS.md).
 
 ### 19.1 Rules
 
-- Stripe is an **external source of billing facts**; Wingman decides effective entitlements
+- Stripe/Paddle are **external sources of billing facts**; Wingman decides effective entitlements
 - Domain asks `entitlements.forUser(userId, now)` (wired via `WingmanEngine.setEntitlementsForUser`) — never reads Stripe objects or client `isPremium`
-- Pipeline: Stripe → Billing Adapter → Billing State → Entitlement Service → signal/ticket/mission caps
+- Pipeline: Provider → Billing Adapter → Billing State → Entitlement Service → signal/ticket/mission caps
+- **Payment readiness (2026-08-12):** `PaymentProvider` with `DisabledPaymentProvider` default; `PAYMENTS_ENABLED=false` fail-closed — see [`CLIENT_MOBILE_PAYMENT_READINESS.md`](../operations/CLIENT_MOBILE_PAYMENT_READINESS.md)
 - Webhook replay is idempotent; cancel-at-period-end keeps Plus until `currentPeriodEnd`
 - Stripe outage must not break core protocol; restart reconstructs rights from DB/cache
 
@@ -470,10 +471,23 @@ See [`operations/S20_PRODUCTION_CERTIFICATION.md`](../operations/S20_PRODUCTION_
 
 ## 21. What is intentionally not in Backend V1
 
-- Live staging credentials for Twilio / FCM HTTP v1 / APNs JWT / Stripe (adapters ready; ops wiring)
+- Live staging credentials for Twilio / FCM HTTP v1 / APNs JWT / Stripe|Paddle (adapters ready; ops wiring)
 - Geo optimization ~~(S25)~~ done as V1.1 flagged engine; live staging provider credentials
 - Multi-region product features beyond single-EU compose envelope
-- Mobile / web / admin application UIs
+- Native Expo mobile app (web prototype is the current executable client)
+
+---
+
+## 21b. Client track — mobile-first + payment readiness (2026-08-12)
+
+| Item | Status |
+|------|--------|
+| Mobile-first prototype (375–412) | **DONE** — [`prototype/`](../prototype/) |
+| Radar→…→Cooldown wired to Nest | **DONE** — `client-loop.smoke.test.ts` |
+| PaymentProvider fail-closed | **DONE** — `DisabledPaymentProvider` default |
+| Real Stripe/Paddle charges | **OFF** — `PAYMENTS_ENABLED=false` |
+
+See [`operations/CLIENT_MOBILE_PAYMENT_READINESS.md`](../operations/CLIENT_MOBILE_PAYMENT_READINESS.md). Does not reopen S0–S26.
 
 ---
 
@@ -500,6 +514,8 @@ V1.1 engines S21–S26 + **S24.1** are implemented. Staging load is **GO**.
 
 Do **not** open S27 by default. The next advantage is knowing whether existing engines improve human encounters.
 
+**Client** (independent): further UX polish / OTP session auth — not payment enablement without credentials.
+
 ---
 
 ## 23. Quick reference — key files
@@ -516,18 +532,23 @@ Do **not** open S27 by default. The next advantage is knowing whether existing e
 | Realtime app facade | [`apps/api/src/modules/realtime/realtime-app.service.ts`](../apps/api/src/modules/realtime/realtime-app.service.ts) |
 | Provider ports | [`packages/providers/src/index.ts`](../packages/providers/src/index.ts) |
 | Billing / entitlements | [`packages/billing/src/index.ts`](../packages/billing/src/index.ts) |
+| PaymentProvider (fail-closed) | [`packages/billing/src/payment-provider.ts`](../packages/billing/src/payment-provider.ts) |
 | Nest app composition | [`apps/api/src/app.module.ts`](../apps/api/src/app.module.ts) |
 | WS e2e | [`apps/api/src/ws.e2e.test.ts`](../apps/api/src/ws.e2e.test.ts) |
 | Billing e2e | [`apps/api/src/billing.e2e.test.ts`](../apps/api/src/billing.e2e.test.ts) |
+| Client loop smoke | [`apps/api/src/client-loop.smoke.test.ts`](../apps/api/src/client-loop.smoke.test.ts) |
 | S20 certification | [`apps/api/src/s20.certification.test.ts`](../apps/api/src/s20.certification.test.ts) |
 | Restart gate | [`apps/api/src/restart.e2e.test.ts`](../apps/api/src/restart.e2e.test.ts) |
 | Nest e2e loop | [`apps/api/src/e2e.test.ts`](../apps/api/src/e2e.test.ts) |
 | Architecture gates | [`apps/api/src/architecture.test.ts`](../apps/api/src/architecture.test.ts) |
+| Mobile-first client | [`prototype/`](../prototype/) |
+| Client + payments doc | [`operations/CLIENT_MOBILE_PAYMENT_READINESS.md`](../operations/CLIENT_MOBILE_PAYMENT_READINESS.md) |
 | S16 runbook | [`operations/S16_PERSISTENCE_LIVE.md`](../operations/S16_PERSISTENCE_LIVE.md) |
 | S17 runbook | [`operations/S17_WEBSOCKET.md`](../operations/S17_WEBSOCKET.md) |
 | S18 runbook | [`operations/S18_PROVIDERS.md`](../operations/S18_PROVIDERS.md) |
 | S19 runbook | [`operations/S19_BILLING_ENTITLEMENTS.md`](../operations/S19_BILLING_ENTITLEMENTS.md) |
 | S20 certificate | [`operations/S20_PRODUCTION_CERTIFICATION.md`](../operations/S20_PRODUCTION_CERTIFICATION.md) |
+| Project board | [`operations/PROJECT_STATE.md`](../operations/PROJECT_STATE.md) |
 | V1.1 roadmap | [`operations/V1.1_ADVANCED_ENGINE.md`](../operations/V1.1_ADVANCED_ENGINE.md) |
 | S21 Radar Intelligence | [`packages/radar-intelligence/src/index.ts`](../packages/radar-intelligence/src/index.ts) |
 | S22 Context Engine | [`packages/context-engine/src/index.ts`](../packages/context-engine/src/index.ts) |

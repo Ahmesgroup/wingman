@@ -1,16 +1,22 @@
 # S19 — Billing → Entitlements
 
-**Status:** Implemented · Related: [`implementation/BACKEND_IMPLEMENTATION_STATUS.md`](../implementation/BACKEND_IMPLEMENTATION_STATUS.md)
+**Status:** Implemented · Payment readiness extended 2026-08-12 · Related: [`implementation/BACKEND_IMPLEMENTATION_STATUS.md`](../implementation/BACKEND_IMPLEMENTATION_STATUS.md), [`CLIENT_MOBILE_PAYMENT_READINESS.md`](./CLIENT_MOBILE_PAYMENT_READINESS.md)
 
 ## Rule
 
 S19 is **Billing → Entitlements**, not “Stripe in the domain”.
 
 ```text
-Stripe (external facts)
+Provider facts (Stripe / Paddle — when enabled)
   │
   ▼
-Billing Adapter (@wingman/billing StripeBillingPort)
+PaymentProvider (@wingman/billing)
+ ├── DisabledPaymentProvider   ← DEFAULT (PAYMENTS_ENABLED=false)
+ ├── StripePaymentProvider      ← ready, OFF until credentials
+ └── PaddlePaymentProvider     ← ready, OFF until credentials
+  │
+  ▼
+Billing Adapter (StripeBillingPort for webhooks when Stripe)
   │  verify signature · idempotence by event.id
   ▼
 Billing State (BillingAccount + memory cache)
@@ -26,6 +32,7 @@ Entitlement Service → entitlements.forUser(userId, now)
 - Domain / signals / connections / mission / destiny **never** import the Stripe SDK or `@wingman/billing`.
 - Clients **never** self-promote via `isPremium` / query flags.
 - Effective rights are reconstructed from durable billing state after restart — Stripe is not called per request.
+- **No second billing system.** Client payment adapters are dormant; entitlements stay S19-only.
 
 ## Plans & capabilities
 
@@ -54,9 +61,10 @@ Handled (verified → billing state → entitlements):
 
 | Method | Path | Auth | Purpose |
 |--------|------|------|---------|
-| GET | `/billing/entitlements` | user | Effective plan + capabilities |
-| POST | `/billing/checkout` | user | Checkout session URL (port) |
-| POST | `/billing/portal` | user | Customer portal URL (port) |
+| GET | `/billing/entitlements` | user | Effective plan + capabilities (+ `payments` status) |
+| GET | `/billing/payments/status` | user | `{ paymentsEnabled, provider }` |
+| POST | `/billing/checkout` | user | Checkout session URL — **fail-closed when disabled** |
+| POST | `/billing/portal` | user | Customer portal URL — fail-closed when disabled |
 | POST | `/billing/webhook` | public + `stripe-signature` | Stripe webhooks |
 
 Enable Nest `rawBody: true` for signature verification in production.
@@ -71,16 +79,28 @@ Enable Nest `rawBody: true` for signature verification in production.
 | `STRIPE_WEBHOOK_SECRET` | Webhook HMAC secret (`whsec_…`) |
 | `STRIPE_PUBLISHABLE_KEY` | Client publishable key (never secret) |
 | `WINGMAN_PLUS_PRODUCT_ID` / `WINGMAN_PLUS_PRICE_ID` | Server-side product/price |
-| `PADDLE_*` | Required only when payments enabled + paddle |
+| `PADDLE_API_KEY` / `PADDLE_WEBHOOK_SECRET` / `PADDLE_CLIENT_TOKEN` | Required when paddle enabled |
+| `PADDLE_ENVIRONMENT` | Default `sandbox` |
 | `DATABASE_URL` | Durable `BillingAccount` / `BillingWebhookEvent` when Prisma is up |
 
-Fail-closed: `PAYMENTS_ENABLED=false` → `DisabledPaymentProvider`. Enabled without credentials → `PAYMENT_NOT_CONFIGURED` (no Fake checkout fallback).
+Fail-closed:
+
+```text
+PAYMENTS_ENABLED=false
+  → DisabledPaymentProvider → 503 PAYMENTS_DISABLED on checkout/portal
+
+PAYMENTS_ENABLED=true + credentials missing
+  → PAYMENT_NOT_CONFIGURED (no accidental Fake checkout)
+```
+
+Card PAN/CVV never touch Wingman. Checkout is hosted by Stripe/Paddle only when a provider is activated later.
 
 ## Gates
 
 ```bash
 pnpm --filter @wingman/billing test
-pnpm --filter @wingman/api test   # billing.e2e + S19 architecture gate
+pnpm --filter @wingman/api exec vitest run src/billing.e2e.test.ts
+pnpm --filter @wingman/api exec vitest run src/client-loop.smoke.test.ts
 ```
 
 Exit criteria:
@@ -94,6 +114,7 @@ Exit criteria:
 - Invalid Stripe signature / Stripe outage does not break core protocol
 - Restart reconstructs entitlements from billing state
 - No Stripe SDK in domain / signals / connections / mission / destiny
+- Defaults: no real checkout session can start (`PAYMENTS_DISABLED`)
 
 ## S20
 

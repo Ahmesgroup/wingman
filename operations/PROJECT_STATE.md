@@ -1,7 +1,8 @@
-# Project state — locked 2026-08-11
+# Project state — locked 2026-08-11 · client track updated 2026-08-12
 
-**Reference commit:** `ccbb7a3`  
-**Related:** [`V1.1_ADVANCED_ENGINE.md`](./V1.1_ADVANCED_ENGINE.md), [`S26_MEASUREMENT.md`](./S26_MEASUREMENT.md), [`STAGING_LOAD_CERTIFICATION.md`](./STAGING_LOAD_CERTIFICATION.md)
+**Reference commit (engines / baseline):** `ccbb7a3`  
+**Client track commits:** `928512f` (mobile-first + payment-ready disabled), `3aaab02` (Connection→Mission loop)  
+**Related:** [`V1.1_ADVANCED_ENGINE.md`](./V1.1_ADVANCED_ENGINE.md), [`S26_MEASUREMENT.md`](./S26_MEASUREMENT.md), [`STAGING_LOAD_CERTIFICATION.md`](./STAGING_LOAD_CERTIFICATION.md), [`CLIENT_MOBILE_PAYMENT_READINESS.md`](./CLIENT_MOBILE_PAYMENT_READINESS.md)
 
 ```text
 S0–S20    Backend V1                FROZEN / GO
@@ -15,8 +16,12 @@ S26       Measurement v1.2.0        DONE (instrumentation)
 LEARNING                            OFF
 MEASUREMENT                         ON  (collect real traffic)
 ENGINE SPRINTS                      STOPPED during baseline
-NEXT                                REAL BASELINE COLLECTION
+NEXT (engines)                      REAL BASELINE COLLECTION
 THEN                                S26 Review (not automatic S27)
+
+CLIENT    Mobile-first + payments   DONE (payments DISABLED)
+          Connection→Mission loop   DONE (wired to Nest)
+PAYMENTS  Architecture ready        OFF (PAYMENTS_ENABLED=false)
 ```
 
 ## Freeze during baseline collection
@@ -28,7 +33,15 @@ Until **S26 Review** closes with an A/B/C decision:
 - Do **not** feed measurement outputs back into ranking / Destiny / geo / anti-abuse.
 - Keep `MEASUREMENT_ENABLED=true` so the baseline stays continuous and **uncontaminated** by mid-flight engine changes.
 
-Bugfixes / infra / ops that do not change V1.1 decision logic remain allowed when objectified.
+Bugfixes / infra / ops / **client UX** that do not change V1.1 decision logic remain allowed when objectified.
+
+## Client track (parallel, closed)
+
+See [`CLIENT_MOBILE_PAYMENT_READINESS.md`](./CLIENT_MOBILE_PAYMENT_READINESS.md).
+
+- Web prototype is the mobile-first client against Nest (`AUTH_ALLOW_DEV` / `x-user-id`).
+- S19 remains the **only** entitlement authority; client never self-promotes.
+- Payments: `DisabledPaymentProvider` default — no real checkout until credentials + explicit enable.
 
 ## Operating mode now
 
@@ -36,6 +49,8 @@ Bugfixes / infra / ops that do not change V1.1 decision logic remain allowed whe
 |------|-------|---------|
 | `MEASUREMENT_ENABLED` | `true` | Observe decisions/outcomes; serve `/internal/measurement/report` |
 | `MEASUREMENT_LEARNING_ENABLED` | `false` | Forbidden to turn on until after S26 Review |
+| `PAYMENTS_ENABLED` | `false` | No checkout / no real charges |
+| `PAYMENT_PROVIDER` | `disabled` | Stripe/Paddle adapters present but OFF |
 
 Measurement **observes; it never decides**. No metric feeds back into S21–S25.
 
@@ -73,4 +88,4 @@ Then choose **exactly one**:
 
 ## Principle
 
-Wingman now has enough engines. The next advantage is knowing whether they **improve real human encounters** — not shipping another engine by habit. Stop engine sprints here; observe first.
+Wingman now has enough engines. The next advantage is knowing whether they **improve real human encounters** — not shipping another engine by habit. Stop engine sprints here; observe first. Client work may continue without reopening S0–S26.

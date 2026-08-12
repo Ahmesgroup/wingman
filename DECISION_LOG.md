@@ -141,3 +141,9 @@ synchronized server time; no exact server event at 00:30 is required. (4) A comp
 
 ## D-027 — Documentation language
 **Decided.** Primary technical documentation in professional English; `docs/FR_EXECUTIVE_SUMMARY.md` in French.
+
+## D-028 — Client: mobile-first web first; payments ready but disabled
+**Decided (2026-08-12).** Executable client for the protocol loop is the **mobile-first web prototype**
+(`prototype/`) against Nest, not Expo yet. Payments architecture is **payment-ready, activation forbidden**:
+`DisabledPaymentProvider` default, Stripe/Paddle adapters OFF, `PAYMENTS_ENABLED=false`. S19 remains the only
+entitlement authority; no card data through Wingman. See `operations/CLIENT_MOBILE_PAYMENT_READINESS.md`.

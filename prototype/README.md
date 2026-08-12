@@ -1,13 +1,20 @@
 # Prototype
 
-**Status:** Client mobile-first + payment readiness (payments disabled) + connection loop wired.
+**Status:** Client mobile-first + payment readiness (payments disabled) + connection loop wired.  
+**Doc:** [`operations/CLIENT_MOBILE_PAYMENT_READINESS.md`](../operations/CLIENT_MOBILE_PAYMENT_READINESS.md)
 
-Open via a static server (`npx serve prototype -l 5173`) with the Nest API on `:3000` (`AUTH_ALLOW_DEV=true`).
+## Run
+
+```bash
+AUTH_ALLOW_DEV=true pnpm --filter @wingman/api dev
+npx serve prototype -l 5173
+# → http://localhost:5173/
+```
 
 Controls (top): EN/FR, Reduce motion, Offline. Loop: Radar → Signal → Selfie → Ticket → Mission → Outcome → Cooldown.
 
 - `api.js` — Nest client (`x-user-id`); mock fallback if `/internal/live` is down; dual-user demo via `userId` override.
-- `payments/` — dormant Stripe/Paddle; **DisabledPaymentProvider** default. No checkout CTAs.
+- `payments/` — dormant Stripe/Paddle adapters; **DisabledPaymentProvider** default. No checkout CTAs. No card fields.
 - Entitlements FREE read-only (S19). Loading / offline / error banners on protocol actions.
 - Smoke: `pnpm --filter @wingman/api exec vitest run src/client-loop.smoke.test.ts`
 

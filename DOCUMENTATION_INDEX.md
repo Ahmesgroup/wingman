@@ -181,7 +181,8 @@ Start with `README.md`, then `docs/PRD.md`, `architecture/STATE_MACHINES.md`, `d
 - [`operations/S16_PERSISTENCE_LIVE.md`](operations/S16_PERSISTENCE_LIVE.md) — live Prisma + boot hydrate
 - [`operations/S17_WEBSOCKET.md`](operations/S17_WEBSOCKET.md) — WebSocket transport
 - [`operations/S18_PROVIDERS.md`](operations/S18_PROVIDERS.md) — SMS + FCM/APNs providers
-- [`operations/S19_BILLING_ENTITLEMENTS.md`](operations/S19_BILLING_ENTITLEMENTS.md) — Billing → Entitlements (Stripe facts → rights)
+- [`operations/S19_BILLING_ENTITLEMENTS.md`](operations/S19_BILLING_ENTITLEMENTS.md) — Billing → Entitlements + payment-ready fail-closed
+- [`operations/CLIENT_MOBILE_PAYMENT_READINESS.md`](operations/CLIENT_MOBILE_PAYMENT_READINESS.md) — mobile-first client + payments disabled
 - [`operations/S20_PRODUCTION_CERTIFICATION.md`](operations/S20_PRODUCTION_CERTIFICATION.md) — **Backend V1 certification GO**
 - [`operations/V1.1_ADVANCED_ENGINE.md`](operations/V1.1_ADVANCED_ENGINE.md) — V1.1 advanced engines roadmap
 - [`operations/S21_RADAR_INTELLIGENCE.md`](operations/S21_RADAR_INTELLIGENCE.md) — Radar Intelligence (flagged ranking)
@@ -191,10 +192,12 @@ Start with `README.md`, then `docs/PRD.md`, `architecture/STATE_MACHINES.md`, `d
 - [`operations/S24.1_DESTINY_PROPOSAL_PERSISTENCE.md`](operations/S24.1_DESTINY_PROPOSAL_PERSISTENCE.md) — Destiny proposal Redis/shared store
 - [`operations/S25_GEO_INTELLIGENCE.md`](operations/S25_GEO_INTELLIGENCE.md) — Geo Intelligence (ephemeral spatial relevance)
 - [`operations/S26_MEASUREMENT.md`](operations/S26_MEASUREMENT.md) — Measurement & Engine Audit (no auto-learning)
-- [`operations/PROJECT_STATE.md`](operations/PROJECT_STATE.md) — locked board: baseline collection → S26 Review
+- [`operations/PROJECT_STATE.md`](operations/PROJECT_STATE.md) — locked board: baseline collection → S26 Review · client track DONE
 - [`operations/STAGING_LOAD_CERTIFICATION.md`](operations/STAGING_LOAD_CERTIFICATION.md) — Staging Redis/Postgres load cert (infra)
 - [`apps/BACKEND_README.md`](apps/BACKEND_README.md) — developer quick start for the executable API
 - [`operations/PRODUCTION_READINESS.md`](operations/PRODUCTION_READINESS.md) — S12–S20 readiness gates
+- [`operations/LOCAL_DEVELOPMENT.md`](operations/LOCAL_DEVELOPMENT.md) — API + prototype client
+- [`operations/ENVIRONMENT_VARIABLES.md`](operations/ENVIRONMENT_VARIABLES.md) — incl. payment fail-closed defaults
 - [`implementation/AI_CODING_RULES.md`](implementation/AI_CODING_RULES.md)
 - [`implementation/CODING_STANDARDS.md`](implementation/CODING_STANDARDS.md)
 - [`implementation/DEFINITION_OF_DONE.md`](implementation/DEFINITION_OF_DONE.md)
@@ -207,9 +210,12 @@ Start with `README.md`, then `docs/PRD.md`, `architecture/STATE_MACHINES.md`, `d
 - [`implementation/SPRINT_2.md`](implementation/SPRINT_2.md)
 - [`implementation/SPRINT_3.md`](implementation/SPRINT_3.md)
 
-## Prototype (prototype/)
+## Prototype / mobile-first client (prototype/)
 
+- [`operations/CLIENT_MOBILE_PAYMENT_READINESS.md`](operations/CLIENT_MOBILE_PAYMENT_READINESS.md) — sprint status + gates
 - [`prototype/README.md`](prototype/README.md)
-- [`prototype/app.js`](prototype/app.js)
 - [`prototype/index.html`](prototype/index.html)
 - [`prototype/styles.css`](prototype/styles.css)
+- [`prototype/app.js`](prototype/app.js)
+- [`prototype/api.js`](prototype/api.js)
+- [`prototype/payments/`](prototype/payments/) — dormant Stripe/Paddle; Disabled default
