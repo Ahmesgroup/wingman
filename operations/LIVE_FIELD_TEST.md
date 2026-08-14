@@ -62,9 +62,56 @@ Repeat on multiple devices. Only then is Wingman a **testable product**, not onl
 - Internal: `?qa=1` for labs.  
 - Banner “Field test · demo” OK during controlled surface phase; any behavior that fakes another real user must be removed from the public field-test path before S34.
 
-## Order
+## Certification chain (strict)
 
-Execute **S27 → S34** in sequence unless a gate failure forces a closed fix list inside the same sprint. Do not open a redesign sprint. Do not enable payments or public Destiny.
+```text
+S27 Identity / real OTP
+  → S28 persistence
+  → S29 realtime multi-device
+  → S30 radar réel
+  → S31 selfie réel
+  → S32 push app fermée
+  → S33 safety
+  → S34 Live Field Test Certification
+```
+
+**Rule:** no sprint is “done” because code compiles or CI is green.  
+Each sprint must produce **real-device proof** that unlocks the next.  
+**S28 does not start until S27 is green on physical phones.**
+
+`078d308` = surface ready to *begin* field work — **not** product proof.  
+`46632b7` = method lock that stops polish-by-habit.
+
+### Product DoD (blocks false positives)
+
+> **Deux vrais numéros → Signal reçu app fermée → vrai selfie → validation → Mission → outcome → Radar**, sans fake user, sans `?qa=1`, sans édition manuelle DB, sans intervention développeur.
+
+Invariant kept for the whole track: **1 active connection per person** (persistence / DB — not UI-only).
+
+## S27 — Production Identity & Real Phone Auth (NEXT)
+
+### Gate (must all pass on physical devices)
+
+| # | Proof |
+|---|--------|
+| 1 | Two physical phones, two **real** E.164 numbers |
+| 2 | **No** `x-user-id` / `AUTH_ALLOW_DEV` on public production |
+| 3 | OTP **actually sent** by the SMS provider (not logged-only / mock) |
+| 4 | Two distinct identities created / resolved |
+| 5 | Full app kill → reopen → sessions still correctly resolved |
+| 6 | Wrong OTP rejected |
+| 7 | Expired OTP rejected |
+| 8 | Controlled resend works |
+| 9 | Rate limit / anti-bruteforce observable |
+| 10 | Existing number → login path (not duplicate phantom account) |
+| 11 | Logout → login restores the same identity |
+
+**Exit:** S27 green on phones → only then open S28.
+
+### Maturity shift
+
+Stop asking “does the product *look* ready?”  
+Ask: **“Can two humans complete the protocol without assistance?”**
 
 ## Related
 
