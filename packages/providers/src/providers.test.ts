@@ -47,6 +47,17 @@ describe("S18 production providers", () => {
   });
 
 
+  it("OTP delivery puts code in SMS body without AUTH_DEBUG_OTP", async () => {
+    delete process.env.AUTH_DEBUG_OTP;
+    const auth = new AuthService("pepper");
+    const inner = new ConsoleSmsProvider();
+    const delivery = new OtpDeliveryService(auth, inner);
+    const res = await delivery.requestAndDeliver("+33699999999");
+    expect(res.challengeId).toBeTruthy();
+    expect(res.debugCode).toBeUndefined();
+    expect(inner.sent[0]!.body).toMatch(/Your Wingman code is \d{6}/);
+  });
+
   it("OTP delivery still goes through SmsProvider port only", async () => {
     process.env.AUTH_DEBUG_OTP = "true";
     const auth = new AuthService("pepper");
@@ -54,6 +65,7 @@ describe("S18 production providers", () => {
     const delivery = new OtpDeliveryService(auth, sms);
     const res = await delivery.requestAndDeliver("+33699999999");
     expect(res.challengeId).toBeTruthy();
+    expect(res.debugCode).toMatch(/^\d{6}$/);
   });
 
   it("mobile push fans out to android+ios and cleans invalid tokens", async () => {

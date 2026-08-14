@@ -267,7 +267,8 @@ const I18N = {
     ob2_eyebrow: 'The solution', ob2_title: 'A quiet protocol, not a swipe feed.', ob2_body: 'No public profiles. No endless chat. A short, private path from "someone\'s near" to "let\'s meet."',
     ob3_eyebrow: 'The promise', ob3_title: 'Make the first move, safely.', ob3_body: 'No explicit rejection. Approximate location only. You stay in control of who can find you.', ob3_cta: 'Create my account',
     phone_sub: 'Verify your number', phone_title: 'Enter your phone', phone_body: 'We send a 6-digit code. Your number is never shown to anyone.', phone_label: 'Phone number', phone_cta: 'Send code', phone_note: 'Verification only — used to keep Wingman free of fake profiles.',
-    otp_sub: 'Enter the code', otp_title: '6-digit code', otp_body: 'Sent to +352 621 000 000', otp_cta: 'Verify',
+    otp_sub: 'Enter the code', otp_title: '6-digit code', otp_body: 'Sent to your phone', otp_cta: 'Verify', otp_resend: 'Resend code',
+    t_auth_required: 'Sign in with your phone to continue', t_auth_ok: 'Signed in', t_otp_sent: 'Code sent', t_otp_bad: 'Invalid code', t_otp_expired: 'Code expired', t_otp_rate: 'Too many attempts — wait and retry',
     profile_sub: 'Your profile', pf_name: 'First name', pf_birth: 'Date of birth', pf_gender: 'Gender', g_male: 'Male', g_female: 'Female', g_nb: 'Non-binary',
     pf_interest: 'Interested in', t_men: 'Men', t_women: 'Women', t_nb: 'Non-binary', pf_height: 'Height (cm)', pf_interests: 'Interests (max 5)', pf_bio: 'Daily bio (150 max)',
     consent_sub: 'Your choices', consent_title: 'What you agree to', consent_body: 'Each purpose is separate. You can change these anytime in Settings.',
@@ -326,7 +327,8 @@ const I18N = {
     ob2_eyebrow: 'La solution', ob2_title: 'Un protocole discret, pas un fil de swipe.', ob2_body: "Pas de profils publics. Pas de chat infini. Un chemin court et privé de « quelqu'un est proche » à « on se voit ».",
     ob3_eyebrow: 'La promesse', ob3_title: 'Faites le premier pas, en sécurité.', ob3_body: "Aucun rejet explicite. Localisation approximative uniquement. Vous contrôlez qui peut vous trouver.", ob3_cta: 'Créer mon compte',
     phone_sub: 'Vérifiez votre numéro', phone_title: 'Votre téléphone', phone_body: 'Nous envoyons un code à 6 chiffres. Votre numéro n\'est jamais montré.', phone_label: 'Numéro de téléphone', phone_cta: 'Envoyer le code', phone_note: 'Vérification uniquement — pour garder Wingman sans faux profils.',
-    otp_sub: 'Entrez le code', otp_title: 'Code à 6 chiffres', otp_body: 'Envoyé au +352 621 000 000', otp_cta: 'Vérifier',
+    otp_sub: 'Entrez le code', otp_title: 'Code à 6 chiffres', otp_body: 'Envoyé sur votre téléphone', otp_cta: 'Vérifier', otp_resend: 'Renvoyer le code',
+    t_auth_required: 'Connectez-vous avec votre téléphone', t_auth_ok: 'Connecté', t_otp_sent: 'Code envoyé', t_otp_bad: 'Code invalide', t_otp_expired: 'Code expiré', t_otp_rate: 'Trop de tentatives — réessayez plus tard',
     profile_sub: 'Votre profil', pf_name: 'Prénom', pf_birth: 'Date de naissance', pf_gender: 'Genre', g_male: 'Homme', g_female: 'Femme', g_nb: 'Non-binaire',
     pf_interest: 'Intéressé·e par', t_men: 'Hommes', t_women: 'Femmes', t_nb: 'Non-binaire', pf_height: 'Taille (cm)', pf_interests: "Centres d'intérêt (max 5)", pf_bio: 'Bio du jour (150 max)',
     consent_sub: 'Vos choix', consent_title: 'Ce que vous acceptez', consent_body: 'Chaque finalité est distincte. Modifiable à tout moment dans Réglages.',
@@ -1086,24 +1088,43 @@ async function bootApi() {
       applyEntitlements({ plan: 'FREE', capabilities: { dailySignals: 2, activeConnectionTickets: 1 } });
       return;
     }
-    await api.seed({
-      id: state.meId,
-      gender: 'MALE',
-      interestedIn: ['WOMEN'],
-    });
-    await api.seed({
-      id: state.peerId,
-      gender: 'FEMALE',
-      interestedIn: ['MEN'],
-    });
-    const ents = await api.entitlements();
-    applyEntitlements(ents);
-    try {
-      const ps = await api.paymentsStatus();
-      if (ps && ps.paymentsEnabled) console.warn('[wingman] payments unexpectedly enabled');
-    } catch (_) { /* ignore */ }
-    setApiBanner('live', t('t_api_live'));
-    feedback('success', t('t_api_live'));
+
+    // S27 session path — real identity from OTP tokens
+    if (api.hasSession && api.userId) {
+      state.meId = api.userId;
+      const ents = await api.entitlements();
+      applyEntitlements(ents);
+      try {
+        const ps = await api.paymentsStatus();
+        if (ps && ps.paymentsEnabled) console.warn('[wingman] payments unexpectedly enabled');
+      } catch (_) { /* ignore */ }
+      setApiBanner('live', t('t_api_live'));
+      feedback('success', t('t_auth_ok'));
+      return;
+    }
+
+    // Local lab only: x-user-id + seed (never on public Vercel field surface)
+    if (api.preferDevHeader) {
+      await api.seed({
+        id: state.meId,
+        gender: 'MALE',
+        interestedIn: ['WOMEN'],
+      });
+      await api.seed({
+        id: state.peerId,
+        gender: 'FEMALE',
+        interestedIn: ['MEN'],
+      });
+      const ents = await api.entitlements();
+      applyEntitlements(ents);
+      setApiBanner('live', t('t_api_live'));
+      feedback('success', t('t_api_live'));
+      return;
+    }
+
+    setApiBanner('busy', t('t_auth_required'));
+    feedback('busy', t('t_auth_required'));
+    applyEntitlements({ plan: 'FREE', capabilities: { dailySignals: 2, activeConnectionTickets: 1 } });
   } catch (_) {
     if (api) api.setUseMock(true);
     state.apiLive = false;
@@ -1236,6 +1257,112 @@ document.addEventListener('keydown', e => {
   if (sheet && sheet.classList.contains('open')) {
     sheet.classList.remove('open');
     sheet.setAttribute('aria-hidden', 'true');
+  }
+});
+
+/* ------------------------------------------------------------ S27 phone auth */
+let pendingPhoneE164 = '';
+
+function normalizeE164(raw) {
+  const s = String(raw || '').trim().replace(/[\s()-]/g, '');
+  if (!s) return '';
+  return s.startsWith('+') ? s : ('+' + s.replace(/^\+/, ''));
+}
+
+function readOtpCode() {
+  return $$('#otp-inputs input').map((i) => i.value).join('');
+}
+
+function clearOtpInputs() {
+  $$('#otp-inputs input').forEach((i) => { i.value = ''; });
+  const first = $('#otp-inputs input');
+  if (first) first.focus();
+}
+
+$$('#otp-inputs input').forEach((inp, idx, arr) => {
+  inp.addEventListener('input', () => {
+    if (inp.value && arr[idx + 1]) arr[idx + 1].focus();
+  });
+  inp.addEventListener('keydown', (e) => {
+    if (e.key === 'Backspace' && !inp.value && arr[idx - 1]) arr[idx - 1].focus();
+  });
+});
+
+async function requestOtpForPhone(phone) {
+  const errEl = $('#phone-error') || $('#otp-error');
+  if (errEl) errEl.textContent = '';
+  if (!api || api.useMock) {
+    feedback('busy', t('t_api_mock'));
+    return false;
+  }
+  try {
+    await withLoading(t('t_loading'), async () => {
+      await api.requestOtp(phone);
+    });
+    pendingPhoneE164 = phone;
+    const sent = $('#otp-sent-to');
+    if (sent) sent.textContent = (state.lang === 'fr' ? 'Envoyé au ' : 'Sent to ') + phone;
+    feedback('success', t('t_otp_sent'));
+    return true;
+  } catch (e) {
+    const code = e && e.code;
+    const msg = code === 'OTP_RATE_LIMITED' ? t('t_otp_rate') : ((e && e.message) || t('t_otp_bad'));
+    if (errEl) errEl.textContent = msg;
+    feedback('error', msg);
+    return false;
+  }
+}
+
+$('#phone-send-btn') && $('#phone-send-btn').addEventListener('click', async () => {
+  const phone = normalizeE164($('#phone-input') && $('#phone-input').value);
+  if (phone.length < 8) {
+    const errEl = $('#phone-error');
+    if (errEl) errEl.textContent = state.lang === 'fr' ? 'Numéro invalide' : 'Invalid number';
+    return;
+  }
+  if (await requestOtpForPhone(phone)) {
+    clearOtpInputs();
+    show('v-otp');
+  }
+});
+
+$('#otp-resend-btn') && $('#otp-resend-btn').addEventListener('click', async () => {
+  const phone = pendingPhoneE164 || normalizeE164($('#phone-input') && $('#phone-input').value);
+  if (!phone) return;
+  await requestOtpForPhone(phone);
+});
+
+$('#otp-verify-btn') && $('#otp-verify-btn').addEventListener('click', async () => {
+  const errEl = $('#otp-error');
+  if (errEl) errEl.textContent = '';
+  const phone = pendingPhoneE164 || normalizeE164($('#phone-input') && $('#phone-input').value);
+  const code = readOtpCode();
+  if (!phone || code.length !== 6) {
+    if (errEl) errEl.textContent = t('t_otp_bad');
+    return;
+  }
+  if (!api || api.useMock) {
+    feedback('busy', t('t_api_mock'));
+    show('v-profile');
+    return;
+  }
+  try {
+    await withLoading(t('t_loading'), async () => {
+      const sess = await api.verifyOtp(phone, code);
+      state.meId = sess.userId;
+      const ents = await api.entitlements();
+      applyEntitlements(ents);
+    });
+    setApiBanner('live', t('t_api_live'));
+    feedback('success', t('t_auth_ok'));
+    show('v-profile');
+  } catch (e) {
+    const codeErr = e && e.code;
+    const msg = codeErr === 'OTP_EXPIRED' ? t('t_otp_expired')
+      : codeErr === 'OTP_RATE_LIMITED' ? t('t_otp_rate')
+      : t('t_otp_bad');
+    if (errEl) errEl.textContent = msg;
+    feedback('error', msg);
   }
 });
 

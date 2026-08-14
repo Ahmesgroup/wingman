@@ -99,8 +99,9 @@
         <div class="body pad">
           <h2 class="head" data-i18n="phone_title">Enter your phone</h2>
           <p class="lead mb" data-i18n="phone_body">We send a 6-digit code. Your number is never shown to anyone.</p>
-          <div class="field"><label for="phone-input" data-i18n="phone_label">Phone number</label><input id="phone-input" type="tel" value="+352 621 000 000" inputmode="tel" autocomplete="tel"></div>
-          <button class="btn btn-primary" data-go="v-otp" data-i18n="phone_cta">Send code</button>
+          <div class="field"><label for="phone-input" data-i18n="phone_label">Phone number</label><input id="phone-input" type="tel" value="" placeholder="+352 …" inputmode="tel" autocomplete="tel"></div>
+          <button type="button" class="btn btn-primary" id="phone-send-btn" data-i18n="phone_cta">Send code</button>
+          <p class="small muted center mt" id="phone-error" role="alert"></p>
           <p class="small muted center mt" data-i18n="phone_note">Verification only — used to keep Wingman free of fake profiles.</p>
         </div>
       </section>
@@ -109,11 +110,13 @@
         <div class="topbar"><div class="logo">WING<b>MAN</b></div><div class="subtitle" data-i18n="otp_sub">Enter the code</div></div>
         <div class="body pad">
           <h2 class="head" data-i18n="otp_title">6-digit code</h2>
-          <p class="lead" data-i18n="otp_body">Sent to +352 621 000 000</p>
+          <p class="lead" id="otp-sent-to" data-i18n="otp_body">Sent to your phone</p>
           <div class="otp" id="otp-inputs">
-            <input maxlength="1" value="4" aria-label="digit 1"><input maxlength="1" value="1" aria-label="digit 2"><input maxlength="1" value="9" aria-label="digit 3"><input maxlength="1" value="2" aria-label="digit 4"><input maxlength="1" value="0" aria-label="digit 5"><input maxlength="1" value="7" aria-label="digit 6">
+            <input maxlength="1" inputmode="numeric" autocomplete="one-time-code" aria-label="digit 1"><input maxlength="1" inputmode="numeric" aria-label="digit 2"><input maxlength="1" inputmode="numeric" aria-label="digit 3"><input maxlength="1" inputmode="numeric" aria-label="digit 4"><input maxlength="1" inputmode="numeric" aria-label="digit 5"><input maxlength="1" inputmode="numeric" aria-label="digit 6">
           </div>
-          <button class="btn btn-primary" data-go="v-profile" data-i18n="otp_cta">Verify</button>
+          <button type="button" class="btn btn-primary" id="otp-verify-btn" data-i18n="otp_cta">Verify</button>
+          <button type="button" class="btn btn-ghost mt-s" id="otp-resend-btn" data-i18n="otp_resend">Resend code</button>
+          <p class="small muted center mt" id="otp-error" role="alert"></p>
         </div>
       </section>
 

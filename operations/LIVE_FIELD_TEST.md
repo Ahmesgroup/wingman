@@ -106,12 +106,34 @@ Invariant kept for the whole track: **1 active connection per person** (persiste
 | 10 | Existing number → login path (not duplicate phantom account) |
 | 11 | Logout → login restores the same identity |
 
-**Exit:** S27 green on phones → only then open S28.
+### Levels of “green” (do not conflate)
 
-### Maturity shift
+| Level | Means | Does **not** mean |
+|-------|--------|-------------------|
+| **CI green** | Code is healthy (compile/tests) | Sprint or product proven |
+| **Sprint green** | Required **real-device proof** for that sprint exists | Full protocol multi-human |
+| **S34 green** | Full protocol works across several humans without assistance | — |
 
-Stop asking “does the product *look* ready?”  
-Ask: **“Can two humans complete the protocol without assistance?”**
+A successful Vercel deploy alone **never** closes S27–S34.
+
+### S27 binary exit (GREEN or OPEN — no “almost”)
+
+**S27 = GREEN** only if **all** of the following are proven on physical phones:
+
+1. Real number A + real number B  
+2. Real OTPs delivered by the SMS provider  
+3. **Zero** dependency on `x-user-id` / `AUTH_ALLOW_DEV` on public production  
+4. Wrong OTP correctly rejected  
+5. Expired OTP correctly rejected  
+6. Resend functional  
+7. Rate-limit functional  
+8. Session persists after full app kill → reopen  
+9. Logout → login again works  
+10. Two independent identities correctly restored  
+
+If **any** item fails → **S27 stays OPEN** → **S28 does not start**.
+
+Invariant for the whole track: **one active connection per user** via persistence (`ActiveUserLock` / DB) — not UI convention.
 
 ## Related
 

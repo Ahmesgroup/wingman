@@ -1,4 +1,4 @@
-import { Body, Controller, Inject, Injectable, Post } from "@nestjs/common";
+import { Body, Controller, ForbiddenException, Inject, Injectable, Post } from "@nestjs/common";
 import type { WingmanEngine } from "@wingman/domain";
 import type { ProtocolPersistenceMirror } from "@wingman/persistence";
 import { Public } from "../../common/public.decorator.js";
@@ -43,6 +43,11 @@ export class DevController {
       wingmanPlus?: boolean;
     },
   ) {
+    if (process.env.AUTH_ALLOW_DEV !== "true") {
+      throw new ForbiddenException({
+        error: { code: "DEV_DISABLED", message: "Dev seed is disabled outside AUTH_ALLOW_DEV" },
+      });
+    }
     return this.dev.seed(body);
   }
 }

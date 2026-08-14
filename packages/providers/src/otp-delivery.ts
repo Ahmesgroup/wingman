@@ -3,7 +3,7 @@ import type { SmsProvider } from "./sms.js";
 
 /**
  * Sends OTP via SmsProvider without storing raw codes outside AuthService.
- * AuthService still owns challenge hashes; this only delivers.
+ * AuthService owns hashes; deliveryCode is used once for SMS and never returned to HTTP.
  */
 export class OtpDeliveryService {
   constructor(
@@ -13,15 +13,14 @@ export class OtpDeliveryService {
 
   async requestAndDeliver(phoneE164: string): Promise<{ challengeId: string; debugCode?: string }> {
     const result = this.auth.requestOtp(phoneE164);
-    const code = result.debugCode;
-    const body = code
-      ? `Your Wingman code is ${code}`
-      : "Your Wingman verification code was issued. Open the app to continue.";
     await this.sms.send({
       toE164: phoneE164,
-      body,
+      body: `Your Wingman code is ${result.deliveryCode}`,
       idempotencyKey: `otp:${result.challengeId}`,
     });
-    return result;
+    return {
+      challengeId: result.challengeId,
+      debugCode: result.debugCode,
+    };
   }
 }

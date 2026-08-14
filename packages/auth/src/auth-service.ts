@@ -88,7 +88,7 @@ export class AuthService {
     return id;
   }
 
-  requestOtp(phoneE164: string): { challengeId: string; debugCode?: string } {
+  requestOtp(phoneE164: string): { challengeId: string; deliveryCode: string; debugCode?: string } {
     const lookup = this.phoneLookup(phoneE164);
     const t = this.now().getTime();
     this.otpRequests = this.otpRequests.filter((r) => t - r.at < this.opts.otpWindowMs);
@@ -112,6 +112,7 @@ export class AuthService {
     this.otpByPhone.set(lookup, challenge.id);
     return {
       challengeId: challenge.id,
+      deliveryCode: code,
       debugCode: process.env.AUTH_DEBUG_OTP === "true" ? code : undefined,
     };
   }

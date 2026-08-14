@@ -30,16 +30,17 @@ export class AuthApiService {
     @Optional() private readonly antiAbuse?: AntiAbuseGate,
   ) {}
 
-  requestOtp(phoneE164: string) {
+  async requestOtp(phoneE164: string) {
     // Hash-stable actor key without logging the phone
     const actorKey = `otp:${simpleHash(phoneE164)}`;
     this.antiAbuse?.assertAllowed(actorKey, "OTP_REQUEST");
-    const result = this.otpDelivery.requestAndDeliver(phoneE164);
+    const result = await this.otpDelivery.requestAndDeliver(phoneE164);
     this.antiAbuse?.note("auth.otp_request", actorKey, {
       evaluate: true,
       eventId: `otp:${actorKey}:${Date.now()}`,
     });
-    return result;
+    // Never return deliveryCode over HTTP — only optional debugCode when AUTH_DEBUG_OTP
+    return { challengeId: result.challengeId, debugCode: result.debugCode };
   }
 
   verify(body: { phoneE164: string; code: string; deviceId: string }) {

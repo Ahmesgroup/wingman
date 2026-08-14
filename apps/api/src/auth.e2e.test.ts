@@ -30,7 +30,9 @@ describe("S9 auth HTTP", () => {
       });
 
     const token = verified.body.accessToken as string;
-    await request(server).post("/dev/seed").send({ id: verified.body.userId, gender: "MALE", interestedIn: ["WOMEN"] });
+    process.env.AUTH_ALLOW_DEV = "true";
+    await request(server).post("/dev/seed").send({ id: verified.body.userId, gender: "MALE", interestedIn: ["WOMEN"] }).expect(201);
+    process.env.AUTH_ALLOW_DEV = "false";
 
     // seed is public; radar needs bearer
     await request(server)
