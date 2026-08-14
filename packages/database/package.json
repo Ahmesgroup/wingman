@@ -22,6 +22,7 @@
     "prisma:migrate:deploy": "prisma migrate deploy --schema=./prisma/schema.prisma"
   },
   "devDependencies": {
+    "@types/node": "^22.10.5",
     "prisma": "^6.3.0",
     "typescript": "^5.7.3"
   },
