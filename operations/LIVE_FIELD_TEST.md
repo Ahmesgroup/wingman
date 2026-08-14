@@ -116,24 +116,15 @@ Invariant kept for the whole track: **1 active connection per person** (persiste
 
 A successful Vercel deploy alone **never** closes S27–S34.
 
-### S27 binary exit (GREEN or OPEN — no “almost”)
+### S27 binary exit (GREEN / OPEN / BLOCKED — no “almost”)
 
-**S27 = GREEN** only if **all** of the following are proven on physical phones:
+- **GREEN** — all physical proofs pass with dated Evidence Pack; no developer bypass  
+- **OPEN** — any single failure (CI green is irrelevant)  
+- **BLOCKED** — external infra (Twilio/credentials/SMS) prevents the run; not a product bug  
 
-1. Real number A + real number B  
-2. Real OTPs delivered by the SMS provider  
-3. **Zero** dependency on `x-user-id` / `AUTH_ALLOW_DEV` on public production  
-4. Wrong OTP correctly rejected  
-5. Expired OTP correctly rejected  
-6. Resend functional  
-7. Rate-limit functional  
-8. Session persists after full app kill → reopen  
-9. Logout → login again works  
-10. Two independent identities correctly restored  
+**S28 does not start** until S27 is **GREEN**. No parallel S28.  
 
-If **any** item fails → **S27 stays OPEN** → **S28 does not start**.
-
-Invariant for the whole track: **one active connection per user** via persistence (`ActiveUserLock` / DB) — not UI convention.
+Template + ordered script: [`S27_IDENTITY_OTP.md`](./S27_IDENTITY_OTP.md).
 
 ## Related
 

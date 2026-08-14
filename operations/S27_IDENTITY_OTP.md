@@ -1,57 +1,118 @@
 # S27 — Production Identity & Real Phone Auth
 
-**Status:** OPEN (implementation in progress — not GREEN)  
+**Status:** OPEN — implementation shipped (`af29101`), **not product-certified**  
 **Board:** [`LIVE_FIELD_TEST.md`](./LIVE_FIELD_TEST.md)  
-**Rule:** binary — GREEN only with full phone proof; otherwise stays OPEN. **S28 blocked.**
+**S28:** BLOCKED until this sprint is **GREEN** (no parallel work)
 
-## Levels
+## Discipline
 
-| Level | Meaning |
-|-------|---------|
-| CI green | Code/tests healthy |
-| Sprint green (S27) | All binary items proven on **physical phones** |
-| S34 green | Full multi-human protocol |
+| Level | Means |
+|-------|--------|
+| **CI green** | Code/tests healthy (`af29101` and later) |
+| **S27 GREEN** | Full physical-phone proof below — no developer bypass |
+| **S27 OPEN** | Any single checklist item fails (even if CI is green) |
+| **S27 BLOCKED** | External infra prevents the test (Twilio/credentials/SMS unreachable) — **not** a product bug |
 
-Vercel deploy alone never closes S27.
+A Vercel deploy alone never closes S27.  
+No new functional development until field evidence, unless a **reproducible** defect appears.
 
-## Binary checklist (phone proof)
+## Ordered field script (unique sequence)
 
-| # | Criterion | Code path | Device proof |
-|---|-----------|-----------|--------------|
-| 1 | Real number A + B | Client OTP UI | ☐ |
-| 2 | Real OTP via SMS provider | `OtpDeliveryService` + Twilio/`SMS_PROVIDER` | ☐ |
-| 3 | No `x-user-id` on public prod | `main.ts` forces off when `production` / `WINGMAN_PUBLIC_PROD` | ☐ |
-| 4 | Wrong OTP rejected | `AuthService.verifyOtp` → OTP_INVALID | ☐ |
-| 5 | Expired OTP rejected | OTP_EXPIRED | ☐ |
-| 6 | Resend works | re-`POST /auth/otp/request` + UI Resend | ☐ |
-| 7 | Rate-limit works | OTP_RATE_LIMITED | ☐ |
-| 8 | Session after kill/reopen | tokens in localStorage + refresh | ☐ |
-| 9 | Logout → login | `/auth/logout` + re-verify | ☐ |
-| 10 | Two independent identities | `ensureUser` per phone | ☐ |
+1. Phone A enters real number → real SMS → enters code → session created  
+2. Phone B repeats → two **distinct** identities  
+3. Full kill of both apps/PWA → reopen → session restored **without** OTP  
+4. Logout A → login again with OTP  
+5. Wrong code rejected  
+6. Expired code rejected  
+7. Resend works  
+8. Excessive attempts → rate-limit  
+9. Confirm public routes reject `x-user-id` and `/dev/seed`  
 
-## Shipped in code (not yet Sprint GREEN)
+## Binary criteria (all required for GREEN)
 
-- SMS body always includes OTP (`deliveryCode`); HTTP never returns it unless `AUTH_DEBUG_OTP`
-- `AUTH_ALLOW_DEV` only when not public prod; `/dev/seed` forbidden otherwise
-- CORS enabled for hosted client → API
-- Prototype: real `requestOtp` / `verifyOtp` / Bearer+deviceId / session restore
-- Local dual-user seed only when hostname is localhost/`?devauth=1`
+| # | Criterion | Device proof |
+|---|-----------|--------------|
+| 1 | Real number A + B | ☐ |
+| 2 | Real OTP via SMS provider | ☐ |
+| 3 | No `x-user-id` / no public `/dev/seed` | ☐ |
+| 4 | Wrong OTP rejected | ☐ |
+| 5 | Expired OTP rejected | ☐ |
+| 6 | Resend works | ☐ |
+| 7 | Rate-limit works | ☐ |
+| 8 | Session after kill/reopen | ☐ |
+| 9 | Logout → login again | ☐ |
+| 10 | Two independent identities restored | ☐ |
 
-## Still required for GREEN
+## S27 Evidence Pack (next useful deliverable)
 
-1. Public Nest API host with `SMS_PROVIDER=twilio` + Twilio secrets + `WINGMAN_PUBLIC_PROD=true` (or `NODE_ENV=production`)
-2. Two physical phones completing the checklist above
-3. S28 for durable OTP/sessions across API restart (kill/reopen of **API** is not fully covered by in-memory Maps)
+Fill one pack per certification attempt. Anonymize numbers (e.g. `+352***…789`).
 
-## Env (field API)
+| Field | Value |
+|-------|--------|
+| Date (UTC) | |
+| API base URL | |
+| Client URL | https://wingman-prototype.vercel.app/ (or build SHA) |
+| Commit under test | `af29101` or later |
+| SMS provider | Twilio / other |
+| `AUTH_ALLOW_DEV` | must be `false` on public API |
+| Device A (model / OS / browser) | |
+| Device B (model / OS / browser) | |
+| Number A (anonymized) | |
+| Number B (anonymized) | |
+| Tester(s) | |
+
+### Scenario log
+
+| Step | Expected | Observed | Timestamp (UTC) | Evidence (screenshot / log id) | PASS/FAIL |
+|------|----------|----------|-----------------|--------------------------------|-----------|
+| A request OTP | SMS received | | | | |
+| A verify OTP | Session created | | | | |
+| B request + verify | Distinct `userId` from A | | | | |
+| Kill both apps | — | | | | |
+| Reopen A + B | Session without OTP | | | | |
+| Logout A | Session cleared | | | | |
+| Login A again | OTP required + success | | | | |
+| Wrong OTP | Rejected | | | | |
+| Expired OTP | Rejected | | | | |
+| Resend | New SMS / usable code | | | | |
+| Rate-limit | Blocked after excess | | | | |
+| `x-user-id` on protected route | 401 | | | | |
+| `POST /dev/seed` | 403 DEV_DISABLED | | | | |
+
+### Verdict
+
+```text
+[ ] S27 GREEN   — all steps PASS, dated evidence attached, no bypass
+[ ] S27 OPEN    — at least one FAIL (product/path defect)
+[ ] S27 BLOCKED — infra/provider prevented the run (describe below)
+```
+
+Infra blocker notes (if BLOCKED):  
+
+---
+
+When the pack is entirely **GREEN**, S28 may move from **BLOCKED → ACTIVE**. Not before.
+
+## Code shipped (CI only — does not certify)
+
+- OTP in SMS via `deliveryCode`; HTTP never returns code unless `AUTH_DEBUG_OTP`
+- Public prod: no `x-user-id`; `/dev/seed` forbidden without `AUTH_ALLOW_DEV`
+- Client: phone → OTP → Bearer session + localStorage restore
+- Local dual-user seed only on localhost / `?devauth=1`
+
+## Public API config for the evidence run
 
 ```bash
 NODE_ENV=production          # or WINGMAN_PUBLIC_PROD=true
-AUTH_ALLOW_DEV=false         # ignored if public prod
+AUTH_ALLOW_DEV=false
 SMS_PROVIDER=twilio
 TWILIO_ACCOUNT_SID=…
 TWILIO_AUTH_TOKEN=…
 TWILIO_FROM_E164=…
 AUTH_PEPPER=<strong secret>
-AUTH_DEBUG_OTP=false         # never true on public field
+AUTH_DEBUG_OTP=false
 ```
+
+## Later sprints
+
+Keep watching **one active connection per user** (`ActiveUserLock` / engine locks + DB invariant) during S29+. That rule is persistence-backed, not UI-only.

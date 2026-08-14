@@ -17,9 +17,10 @@ CLIENT UI P1–P4                     DONE (`078d308` surface field-test)
 CLIENT polish loop                  STOPPED — no redesign / polish-by-habit
 PAYMENTS                            OFF (architecture dormant)
 DESTINY (public field)              OUT until own gates
-ACTIVE                              LIVE FIELD TEST — S27 OPEN (impl started, not GREEN)
-S27 gate                            binary phone checklist — see S27_IDENTITY_OTP.md
-S28+                                BLOCKED until S27 GREEN on device
+ACTIVE                              LIVE FIELD TEST — S27 OPEN (code done, not certified)
+S27                                 Evidence Pack required — see S27_IDENTITY_OTP.md
+S27 verdict                         GREEN | OPEN | BLOCKED (infra) — never “almost”
+S28+                                BLOCKED until S27 GREEN (no parallel)
 ```
 
 ## Live Field Test board (protocol — not engines)
