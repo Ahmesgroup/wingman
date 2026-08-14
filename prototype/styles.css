@@ -254,18 +254,91 @@ p.lead{color:var(--t-secondary);font-size:14px;line-height:1.5}
 .dots i.on{background:var(--wingman);width:20px;border-radius:4px;transition:var(--d-normal) var(--ease)}
 
 /* ---- OTP ---- */
-.otp{display:flex;gap:8px;justify-content:center;margin:20px 0}
-.otp input{width:42px;height:52px;text-align:center;font-size:22px;font-weight:700;background:var(--card);border:1px solid var(--border);border-radius:var(--r-sm);color:var(--t-primary)}
-.otp input:focus{border-color:var(--wingman);outline:none}
+.otp{
+  display:grid;grid-template-columns:repeat(6,minmax(0,1fr));
+  gap:clamp(6px,2.2vw,10px);margin:18px 0;width:100%;max-width:360px;align-self:center
+}
+.otp input{
+  width:100%;min-width:0;aspect-ratio:1/1.15;max-height:56px;
+  text-align:center;font-size:clamp(18px,5.5vw,22px);font-weight:700;
+  background:var(--elevated);border:1px solid var(--border);border-radius:14px;
+  color:var(--t-primary);caret-color:var(--air);
+  -webkit-appearance:none;appearance:none
+}
+.otp input:focus{border-color:var(--wingman);outline:none;box-shadow:0 0 0 3px var(--glow-signal)}
 
-/* ---- form fields ---- */
-.field{margin-bottom:14px}
-.field label{display:block;font-size:12px;color:var(--t-secondary);margin-bottom:6px;font-weight:600}
-.field input,.field select,.field textarea{width:100%;background:var(--card);border:1px solid var(--border);border-radius:var(--r-sm);padding:12px;color:var(--t-primary);font-size:14px;font-family:inherit}
+/* ---- form fields (phone-first) ---- */
+.field{margin-bottom:16px}
+.field label{display:block;font-size:12px;color:var(--t-secondary);margin-bottom:8px;font-weight:600;letter-spacing:.02em}
+.field-hint{font-size:11px;color:var(--t-muted);margin-top:8px;line-height:1.35}
+.field input,.field select,.field textarea{
+  width:100%;min-height:48px;
+  background:var(--elevated);border:1px solid var(--border);border-radius:14px;
+  padding:14px 16px;color:var(--t-primary);
+  font-size:16px; /* iOS: avoid auto-zoom */
+  font-family:inherit;line-height:1.3;
+  -webkit-appearance:none;appearance:none
+}
+.field textarea{min-height:96px;resize:vertical;padding-top:14px}
+.field input::placeholder,.field textarea::placeholder{color:var(--t-disabled)}
+.field input:focus,.field select:focus,.field textarea:focus{
+  border-color:var(--wingman);outline:none;box-shadow:0 0 0 3px var(--glow-signal)
+}
+.field input[type="number"]{-moz-appearance:textfield}
+.field input[type="number"]::-webkit-outer-spin-button,
+.field input[type="number"]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+
+/* Birth: 3 native selects → iOS wheel UI, readable on Mini */
+.birth-picker{
+  display:grid;grid-template-columns:minmax(0,0.9fr) minmax(0,1.35fr) minmax(0,1.1fr);
+  gap:8px;align-items:stretch
+}
+.birth-col{display:flex;flex-direction:column;gap:6px;min-width:0;margin:0}
+.birth-cap{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--air);padding-left:2px}
+.birth-col select{
+  width:100%;min-height:52px;padding:12px 28px 12px 10px;
+  border:1px solid var(--border);border-radius:14px;
+  color:var(--t-primary);font-size:16px;font-weight:600;font-family:inherit;
+  -webkit-appearance:none;appearance:none;
+  background-color:var(--elevated);
+  background-image:
+    linear-gradient(180deg,rgba(124,92,252,.16),rgba(124,92,252,0) 48%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23B9A7FF' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+  background-repeat:no-repeat,no-repeat;
+  background-position:0 0,right 12px center;
+  background-size:100% 100%,12px 8px
+}
+.birth-col select:focus{border-color:var(--wingman);outline:none;box-shadow:0 0 0 3px var(--glow-signal)}
+
 .pillset{display:flex;flex-wrap:wrap;gap:8px}
-.pill{padding:8px 12px;border-radius:var(--r-badge);border:1px solid var(--border);background:var(--card);font-size:13px;color:var(--t-secondary);min-height:var(--touch-min);display:inline-flex;align-items:center}
+.pillset-wrap .pill{flex:1 1 calc(50% - 8px);justify-content:center;min-width:calc(50% - 8px)}
+.pill{
+  padding:10px 14px;border-radius:999px;border:1px solid var(--border);background:var(--card);
+  font-size:14px;color:var(--t-secondary);min-height:44px;display:inline-flex;align-items:center;justify-content:center;
+  transition:transform var(--motion-tap) var(--ease),background var(--d-fast) var(--ease)
+}
+.pill:active{transform:scale(.97)}
 .pill[aria-pressed="true"]{background:var(--wingman);color:#fff;border-color:var(--wingman)}
 
+.form-scroll{padding-bottom:calc(112px + var(--safe-bottom))!important}
+.form-cta-spacer{height:8px}
+.form-sticky-cta{
+  position:sticky;bottom:calc(12px + var(--safe-bottom));z-index:5;
+  margin-top:8px;box-shadow:0 12px 32px rgba(0,0,0,.45)
+}
+
+@media (max-width:375px){
+  .otp{gap:5px}
+  .otp input{border-radius:12px;font-size:18px}
+  .birth-picker{gap:6px}
+  .birth-col select{min-height:50px;padding-left:8px;padding-right:24px;font-size:15px}
+  .pillset-wrap .pill{flex:1 1 100%;min-width:100%}
+  .field input,.field select,.field textarea{padding:13px 14px}
+}
+@media (max-width:360px){
+  .birth-cap{font-size:9px}
+  .otp{gap:4px}
+}
 /* ---- consent ---- */
 .consent-item{display:flex;gap:12px;align-items:flex-start;padding:12px;border:1px solid var(--border);border-radius:var(--r-sm);margin-bottom:10px;background:var(--card)}
 .consent-item .txt{flex:1}

@@ -271,7 +271,8 @@ const I18N = {
     otp_sub: 'Enter the code', otp_title: '6-digit code', otp_body: 'Sent to your phone', otp_cta: 'Verify', otp_resend: 'Resend code',
     otp_body_ft: 'Field test for', otp_field_note: 'Field test verification — no SMS is sent. Use the code from your test coordinator.',
     t_auth_required: 'Sign in with your phone to continue', t_auth_ok: 'Signed in', t_otp_sent: 'Code sent', t_otp_ready_ft: 'Enter the field-test code', t_otp_bad: 'Invalid code', t_otp_expired: 'Code expired', t_otp_rate: 'Too many attempts — wait and retry', t_otp_not_allowed: 'This number is not on the field-test allow-list',
-    profile_sub: 'Your profile', pf_name: 'First name', pf_birth: 'Date of birth', pf_gender: 'Gender', g_male: 'Male', g_female: 'Female', g_nb: 'Non-binary',
+    profile_sub: 'Your profile', pf_name: 'First name', pf_birth: 'Date of birth', pf_birth_day: 'Day', pf_birth_month: 'Month', pf_birth_year: 'Year', pf_birth_hint: 'Tap each column — native picker on iPhone.',
+    pf_gender: 'Gender', g_male: 'Male', g_female: 'Female', g_nb: 'Non-binary',
     pf_interest: 'Interested in', t_men: 'Men', t_women: 'Women', t_nb: 'Non-binary', pf_height: 'Height (cm)', pf_interests: 'Interests (max 5)', pf_bio: 'Daily bio (150 max)',
     consent_sub: 'Your choices', consent_title: 'What you agree to', consent_body: 'Each purpose is separate. You can change these anytime in Settings.',
     c_core: 'Run the service', c_core_d: 'Required to match you and operate the protocol.', c_loc: 'Approximate location', c_loc_d: 'Coarse radius only — never your exact position.',
@@ -333,7 +334,8 @@ const I18N = {
     otp_sub: 'Entrez le code', otp_title: 'Code à 6 chiffres', otp_body: 'Envoyé sur votre téléphone', otp_cta: 'Vérifier', otp_resend: 'Renvoyer le code',
     otp_body_ft: 'Field test pour', otp_field_note: 'Vérification field test — aucun SMS n\'est envoyé. Utilisez le code fourni par le coordinateur.',
     t_auth_required: 'Connectez-vous avec votre téléphone', t_auth_ok: 'Connecté', t_otp_sent: 'Code envoyé', t_otp_ready_ft: 'Entrez le code field-test', t_otp_bad: 'Code invalide', t_otp_expired: 'Code expiré', t_otp_rate: 'Trop de tentatives — réessayez plus tard', t_otp_not_allowed: 'Ce numéro n\'est pas sur la allow-list field-test',
-    profile_sub: 'Votre profil', pf_name: 'Prénom', pf_birth: 'Date de naissance', pf_gender: 'Genre', g_male: 'Homme', g_female: 'Femme', g_nb: 'Non-binaire',
+    profile_sub: 'Votre profil', pf_name: 'Prénom', pf_birth: 'Date de naissance', pf_birth_day: 'Jour', pf_birth_month: 'Mois', pf_birth_year: 'Année', pf_birth_hint: 'Touchez chaque colonne — molette native sur iPhone.',
+    pf_gender: 'Genre', g_male: 'Homme', g_female: 'Femme', g_nb: 'Non-binaire',
     pf_interest: 'Intéressé·e par', t_men: 'Hommes', t_women: 'Femmes', t_nb: 'Non-binaire', pf_height: 'Taille (cm)', pf_interests: "Centres d'intérêt (max 5)", pf_bio: 'Bio du jour (150 max)',
     consent_sub: 'Vos choix', consent_title: 'Ce que vous acceptez', consent_body: 'Chaque finalité est distincte. Modifiable à tout moment dans Réglages.',
     c_core: 'Faire fonctionner le service', c_core_d: 'Nécessaire pour vous mettre en relation et opérer le protocole.', c_loc: 'Localisation approximative', c_loc_d: 'Rayon grossier uniquement — jamais votre position exacte.',
@@ -395,6 +397,7 @@ function applyLang() {
   const rs = $('#radar-state');
   if (rs) rs.textContent = state.radarActive ? dict.radar_active : dict.radar_invisible;
   if (typeof applyFieldTestAuthCopy === 'function') applyFieldTestAuthCopy();
+  if (typeof refreshBirthMonthLabels === 'function') refreshBirthMonthLabels();
 }
 const t = k => I18N[state.lang][k] || k;
 
@@ -1264,6 +1267,106 @@ document.addEventListener('keydown', e => {
     sheet.setAttribute('aria-hidden', 'true');
   }
 });
+
+/* ------------------------------------------------------------ birth picker (mobile) */
+const BIRTH_MONTHS = {
+  en: ['January','February','March','April','May','June','July','August','September','October','November','December'],
+  fr: ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'],
+};
+
+function daysInMonth(year, month1to12) {
+  if (!year || !month1to12) return 31;
+  return new Date(year, month1to12, 0).getDate();
+}
+
+function syncBirthHidden() {
+  const hidden = $('#pf-birth');
+  const d = $('#pf-birth-day');
+  const m = $('#pf-birth-month');
+  const y = $('#pf-birth-year');
+  if (!hidden || !d || !m || !y) return;
+  if (!d.value || !m.value || !y.value) {
+    hidden.value = '';
+    return;
+  }
+  const dd = String(d.value).padStart(2, '0');
+  const mm = String(m.value).padStart(2, '0');
+  hidden.value = y.value + '-' + mm + '-' + dd;
+}
+
+function fillBirthDays() {
+  const d = $('#pf-birth-day');
+  const m = $('#pf-birth-month');
+  const y = $('#pf-birth-year');
+  if (!d) return;
+  const prev = d.value;
+  const max = daysInMonth(Number(y && y.value), Number(m && m.value));
+  d.innerHTML = '<option value="">—</option>';
+  for (let i = 1; i <= max; i++) {
+    const opt = document.createElement('option');
+    opt.value = String(i);
+    opt.textContent = String(i);
+    d.appendChild(opt);
+  }
+  if (prev && Number(prev) <= max) d.value = prev;
+  else if (prev) d.value = '';
+  syncBirthHidden();
+}
+
+function refreshBirthMonthLabels() {
+  const m = $('#pf-birth-month');
+  if (!m || !m.options.length) return;
+  const months = BIRTH_MONTHS[state.lang] || BIRTH_MONTHS.en;
+  const prev = m.value;
+  for (let i = 0; i < m.options.length; i++) {
+    const opt = m.options[i];
+    if (!opt.value) {
+      opt.textContent = '—';
+      continue;
+    }
+    const idx = Number(opt.value) - 1;
+    if (months[idx]) opt.textContent = months[idx];
+  }
+  m.value = prev;
+}
+
+function initBirthPicker() {
+  const d = $('#pf-birth-day');
+  const m = $('#pf-birth-month');
+  const y = $('#pf-birth-year');
+  if (!d || !m || !y) return;
+
+  const now = new Date();
+  const maxYear = now.getFullYear() - 18;
+  const minYear = now.getFullYear() - 80;
+
+  y.innerHTML = '<option value="">—</option>';
+  for (let yr = maxYear; yr >= minYear; yr--) {
+    const opt = document.createElement('option');
+    opt.value = String(yr);
+    opt.textContent = String(yr);
+    y.appendChild(opt);
+  }
+
+  m.innerHTML = '<option value="">—</option>';
+  const months = BIRTH_MONTHS[state.lang] || BIRTH_MONTHS.en;
+  months.forEach((label, idx) => {
+    const opt = document.createElement('option');
+    opt.value = String(idx + 1);
+    opt.textContent = label;
+    m.appendChild(opt);
+  });
+
+  fillBirthDays();
+  [d, m, y].forEach((el) => {
+    el.addEventListener('change', () => {
+      if (el === m || el === y) fillBirthDays();
+      else syncBirthHidden();
+    });
+  });
+}
+
+initBirthPicker();
 
 /* ------------------------------------------------------------ S27 phone auth */
 let pendingPhoneE164 = '';
