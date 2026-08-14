@@ -8,15 +8,22 @@
 
 ## Live run (field test)
 
-```bash
-# API (Nest :3000)
-AUTH_ALLOW_DEV=true MEASUREMENT_ENABLED=true pnpm --filter @wingman/api dev
+**Local**
 
-# Prototype (phone browser → same LAN IP :5173)
+```bash
+AUTH_ALLOW_DEV=true MEASUREMENT_ENABLED=true pnpm --filter @wingman/api dev
 npx serve prototype -l 5173
 ```
 
-- Checkpoint to evaluate: **`04e7c4d`** behavior (current `master` includes method docs only after that).  
+**Vercel (client UI — readable on phone)**
+
+```bash
+npx vercel --cwd prototype --prod --yes
+```
+
+- Checkpoint to evaluate: **`04e7c4d`** behavior (docs after that are method-only).  
+- On Vercel without a public HTTPS API → mock/demo loop (UI review still valid).  
+- Optional: `?api=https://…` when a public Nest API exists.  
 - Fill findings with the observation schema below — then verdict FREEZE V1 or P5 closed list.
 
 ```text

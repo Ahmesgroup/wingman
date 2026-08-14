@@ -5,7 +5,12 @@
 (function (global) {
   'use strict';
 
-  const DEFAULT_BASE = 'http://localhost:3000';
+  const params = (typeof location !== 'undefined' && location.search)
+    ? new URLSearchParams(location.search)
+    : null;
+  const DEFAULT_BASE = (params && params.get('api'))
+    || (typeof localStorage !== 'undefined' && localStorage.getItem('wingman_api_base'))
+    || 'http://localhost:3000';
 
   function createApiClient(opts) {
     opts = opts || {};

@@ -11,6 +11,14 @@ npx serve prototype -l 5173
 # → http://localhost:5173/
 ```
 
+## Deploy (Vercel — client UI)
+
+```bash
+npx vercel --cwd prototype --prod --yes
+```
+
+On Vercel the Nest API is not co-hosted; the client falls back to **mock/demo** unless `?api=https://your-api` (HTTPS) is set. Field UI review works in mock; live Nest loop still needs a reachable API.
+
 Controls (top): EN/FR, Reduce motion, Offline. Loop: Radar → Signal → Selfie → Ticket → Mission → Outcome → Cooldown.
 
 - `api.js` — Nest client (`x-user-id`); mock fallback if `/internal/live` is down; dual-user demo via `userId` override.
