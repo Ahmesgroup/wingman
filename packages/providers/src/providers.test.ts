@@ -49,23 +49,45 @@ describe("S18 production providers", () => {
 
   it("OTP delivery puts code in SMS body without AUTH_DEBUG_OTP", async () => {
     delete process.env.AUTH_DEBUG_OTP;
+    delete process.env.AUTH_FIELD_TEST_MODE;
     const auth = new AuthService("pepper");
     const inner = new ConsoleSmsProvider();
     const delivery = new OtpDeliveryService(auth, inner);
     const res = await delivery.requestAndDeliver("+33699999999");
     expect(res.challengeId).toBeTruthy();
     expect(res.debugCode).toBeUndefined();
+    expect(res.fieldTest).toBe(false);
     expect(inner.sent[0]!.body).toMatch(/Your Wingman code is \d{6}/);
   });
 
   it("OTP delivery still goes through SmsProvider port only", async () => {
     process.env.AUTH_DEBUG_OTP = "true";
+    delete process.env.AUTH_FIELD_TEST_MODE;
     const auth = new AuthService("pepper");
     const sms = new ReliableSmsProvider(new ConsoleSmsProvider());
     const delivery = new OtpDeliveryService(auth, sms);
     const res = await delivery.requestAndDeliver("+33699999999");
     expect(res.challengeId).toBeTruthy();
     expect(res.debugCode).toMatch(/^\d{6}$/);
+  });
+
+  it("field-test OTP skips SMS and uses fixed code + allow-list", async () => {
+    process.env.AUTH_FIELD_TEST_MODE = "true";
+    process.env.FIELD_TEST_OTP_CODE = "482913";
+    process.env.FIELD_TEST_PHONE_ALLOWLIST = "+35211111111,+35222222222";
+    delete process.env.AUTH_DEBUG_OTP;
+    const auth = new AuthService("pepper");
+    const inner = new ConsoleSmsProvider();
+    const delivery = new OtpDeliveryService(auth, inner);
+    const res = await delivery.requestAndDeliver("+35211111111");
+    expect(res.fieldTest).toBe(true);
+    expect(inner.sent).toHaveLength(0);
+    const session = auth.verifyOtp("+35211111111", "482913", "d1");
+    expect(session.accessToken).toBeTruthy();
+    await expect(delivery.requestAndDeliver("+35299999999")).rejects.toThrow();
+    delete process.env.AUTH_FIELD_TEST_MODE;
+    delete process.env.FIELD_TEST_OTP_CODE;
+    delete process.env.FIELD_TEST_PHONE_ALLOWLIST;
   });
 
   it("mobile push fans out to android+ios and cleans invalid tokens", async () => {

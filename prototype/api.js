@@ -178,6 +178,9 @@
         return res.ok;
       },
 
+      authMode: function () {
+        return request('GET', '/auth/mode', undefined, { public: true });
+      },
       requestOtp: function (phoneE164) {
         return request('POST', '/auth/otp/request', { phoneE164: phoneE164 }, { public: true });
       },

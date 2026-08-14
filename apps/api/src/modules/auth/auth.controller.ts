@@ -1,9 +1,16 @@
-import { Body, Controller, Headers, Inject, Injectable, Optional, Post } from "@nestjs/common";
-import { AuthService } from "@wingman/auth";
+import { Body, Controller, Get, Headers, Inject, Injectable, Optional, Post } from "@nestjs/common";
+import {
+  AuthService,
+  assertFieldTestPhoneAllowed,
+  isFieldTestAuthMode,
+  normalizePhoneE164,
+} from "@wingman/auth";
+import type { WingmanEngine } from "@wingman/domain";
 import type { OtpDeliveryService } from "@wingman/providers";
 import { z } from "zod";
 import { Public } from "../../common/public.decorator.js";
 import { ZodValidationPipe } from "../../common/zod-validation.pipe.js";
+import { WINGMAN_ENGINE } from "../../engine/engine.tokens.js";
 import { AUTH_SERVICE_TOKEN, OTP_DELIVERY } from "../infra/infra.tokens.js";
 import { AntiAbuseGate } from "../anti-abuse/anti-abuse.module.js";
 
@@ -27,24 +34,56 @@ export class AuthApiService {
   constructor(
     @Inject(AUTH_SERVICE_TOKEN) private readonly auth: AuthService,
     @Inject(OTP_DELIVERY) private readonly otpDelivery: OtpDeliveryService,
+    @Inject(WINGMAN_ENGINE) private readonly engine: WingmanEngine,
     @Optional() private readonly antiAbuse?: AntiAbuseGate,
   ) {}
 
+  mode() {
+    return {
+      fieldTest: isFieldTestAuthMode(),
+      authAllowDev: process.env.AUTH_ALLOW_DEV === "true",
+      publicProd:
+        process.env.WINGMAN_PUBLIC_PROD === "true" || process.env.NODE_ENV === "production",
+    };
+  }
+
   async requestOtp(phoneE164: string) {
-    // Hash-stable actor key without logging the phone
-    const actorKey = `otp:${simpleHash(phoneE164)}`;
+    const phone = normalizePhoneE164(phoneE164);
+    if (isFieldTestAuthMode()) assertFieldTestPhoneAllowed(phone);
+
+    const actorKey = `otp:${simpleHash(phone)}`;
     this.antiAbuse?.assertAllowed(actorKey, "OTP_REQUEST");
-    const result = await this.otpDelivery.requestAndDeliver(phoneE164);
+    const result = await this.otpDelivery.requestAndDeliver(phone);
     this.antiAbuse?.note("auth.otp_request", actorKey, {
       evaluate: true,
       eventId: `otp:${actorKey}:${Date.now()}`,
     });
-    // Never return deliveryCode over HTTP — only optional debugCode when AUTH_DEBUG_OTP
-    return { challengeId: result.challengeId, debugCode: result.debugCode };
+    return {
+      challengeId: result.challengeId,
+      debugCode: result.debugCode,
+      fieldTest: Boolean(result.fieldTest),
+    };
   }
 
   verify(body: { phoneE164: string; code: string; deviceId: string }) {
-    return this.auth.verifyOtp(body.phoneE164, body.code, body.deviceId);
+    const phone = normalizePhoneE164(body.phoneE164);
+    if (isFieldTestAuthMode()) assertFieldTestPhoneAllowed(phone);
+
+    const session = this.auth.verifyOtp(phone, body.code, body.deviceId);
+    // Ensure protocol engine knows this real identity (no demo seed / x-user-id).
+    // Do not overwrite an existing profile on re-login.
+    if (!this.engine.users.has(session.userId)) {
+      this.engine.seedUser({
+        id: session.userId,
+        wingmanPlus: false,
+        profile: {
+          userId: session.userId,
+          gender: "NON_BINARY",
+          interestedIn: ["MEN", "WOMEN", "NON_BINARY_PEOPLE"],
+        },
+      });
+    }
+    return session;
   }
 
   refresh(body: { refreshToken: string; deviceId: string }) {
@@ -69,6 +108,11 @@ function simpleHash(s: string): string {
 @Controller("auth")
 export class AuthController {
   constructor(private readonly authApi: AuthApiService) {}
+
+  @Get("mode")
+  mode() {
+    return this.authApi.mode();
+  }
 
   @Post("otp/request")
   async requestOtp(@Body(new ZodValidationPipe(RequestOtpSchema)) body: { phoneE164: string }) {

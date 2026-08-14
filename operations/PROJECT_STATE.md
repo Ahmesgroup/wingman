@@ -17,17 +17,19 @@ CLIENT UI P1–P4                     DONE (`078d308` surface field-test)
 CLIENT polish loop                  STOPPED — no redesign / polish-by-habit
 PAYMENTS                            OFF (architecture dormant)
 DESTINY (public field)              OUT until own gates
-ACTIVE                              LIVE FIELD TEST — S27 OPEN (code done, not certified)
-S27                                 Evidence Pack required — see S27_IDENTITY_OTP.md
-S27 verdict                         GREEN | OPEN | BLOCKED (infra) — never “almost”
-S28+                                BLOCKED until S27 GREEN (no parallel)
+ACTIVE                              LIVE FIELD TEST — S27A OPEN (field-test auth code; not certified)
+S27A                                Field-test identity Evidence Pack — see S27_IDENTITY_OTP.md
+S27B                                Production SMS OTP — OPEN / deferred (Twilio later)
+S27A verdict                        GREEN | OPEN — never “almost”; SMS delivery is S27B only
+S28+                                BLOCKED until S27A GREEN (no parallel)
 ```
 
 ## Live Field Test board (protocol — not engines)
 
 ```text
-S27  Production Identity & Real Phone Auth     NEXT
-S28  Production Persistence Certification      QUEUED
+S27A Field-Test Identity                       NEXT
+S27B Production SMS OTP                        OPEN (deferred)
+S28  Production Persistence Certification      BLOCKED until S27A GREEN
 S29  Real Multi-user Realtime                  QUEUED
 S30  Real Radar & Geo Field Test               QUEUED
 S31  Real Selfie Exchange                      QUEUED

@@ -6,6 +6,7 @@ export class AuthError extends Error {
       | "OTP_INVALID"
       | "OTP_EXPIRED"
       | "OTP_RATE_LIMITED"
+      | "PHONE_NOT_ALLOWED"
       | "SESSION_INVALID"
       | "SESSION_REVOKED"
       | "DEVICE_MISMATCH",
@@ -88,7 +89,10 @@ export class AuthService {
     return id;
   }
 
-  requestOtp(phoneE164: string): { challengeId: string; deliveryCode: string; debugCode?: string } {
+  requestOtp(
+    phoneE164: string,
+    options?: { deliveryCode?: string },
+  ): { challengeId: string; deliveryCode: string; debugCode?: string } {
     const lookup = this.phoneLookup(phoneE164);
     const t = this.now().getTime();
     this.otpRequests = this.otpRequests.filter((r) => t - r.at < this.opts.otpWindowMs);
@@ -98,7 +102,10 @@ export class AuthService {
     }
     this.otpRequests.push({ phoneLookup: lookup, at: t });
 
-    const code = String(Math.floor(100000 + Math.random() * 900000));
+    const code =
+      options?.deliveryCode && /^\d{6}$/.test(options.deliveryCode)
+        ? options.deliveryCode
+        : String(Math.floor(100000 + Math.random() * 900000));
     const challenge: OtpChallenge = {
       id: newId("otp"),
       phoneLookup: lookup,

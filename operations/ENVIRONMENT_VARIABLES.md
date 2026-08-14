@@ -37,4 +37,9 @@ See [`PROJECT_STATE.md`](./PROJECT_STATE.md).
 
 | Variable | Default | Notes |
 |----------|---------|-------|
-| `AUTH_ALLOW_DEV` | e2e `true` | Allows `x-user-id` for prototype / smoke |
+| `AUTH_ALLOW_DEV` | e2e `true` | Allows `x-user-id` for prototype / smoke — **must be false** on public field-test / prod |
+| `AUTH_FIELD_TEST_MODE` | `false` | When `true`: allow-list + fixed OTP, **no SMS** (S27A). Never combine with `AUTH_ALLOW_DEV=true` on public API |
+| `FIELD_TEST_OTP_CODE` | empty | 6-digit coordinator code (Sensitive). Required if field-test mode |
+| `FIELD_TEST_PHONE_ALLOWLIST` | empty | Comma-separated E.164 numbers allowed to auth in field-test mode |
+| `AUTH_DEBUG_OTP` | unset/`false` | Never expose OTP in HTTP on public builds |
+| `AUTH_PEPPER` | required | Session/OTP hashing pepper |

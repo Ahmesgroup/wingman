@@ -41,7 +41,8 @@ REAL USERS → REAL PHONES → REAL OTP → REAL RADAR → REAL SIGNAL
 
 | Sprint | Focus | Gate |
 |--------|-------|------|
-| **S27** | Production Identity & Real Phone Auth | Two real phones, two real numbers → two independent accounts; reconnect after full app kill; OTP expiry/resend; rate limits; **dev auth impossible on public production** |
+| **S27A** | Field-Test Identity | Real phones + real E.164 identities + Bearer sessions + allow-list + field-test OTP (**no SMS claim**); no `x-user-id` / fake users |
+| **S27B** | Production SMS OTP | Real SMS provider (Twilio later); delivery / wrong / expired / resend / rate-limit on production domain |
 | **S28** | Production Persistence Certification | Users, profiles, Signals, Connections, durable state, entitlements survive Vercel redeploy/restart; Redis ephemeral; Postgres durable authority; no critical state in instance memory |
 | **S29** | Real Multi-user Realtime | 2 → 5 → 10 phones; Signal A→B without manual refresh; accept/expire/selfie/validation/ticket/Mission/Cooldown synced; WS reconnect, bg/fg, slow net, Wi‑Fi↔cellular, brief offline; **no contradictory states** |
 | **S30** | Real Radar & Geo Field Test | No simulated nearby users; coarse location + real presence + visibility; near/far/moving/offline/invisible/permission denied; **no precise coordinates exposed** |
@@ -65,7 +66,8 @@ Repeat on multiple devices. Only then is Wingman a **testable product**, not onl
 ## Certification chain (strict)
 
 ```text
-S27 Identity / real OTP
+S27A Field-test identity  →  (unlocks S28+)
+S27B Production SMS OTP   →  (before public launch; parallel after S27A OK)
   → S28 persistence
   → S29 realtime multi-device
   → S30 radar réel
@@ -77,7 +79,8 @@ S27 Identity / real OTP
 
 **Rule:** no sprint is “done” because code compiles or CI is green.  
 Each sprint must produce **real-device proof** that unlocks the next.  
-**S28 does not start until S27 is green on physical phones.**
+**S28 does not start until S27A is green on physical phones.**  
+S27B must not be marked GREEN without real SMS delivery.
 
 `078d308` = surface ready to *begin* field work — **not** product proof.  
 `46632b7` = method lock that stops polish-by-habit.
@@ -88,43 +91,49 @@ Each sprint must produce **real-device proof** that unlocks the next.
 
 Invariant kept for the whole track: **1 active connection per person** (persistence / DB — not UI-only).
 
-## S27 — Production Identity & Real Phone Auth (NEXT)
+## S27A — Field-Test Identity (NEXT)
 
-### Gate (must all pass on physical devices)
+### Gate (physical devices)
 
 | # | Proof |
 |---|--------|
-| 1 | Two physical phones, two **real** E.164 numbers |
+| 1 | Two physical phones, two **real** E.164 numbers (allow-listed) |
 | 2 | **No** `x-user-id` / `AUTH_ALLOW_DEV` on public production |
-| 3 | OTP **actually sent** by the SMS provider (not logged-only / mock) |
+| 3 | Field-test OTP (fixed coordinator code) — UI must **not** claim SMS sent |
 | 4 | Two distinct identities created / resolved |
 | 5 | Full app kill → reopen → sessions still correctly resolved |
 | 6 | Wrong OTP rejected |
 | 7 | Expired OTP rejected |
 | 8 | Controlled resend works |
 | 9 | Rate limit / anti-bruteforce observable |
-| 10 | Existing number → login path (not duplicate phantom account) |
+| 10 | Non-allow-listed number rejected |
 | 11 | Logout → login restores the same identity |
+
+## S27B — Production SMS OTP (deferred)
+
+Same identity protocol with real Twilio (or equivalent) delivery. Does **not** block S28 after S27A GREEN. Required before public launch claiming SMS verification.
 
 ### Levels of “green” (do not conflate)
 
 | Level | Means | Does **not** mean |
 |-------|--------|-------------------|
 | **CI green** | Code is healthy (compile/tests) | Sprint or product proven |
-| **Sprint green** | Required **real-device proof** for that sprint exists | Full protocol multi-human |
+| **S27A green** | Real-device identity proof with field-test OTP | SMS delivery proven |
+| **S27B green** | Real SMS delivery proven | Full multi-human protocol |
 | **S34 green** | Full protocol works across several humans without assistance | — |
 
 A successful Vercel deploy alone **never** closes S27–S34.
 
-### S27 binary exit (GREEN / OPEN / BLOCKED — no “almost”)
+### Binary exit (GREEN / OPEN / BLOCKED — no “almost”)
 
-- **GREEN** — all physical proofs pass with dated Evidence Pack; no developer bypass  
+- **S27A GREEN** — field-test identity Evidence Pack complete; no developer bypass  
+- **S27B GREEN** — real SMS Evidence Pack complete  
 - **OPEN** — any single failure (CI green is irrelevant)  
-- **BLOCKED** — external infra (Twilio/credentials/SMS) prevents the run; not a product bug  
+- **BLOCKED** — external infra (Twilio) prevents **S27B**; not used to fake S27A  
 
-**S28 does not start** until S27 is **GREEN**. No parallel S28.  
+**S28 does not start** until **S27A** is **GREEN**. No parallel S28.  
 
-Template + ordered script: [`S27_IDENTITY_OTP.md`](./S27_IDENTITY_OTP.md).
+Template + scripts: [`S27_IDENTITY_OTP.md`](./S27_IDENTITY_OTP.md).
 
 ## Related
 

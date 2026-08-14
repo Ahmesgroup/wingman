@@ -267,8 +267,10 @@ const I18N = {
     ob2_eyebrow: 'The solution', ob2_title: 'A quiet protocol, not a swipe feed.', ob2_body: 'No public profiles. No endless chat. A short, private path from "someone\'s near" to "let\'s meet."',
     ob3_eyebrow: 'The promise', ob3_title: 'Make the first move, safely.', ob3_body: 'No explicit rejection. Approximate location only. You stay in control of who can find you.', ob3_cta: 'Create my account',
     phone_sub: 'Verify your number', phone_title: 'Enter your phone', phone_body: 'We send a 6-digit code. Your number is never shown to anyone.', phone_label: 'Phone number', phone_cta: 'Send code', phone_note: 'Verification only — used to keep Wingman free of fake profiles.',
+    phone_body_ft: 'Enter your real number. In this field-test build, no SMS is sent — you will use a coordinator code.',
     otp_sub: 'Enter the code', otp_title: '6-digit code', otp_body: 'Sent to your phone', otp_cta: 'Verify', otp_resend: 'Resend code',
-    t_auth_required: 'Sign in with your phone to continue', t_auth_ok: 'Signed in', t_otp_sent: 'Code sent', t_otp_bad: 'Invalid code', t_otp_expired: 'Code expired', t_otp_rate: 'Too many attempts — wait and retry',
+    otp_body_ft: 'Field test for', otp_field_note: 'Field test verification — no SMS is sent. Use the code from your test coordinator.',
+    t_auth_required: 'Sign in with your phone to continue', t_auth_ok: 'Signed in', t_otp_sent: 'Code sent', t_otp_ready_ft: 'Enter the field-test code', t_otp_bad: 'Invalid code', t_otp_expired: 'Code expired', t_otp_rate: 'Too many attempts — wait and retry', t_otp_not_allowed: 'This number is not on the field-test allow-list',
     profile_sub: 'Your profile', pf_name: 'First name', pf_birth: 'Date of birth', pf_gender: 'Gender', g_male: 'Male', g_female: 'Female', g_nb: 'Non-binary',
     pf_interest: 'Interested in', t_men: 'Men', t_women: 'Women', t_nb: 'Non-binary', pf_height: 'Height (cm)', pf_interests: 'Interests (max 5)', pf_bio: 'Daily bio (150 max)',
     consent_sub: 'Your choices', consent_title: 'What you agree to', consent_body: 'Each purpose is separate. You can change these anytime in Settings.',
@@ -327,8 +329,10 @@ const I18N = {
     ob2_eyebrow: 'La solution', ob2_title: 'Un protocole discret, pas un fil de swipe.', ob2_body: "Pas de profils publics. Pas de chat infini. Un chemin court et privé de « quelqu'un est proche » à « on se voit ».",
     ob3_eyebrow: 'La promesse', ob3_title: 'Faites le premier pas, en sécurité.', ob3_body: "Aucun rejet explicite. Localisation approximative uniquement. Vous contrôlez qui peut vous trouver.", ob3_cta: 'Créer mon compte',
     phone_sub: 'Vérifiez votre numéro', phone_title: 'Votre téléphone', phone_body: 'Nous envoyons un code à 6 chiffres. Votre numéro n\'est jamais montré.', phone_label: 'Numéro de téléphone', phone_cta: 'Envoyer le code', phone_note: 'Vérification uniquement — pour garder Wingman sans faux profils.',
+    phone_body_ft: 'Entrez votre vrai numéro. Dans ce build field-test, aucun SMS n\'est envoyé — utilisez le code du coordinateur.',
     otp_sub: 'Entrez le code', otp_title: 'Code à 6 chiffres', otp_body: 'Envoyé sur votre téléphone', otp_cta: 'Vérifier', otp_resend: 'Renvoyer le code',
-    t_auth_required: 'Connectez-vous avec votre téléphone', t_auth_ok: 'Connecté', t_otp_sent: 'Code envoyé', t_otp_bad: 'Code invalide', t_otp_expired: 'Code expiré', t_otp_rate: 'Trop de tentatives — réessayez plus tard',
+    otp_body_ft: 'Field test pour', otp_field_note: 'Vérification field test — aucun SMS n\'est envoyé. Utilisez le code fourni par le coordinateur.',
+    t_auth_required: 'Connectez-vous avec votre téléphone', t_auth_ok: 'Connecté', t_otp_sent: 'Code envoyé', t_otp_ready_ft: 'Entrez le code field-test', t_otp_bad: 'Code invalide', t_otp_expired: 'Code expiré', t_otp_rate: 'Trop de tentatives — réessayez plus tard', t_otp_not_allowed: 'Ce numéro n\'est pas sur la allow-list field-test',
     profile_sub: 'Votre profil', pf_name: 'Prénom', pf_birth: 'Date de naissance', pf_gender: 'Genre', g_male: 'Homme', g_female: 'Femme', g_nb: 'Non-binaire',
     pf_interest: 'Intéressé·e par', t_men: 'Hommes', t_women: 'Femmes', t_nb: 'Non-binaire', pf_height: 'Taille (cm)', pf_interests: "Centres d'intérêt (max 5)", pf_bio: 'Bio du jour (150 max)',
     consent_sub: 'Vos choix', consent_title: 'Ce que vous acceptez', consent_body: 'Chaque finalité est distincte. Modifiable à tout moment dans Réglages.',
@@ -390,6 +394,7 @@ function applyLang() {
   // keep radar state label correct
   const rs = $('#radar-state');
   if (rs) rs.textContent = state.radarActive ? dict.radar_active : dict.radar_invisible;
+  if (typeof applyFieldTestAuthCopy === 'function') applyFieldTestAuthCopy();
 }
 const t = k => I18N[state.lang][k] || k;
 
@@ -1262,11 +1267,33 @@ document.addEventListener('keydown', e => {
 
 /* ------------------------------------------------------------ S27 phone auth */
 let pendingPhoneE164 = '';
+let authFieldTest = false;
 
 function normalizeE164(raw) {
   const s = String(raw || '').trim().replace(/[\s()-]/g, '');
   if (!s) return '';
   return s.startsWith('+') ? s : ('+' + s.replace(/^\+/, ''));
+}
+
+function applyFieldTestAuthCopy() {
+  const phoneBody = document.querySelector('#v-phone [data-i18n="phone_body"]');
+  if (phoneBody) phoneBody.textContent = authFieldTest ? t('phone_body_ft') : t('phone_body');
+  const note = $('#otp-field-test-note');
+  if (note) {
+    note.hidden = !authFieldTest;
+    note.textContent = t('otp_field_note');
+  }
+}
+
+async function refreshAuthMode() {
+  if (!api || api.useMock || !api.authMode) return;
+  try {
+    const mode = await api.authMode();
+    authFieldTest = Boolean(mode && mode.fieldTest);
+    applyFieldTestAuthCopy();
+  } catch (_) {
+    /* keep last known mode */
+  }
 }
 
 function readOtpCode() {
@@ -1296,17 +1323,28 @@ async function requestOtpForPhone(phone) {
     return false;
   }
   try {
+    let res;
     await withLoading(t('t_loading'), async () => {
-      await api.requestOtp(phone);
+      res = await api.requestOtp(phone);
     });
     pendingPhoneE164 = phone;
+    if (res && typeof res.fieldTest === 'boolean') {
+      authFieldTest = res.fieldTest;
+      applyFieldTestAuthCopy();
+    }
     const sent = $('#otp-sent-to');
-    if (sent) sent.textContent = (state.lang === 'fr' ? 'Envoyé au ' : 'Sent to ') + phone;
-    feedback('success', t('t_otp_sent'));
+    if (sent) {
+      sent.textContent = authFieldTest
+        ? (t('otp_body_ft') + ' ' + phone)
+        : ((state.lang === 'fr' ? 'Envoyé au ' : 'Sent to ') + phone);
+    }
+    feedback('success', authFieldTest ? t('t_otp_ready_ft') : t('t_otp_sent'));
     return true;
   } catch (e) {
     const code = e && e.code;
-    const msg = code === 'OTP_RATE_LIMITED' ? t('t_otp_rate') : ((e && e.message) || t('t_otp_bad'));
+    const msg = code === 'OTP_RATE_LIMITED' ? t('t_otp_rate')
+      : code === 'PHONE_NOT_ALLOWED' ? t('t_otp_not_allowed')
+      : ((e && e.message) || t('t_otp_bad'));
     if (errEl) errEl.textContent = msg;
     feedback('error', msg);
     return false;
@@ -1360,11 +1398,14 @@ $('#otp-verify-btn') && $('#otp-verify-btn').addEventListener('click', async () 
     const codeErr = e && e.code;
     const msg = codeErr === 'OTP_EXPIRED' ? t('t_otp_expired')
       : codeErr === 'OTP_RATE_LIMITED' ? t('t_otp_rate')
+      : codeErr === 'PHONE_NOT_ALLOWED' ? t('t_otp_not_allowed')
       : t('t_otp_bad');
     if (errEl) errEl.textContent = msg;
     feedback('error', msg);
   }
 });
+
+refreshAuthMode();
 
 applyLang();
 sizeCanvas();

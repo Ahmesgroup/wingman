@@ -53,9 +53,11 @@ export class DomainExceptionFilter implements ExceptionFilter {
       const status =
         exception.code === "OTP_RATE_LIMITED"
           ? 429
-          : exception.code.startsWith("SESSION") || exception.code === "DEVICE_MISMATCH"
-            ? 401
-            : 400;
+          : exception.code === "PHONE_NOT_ALLOWED"
+            ? 403
+            : exception.code.startsWith("SESSION") || exception.code === "DEVICE_MISMATCH"
+              ? 401
+              : 400;
       res.status(status).json({ error: { code: exception.code, message: exception.message } });
       return;
     }
