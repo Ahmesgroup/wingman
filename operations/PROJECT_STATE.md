@@ -24,7 +24,8 @@ CLIENT    Mobile-first + payments   DONE (payments DISABLED)
 PAYMENTS  Architecture ready        OFF (PAYMENTS_ENABLED=false)
 CLIENT    Checkpoint fonctionnel    `04e7c4d` (à évaluer sur téléphone)
 CLIENT    Méthode review            `362eb4d` (FREEZE | P5 liste fermée)
-CLIENT    Code polish               PAUSED — next signal = real-phone observations only
+CLIENT    Code polish               PAUSED
+CLIENT    Field review              IN PROGRESS — live phone / loop test
 ```
 
 ## Freeze during baseline collection

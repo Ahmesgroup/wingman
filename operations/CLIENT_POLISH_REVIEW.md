@@ -1,11 +1,23 @@
 # Client Polish Review — real-phone verdict
 
-**Status:** OPEN — next action (no code sprint)  
+**Status:** IN PROGRESS — live field test (no code from theory)  
 **Client checkpoint before field validation:** `04e7c4d`  
-**Implements closed:** P1–P4 (`bb9bb13`) — polish *implementation* done  
+**Method lock:** `362eb4d` · coding pause note `1f6127d`  
+**Implements closed:** P1–P4 (`bb9bb13`)  
 **Forbidden until verdict:** code changes from theoretical impressions; engines; payments; **P5 by habit**
 
-## Boundary (locked)
+## Live run (field test)
+
+```bash
+# API (Nest :3000)
+AUTH_ALLOW_DEV=true MEASUREMENT_ENABLED=true pnpm --filter @wingman/api dev
+
+# Prototype (phone browser → same LAN IP :5173)
+npx serve prototype -l 5173
+```
+
+- Checkpoint to evaluate: **`04e7c4d`** behavior (current `master` includes method docs only after that).  
+- Fill findings with the observation schema below — then verdict FREEZE V1 or P5 closed list.
 
 ```text
 Smoke / P1–P4 tests     → prove the client works
