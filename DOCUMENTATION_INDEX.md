@@ -184,8 +184,10 @@ Start with `README.md`, then `docs/PRD.md`, `architecture/STATE_MACHINES.md`, `d
 - [`operations/S19_BILLING_ENTITLEMENTS.md`](operations/S19_BILLING_ENTITLEMENTS.md) — Billing → Entitlements + payment-ready fail-closed
 - [`operations/CLIENT_MOBILE_PAYMENT_READINESS.md`](operations/CLIENT_MOBILE_PAYMENT_READINESS.md) — mobile-first client + payments disabled
 - [`operations/CLIENT_POLISH.md`](operations/CLIENT_POLISH.md) — polish-only P1–P4 (**done**); no engines, no payments
-- [`operations/CLIENT_POLISH_REVIEW.md`](operations/CLIENT_POLISH_REVIEW.md) — post-P4 review before freeze or optional P5
-- [`operations/FIELD_TEST.md`](operations/FIELD_TEST.md) — product-ready field test (Vercel URL + tester steps)
+- [`operations/CLIENT_POLISH_REVIEW.md`](operations/CLIENT_POLISH_REVIEW.md) — UI review residual (does not replace Live Field Test)
+- [`operations/FIELD_TEST.md`](operations/FIELD_TEST.md) — surface UI field test (`078d308` / Vercel)
+- [`operations/LIVE_FIELD_TEST.md`](operations/LIVE_FIELD_TEST.md) — **active** S27–S34 real multi-user protocol track
+- [`operations/PROJECT_STATE.md`](operations/PROJECT_STATE.md) — board: Live Field Test S27 next; engines stopped
 - [`operations/S20_PRODUCTION_CERTIFICATION.md`](operations/S20_PRODUCTION_CERTIFICATION.md) — **Backend V1 certification GO**
 - [`operations/V1.1_ADVANCED_ENGINE.md`](operations/V1.1_ADVANCED_ENGINE.md) — V1.1 advanced engines roadmap
 - [`operations/S21_RADAR_INTELLIGENCE.md`](operations/S21_RADAR_INTELLIGENCE.md) — Radar Intelligence (flagged ranking)

@@ -1,100 +1,70 @@
-# Project state — locked 2026-08-11 · client track updated 2026-08-12
+# Project state — locked 2026-08-11 · Live Field Test track 2026-08-14
 
 **Reference commit (engines / baseline):** `ccbb7a3`  
-**Client track:** checkpoint `04e7c4d` (P1–P4 + review gate) · field validation OPEN · no code from theory  
-**Related:** [`V1.1_ADVANCED_ENGINE.md`](./V1.1_ADVANCED_ENGINE.md), [`S26_MEASUREMENT.md`](./S26_MEASUREMENT.md), [`STAGING_LOAD_CERTIFICATION.md`](./STAGING_LOAD_CERTIFICATION.md), [`CLIENT_MOBILE_PAYMENT_READINESS.md`](./CLIENT_MOBILE_PAYMENT_READINESS.md), [`CLIENT_POLISH_REVIEW.md`](./CLIENT_POLISH_REVIEW.md)
+**Client UI surface:** `078d308` · https://wingman-prototype.vercel.app/  
+**Active track:** [`LIVE_FIELD_TEST.md`](./LIVE_FIELD_TEST.md) — S27–S34 protocol productionization  
+**Related:** [`S26_MEASUREMENT.md`](./S26_MEASUREMENT.md), [`CLIENT_MOBILE_PAYMENT_READINESS.md`](./CLIENT_MOBILE_PAYMENT_READINESS.md), [`FIELD_TEST.md`](./FIELD_TEST.md)
 
 ```text
 S0–S20    Backend V1                FROZEN / GO
-S21       Radar Intelligence        DONE
-S22       Context Engine            DONE
-S23       Destiny V2                DONE
-S24       Anti-Abuse                DONE
-S24.1     Destiny Multi-instance    DONE
-S25       Geo Intelligence          DONE
-S26       Measurement v1.2.0        DONE (instrumentation)
+S21–S26   Advanced engines          DONE / baseline (learning OFF)
 LEARNING                            OFF
-MEASUREMENT                         ON  (collect real traffic)
-ENGINE SPRINTS                      STOPPED during baseline
-NEXT (engines)                      REAL BASELINE COLLECTION
-THEN                                S26 Review (not automatic S27)
+MEASUREMENT                         ON
+ENGINE / INTEL SPRINTS              STOPPED (no new engine; not this S27)
+NEXT (engines)                      S26 Review only — not automatic engine-S27
 
-CLIENT    Mobile-first + payments   DONE (payments DISABLED)
-          Connection→Mission loop   DONE (wired to Nest)
-PAYMENTS  Architecture ready        OFF (PAYMENTS_ENABLED=false)
-CLIENT    Checkpoint fonctionnel    `04e7c4d` (à évaluer sur téléphone)
-CLIENT    Méthode review            `362eb4d` (FREEZE | P5 liste fermée)
-CLIENT    Code polish               PAUSED
-CLIENT    Field review              IN PROGRESS — product-ready for phone test
-CLIENT    Vercel UI                 https://wingman-prototype.vercel.app
-CLIENT    Field test guide          operations/FIELD_TEST.md
+CLIENT UI P1–P4                     DONE (`078d308` surface field-test)
+CLIENT polish loop                  STOPPED — no redesign / polish-by-habit
+PAYMENTS                            OFF (architecture dormant)
+DESTINY (public field)              OUT until own gates
+ACTIVE                              LIVE FIELD TEST S27–S34
 ```
 
-## Freeze during baseline collection
+## Live Field Test board (protocol — not engines)
 
-Until **S26 Review** closes with an A/B/C decision:
+```text
+S27  Production Identity & Real Phone Auth     NEXT
+S28  Production Persistence Certification      QUEUED
+S29  Real Multi-user Realtime                  QUEUED
+S30  Real Radar & Geo Field Test               QUEUED
+S31  Real Selfie Exchange                      QUEUED
+S32  Push & Closed-app Protocol                QUEUED
+S33  Safety & Field-test Controls              QUEUED
+S34  Live Field Test Certification             QUEUED
+     → GO PILOT | FIX LIST CLOSED | NO-GO
+```
 
-- Do **not** open new advanced-engine sprints (no S27 by habit, no parallel “intelligence” packages).
-- Do **not** turn `MEASUREMENT_LEARNING_ENABLED` on.
-- Do **not** feed measurement outputs back into ranking / Destiny / geo / anti-abuse.
-- Keep `MEASUREMENT_ENABLED=true` so the baseline stays continuous and **uncontaminated** by mid-flight engine changes.
-- Do **not** enable payments (`PAYMENTS_ENABLED` stays `false`).
+Gate chain:
 
-Bugfixes / infra / ops / **client polish** that do not change V1.1 decision logic remain allowed when objectified. **P5 is not automatic** — only after Client Polish Review lists reproducible defects.
+```text
+REAL USERS → REAL PHONES → REAL OTP → REAL RADAR → REAL SIGNAL
+→ REAL SELFIE → REAL MUTUAL VALIDATION → REAL MISSION → REAL OUTCOME
+```
 
-## Client track
+## Locks (immediate)
 
-**Shipped:** [`CLIENT_MOBILE_PAYMENT_READINESS.md`](./CLIENT_MOBILE_PAYMENT_READINESS.md) — mobile-first + payment-ready disabled + loop wired.  
-**Shipped:** [`CLIENT_POLISH.md`](./CLIENT_POLISH.md) — P1–P4 implementation closed.  
-**Open:** [`CLIENT_POLISH_REVIEW.md`](./CLIENT_POLISH_REVIEW.md) — checkpoint `04e7c4d` → real phone → **FREEZE V1** or **P5 closed correction list** (not a design phase). No code from theoretical impressions.
+- No payments now · no public Destiny · no new intelligent engine · no general redesign  
+- One **active connection per person** enforced in persistence, not only UI  
+- Labs (`?qa=1`, Smoke, Offline) internal only  
+- No fake peer that can be mistaken for a real user on the public field path  
+- “CI green + Vercel” ≠ Field Test Ready  
 
-- Web prototype is the mobile-first client against Nest (`AUTH_ALLOW_DEV` / `x-user-id`).
-- S19 remains the **only** entitlement authority; client never self-promotes.
-- Payments: `DisabledPaymentProvider` default — no real checkout until credentials + explicit enable.
+## DoD — Wingman Field Test Ready
+
+Two real phones, two real numbers, Signal with app closed on B, real selfie + mutual validation, Mission Meet → Outcome → Radar — without fake users, QA buttons, manual DB, required refresh, or developer help. Details: [`LIVE_FIELD_TEST.md`](./LIVE_FIELD_TEST.md).
+
+## Client / payments (unchanged intent)
+
+- S19 = only entitlement authority  
+- `DisabledPaymentProvider` / `PAYMENTS_ENABLED=false`  
+- Surface UI guide: [`FIELD_TEST.md`](./FIELD_TEST.md)  
+- Polish review (UI-only residual): [`CLIENT_POLISH_REVIEW.md`](./CLIENT_POLISH_REVIEW.md) — does not replace Live Field Test  
 
 ## Operating mode now
 
 | Flag | Value | Meaning |
 |------|-------|---------|
-| `MEASUREMENT_ENABLED` | `true` | Observe decisions/outcomes; serve `/internal/measurement/report` |
-| `MEASUREMENT_LEARNING_ENABLED` | `false` | Forbidden to turn on until after S26 Review |
-| `PAYMENTS_ENABLED` | `false` | No checkout / no real charges |
-| `PAYMENT_PROVIDER` | `disabled` | Stripe/Paddle adapters present but OFF |
-
-Measurement **observes; it never decides**. No metric feeds back into S21–S25.
-
-## Baseline dimensions (no single North Star)
-
-Collect enough real traffic to read **four dimensions together**:
-
-| Dimension | Proxies |
-|-----------|---------|
-| **Quality** | Signal→Connection, mutual→Mission, Mission→completed, time-to-signal, Destiny acceptance |
-| **Safety** | Blocks, abuse sanctions, restrictions after interaction |
-| **Diversity / rotation** | Repeat exposure rate |
-| **Contextual resilience** | Context/geo fallback share |
-
-Do **not** optimize a single metric. `Signal→Connection` alone can make ranking aggressive; `Mission→completed` alone can favor the same profiles.
-
-## After enough data → S26 Review (required)
-
-**S26 Review is not a new product engine.** It is an evidence gate before any adaptive work.
-
-Compare V1 vs V1.1 and answer:
-
-1. Does contextual ranking raise completed encounters **without** raising blocks / repeat exposure?
-2. Does Destiny add rare mutual value, or noise?
-3. Are there undesirable correlations (e.g. more Signals, worse safety/diversity)?
-4. Do context/geo fallbacks stay rare enough that policies are trustworthy?
-
-Then choose **exactly one**:
-
-| Option | When |
-|--------|------|
-| **A. Change nothing** | Engines already improve human encounters within guardrails |
-| **B. Manual policy tune** | Adjust S21–S25 thresholds/flags from evidence (still no learning loop) |
-| **C. S27 Adaptive Engine** | Only if data justify controlled adaptation — never as the default next sprint |
-
-## Principle
-
-Wingman now has enough engines. The next advantage is knowing whether they **improve real human encounters** — not shipping another engine by habit. Stop engine sprints here; observe first. Client work may continue without reopening S0–S26.
+| `MEASUREMENT_ENABLED` | `true` | Observe; do not learn |
+| `MEASUREMENT_LEARNING_ENABLED` | `false` | Forbidden until after S26 Review |
+| `PAYMENTS_ENABLED` | `false` | No checkout |
+| `AUTH_ALLOW_DEV` | local/dev only | Must be off on public production (S27) |

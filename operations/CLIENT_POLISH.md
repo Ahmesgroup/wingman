@@ -1,8 +1,9 @@
 # Client Polish Only — P1–P4
 
-**Status:** P1–P4 implementation DONE · Next = real-phone [`CLIENT_POLISH_REVIEW.md`](./CLIENT_POLISH_REVIEW.md)  
-**Forbidden:** new engines (S27+), payment enablement, domain S0–S26 changes, **P5 by default**  
-**Related:** [`CLIENT_MOBILE_PAYMENT_READINESS.md`](./CLIENT_MOBILE_PAYMENT_READINESS.md), [`PROJECT_STATE.md`](./PROJECT_STATE.md), [`../design/COLOR_SYSTEM.md`](../design/COLOR_SYSTEM.md)
+**Status:** P1–P4 DONE · polish loop **STOPPED**  
+**Next product track:** [`LIVE_FIELD_TEST.md`](./LIVE_FIELD_TEST.md) (S27–S34) — not more UI polish  
+**Forbidden:** new engines / learning, payment enablement, general redesign, polish-by-habit  
+**Related:** [`FIELD_TEST.md`](./FIELD_TEST.md), [`PROJECT_STATE.md`](./PROJECT_STATE.md)
 
 ## Scope lock
 
@@ -110,15 +111,13 @@ Rose (`--love`) remains reserved for Connection Confirmed. Do not recolor moods 
 - [x] Orientation / keyboard / refresh session / offline-reconnect retained
 - [x] Smoke: `Smoke P4` chip + `?smoke=1` walks Splash→…→Cooldown→Radar
 
-**P4 shipped** — polish *implementation* closed.
+**P4 shipped** — polish *implementation* closed. **Do not continue polishing in a loop.**
 
-## After P4 (no auto P5)
+## After P4
 
-```text
-Client Polish Review (real phone) → FREEZE V1  |  P5 only if reproducible defects
-```
-
-See [`CLIENT_POLISH_REVIEW.md`](./CLIENT_POLISH_REVIEW.md). Smoke is not a substitute for on-device fluidity / state clarity / touch / readability in motion.
+- UI residual only via [`CLIENT_POLISH_REVIEW.md`](./CLIENT_POLISH_REVIEW.md) if objectified defects remain.  
+- Product proof = [`LIVE_FIELD_TEST.md`](./LIVE_FIELD_TEST.md) (**S27 next**).  
+- “CI green + Vercel” is **not** Wingman Field Test Ready.
 
 ## Run
 
