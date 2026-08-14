@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" role="img" aria-label="Wingman">
+  <rect width="192" height="192" rx="40" fill="#0B1020"/>
+  <circle cx="96" cy="96" r="54" fill="none" stroke="#7C5CFC" stroke-width="8"/>
+  <circle cx="96" cy="96" r="18" fill="#7C5CFC"/>
+</svg>

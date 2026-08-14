@@ -25,8 +25,9 @@ PAYMENTS  Architecture ready        OFF (PAYMENTS_ENABLED=false)
 CLIENT    Checkpoint fonctionnel    `04e7c4d` (à évaluer sur téléphone)
 CLIENT    Méthode review            `362eb4d` (FREEZE | P5 liste fermée)
 CLIENT    Code polish               PAUSED
-CLIENT    Field review              IN PROGRESS — live phone / Vercel UI
+CLIENT    Field review              IN PROGRESS — product-ready for phone test
 CLIENT    Vercel UI                 https://wingman-prototype.vercel.app
+CLIENT    Field test guide          operations/FIELD_TEST.md
 ```
 
 ## Freeze during baseline collection

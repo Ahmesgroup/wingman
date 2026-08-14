@@ -4,9 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0">
 <meta name="theme-color" content="#0B1020">
+<meta name="description" content="Wingman — make the first acquaintance easy. Field-test client for the protocol loop.">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="mobile-web-app-capable" content="yes">
+<meta name="application-name" content="Wingman">
 <title>Wingman</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Sora:wght@600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
@@ -21,8 +27,8 @@
       <button type="button" class="chip lang" data-lang="en" aria-pressed="true" aria-label="English">EN</button>
       <button type="button" class="chip lang" data-lang="fr" aria-pressed="false" aria-label="Français">FR</button>
       <button type="button" class="chip" id="rm-toggle" aria-pressed="false" data-i18n="set_rm" title="Reduce motion">Reduce motion</button>
-      <button type="button" class="chip" id="offline-toggle" aria-pressed="false" data-i18n="t_phase_offline" title="Simulate offline">Offline</button>
-      <button type="button" class="chip" id="smoke-p4-btn" title="Run P4 smoke loop">Smoke P4</button>
+      <button type="button" class="chip qa-only" id="offline-toggle" aria-pressed="false" data-i18n="t_phase_offline" title="Simulate offline">Offline</button>
+      <button type="button" class="chip qa-only" id="smoke-p4-btn" title="Run P4 smoke loop">Smoke P4</button>
     </div>
   </div>
 

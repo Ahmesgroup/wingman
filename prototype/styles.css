@@ -579,6 +579,10 @@ p.lead{color:var(--t-secondary);font-size:14px;line-height:1.5}
   .btn:active,.act-primary:active,.act-secondary:active,.radar-toggle:active{transform:none}
 }
 
+body.field-test .qa-only{display:none!important}
+body.field-test .brand-tag{letter-spacing:1.2px}
+.api-banner.mock{background:rgba(124,92,252,.16);color:var(--air)}
+
 /* utility */
 .center{text-align:center}
 .mt{margin-top:14px}.mt-s{margin-top:8px}.mb{margin-bottom:14px}

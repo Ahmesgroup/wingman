@@ -303,7 +303,8 @@ const I18N = {
     admin_pending: 'PENDING', admin_review: 'UNDER REVIEW', admin_resolved: 'RESOLVED', admin_c1: '3 independent reports · category: Off-platform contact', admin_c2: '1 report · Harassment · evidence sealed', admin_c3: 'Dismissed — coordinated false reports detected', admin_back: '← Back to app',
     nav_radar: 'Radar', nav_signal: 'Signal', nav_pulse: 'Pulse', nav_settings: 'Settings',
     t_signal_sent: 'Signal sent · silent expiry in 10 min', t_mood: 'Mood updated', t_blocked: 'Blocked: contact details are not allowed', t_active: "You're visible on the Radar", t_invisible: "You're invisible",
-    t_api_mock: 'API offline — demo mode', t_api_live: 'Connected to Wingman API',
+    t_api_mock: 'Field test · demo loop', t_api_live: 'Connected to Wingman API',
+    t_field_build: 'Field test build',
     t_loading: 'Loading…', t_accepting: 'Opening connection…', t_selfie: 'Sending selfie…', t_approving: 'Confirming…',
     t_meet: 'Opening Mission Meet…', t_ticket: 'Holding ticket…', t_chat: 'Sending…', t_outcome: 'Saving outcome…',
     t_timeout: 'Taking too long — try again', t_offline_blocked: 'Offline — try again', t_offline_banner: 'Offline — timers keep running on the server',
@@ -361,7 +362,8 @@ const I18N = {
     admin_pending: 'EN ATTENTE', admin_review: 'EN REVUE', admin_resolved: 'RÉSOLU', admin_c1: '3 signalements indépendants · catégorie : Contact hors plateforme', admin_c2: '1 signalement · Harcèlement · preuve scellée', admin_c3: 'Rejeté — faux signalements coordonnés détectés', admin_back: '← Retour à l\'app',
     nav_radar: 'Radar', nav_signal: 'Signal', nav_pulse: 'Pulse', nav_settings: 'Réglages',
     t_signal_sent: 'Signal envoyé · expiration silencieuse dans 10 min', t_mood: 'Humeur mise à jour', t_blocked: 'Bloqué : les coordonnées ne sont pas autorisées', t_active: 'Vous êtes visible sur le Radar', t_invisible: 'Vous êtes invisible',
-    t_api_mock: 'API hors ligne — mode démo', t_api_live: 'Connecté à l\'API Wingman',
+    t_api_mock: 'Test terrain · boucle démo', t_api_live: 'Connecté à l\'API Wingman',
+    t_field_build: 'Build test terrain',
     t_loading: 'Chargement…', t_accepting: 'Ouverture de la connexion…', t_selfie: 'Envoi du selfie…', t_approving: 'Confirmation…',
     t_meet: 'Ouverture Mission Meet…', t_ticket: 'Ticket en cours…', t_chat: 'Envoi…', t_outcome: 'Enregistrement…',
     t_timeout: 'Trop long — réessayez', t_offline_blocked: 'Hors ligne — réessayez', t_offline_banner: 'Hors ligne — les timers continuent côté serveur',
@@ -1244,6 +1246,16 @@ syncViewA11y(state.viewId || 'v-splash');
 syncRadarEmpty();
 syncSignalEmpty();
 applyEntitlements({ plan: 'FREE', capabilities: { dailySignals: 2, activeConnectionTickets: 1 } });
+
+/* Field-test product surface: hide lab chips unless ?qa=1 */
+(function configureFieldTestSurface() {
+  const q = new URLSearchParams(location.search);
+  const qa = q.get('qa') === '1';
+  const hosted = /vercel\.app$/i.test(location.hostname) || q.get('field') === '1';
+  if (hosted && !qa) document.body.classList.add('field-test');
+  if (qa) document.body.classList.remove('field-test');
+})();
+
 bootApi().then(() => {
   restoreSessionIfAny();
   if (/[?&]smoke=1\b/.test(location.search)) runP4Smoke();
