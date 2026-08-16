@@ -1123,6 +1123,7 @@ async function bootApi() {
         const ps = await api.paymentsStatus();
         if (ps && ps.paymentsEnabled) console.warn('[wingman] payments unexpectedly enabled');
       } catch (_) { /* ignore */ }
+      setOfflineUi(false, false);
       setApiBanner('live', t('t_api_live'));
       feedback('success', t('t_auth_ok'));
       await refreshAuthMode();
@@ -1143,11 +1144,13 @@ async function bootApi() {
       });
       const ents = await api.entitlements();
       applyEntitlements(ents);
+      setOfflineUi(false, false);
       setApiBanner('live', t('t_api_live'));
       feedback('success', t('t_api_live'));
       return;
     }
 
+    setOfflineUi(false, false);
     setApiBanner('busy', t('t_auth_required'));
     feedback('busy', t('t_auth_required'));
     applyEntitlements({ plan: 'FREE', capabilities: { dailySignals: 2, activeConnectionTickets: 1 } });
