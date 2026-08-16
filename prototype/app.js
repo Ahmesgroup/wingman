@@ -119,6 +119,25 @@ function readSession() {
   }
 }
 
+function clearProtoSession() {
+  try { localStorage.removeItem(SESSION_KEY); } catch (_) { /* ignore */ }
+}
+
+function isAuthedSession() {
+  return Boolean(api && api.hasSession && api.userId);
+}
+
+/** Public product: protocol screens need OTP session — never resume a ghost Radar. */
+function requireAuthOrPhone(reasonFeedback) {
+  if (isAuthedSession()) return true;
+  if (api && api.productPath) {
+    if (reasonFeedback !== false) feedback('busy', t('t_auth_required'));
+    show('v-phone');
+    return false;
+  }
+  return true;
+}
+
 function setPhase(phase, label) {
   state.phase = phase;
   const strip = $('#phase-strip');
@@ -455,6 +474,15 @@ function show(id) {
     clearTimeout(confirmedAdvanceTimer);
     confirmedAdvanceTimer = null;
   }
+  const protocolViews = new Set([
+    'v-radar', 'v-signal', 'v-selfie', 'v-ticket', 'v-mission-meet', 'v-mission-mode',
+    'v-outcome', 'v-cooldown', 'v-confirmed', 'v-destiny', 'v-pulse', 'v-settings',
+  ]);
+  // Public product: block protocol UI without OTP — stop ghost Radar / dead Go active.
+  if (protocolViews.has(id) && api && api.productPath && !isAuthedSession()) {
+    feedback('busy', t('t_auth_required'));
+    id = 'v-phone';
+  }
   syncViewA11y(id);
   const v = $('#' + id); if (!v) return;
   state.viewId = id;
@@ -620,6 +648,7 @@ canvas.addEventListener('keydown', e => {
 });
 $('#send-signal-btn').addEventListener('click', async () => {
   if (state.busy) return;
+  if (!requireAuthOrPhone()) return;
   if (state.signalsLeft <= 0) { toast(state.lang === 'fr' ? 'Plus de signaux aujourd\'hui' : 'No signals left today'); return; }
   const w = canvas.clientWidth || 400; signalWave = { x: w / 2, y: 170, t: performance.now() };
   startRadar(); haptic('signalSent');
@@ -663,6 +692,7 @@ $('#send-signal-btn').addEventListener('click', async () => {
 /* ------------------------------------------------------- radar toggle/mood */
 $('#radar-toggle').addEventListener('click', async () => {
   if (state.busy) return;
+  if (!requireAuthOrPhone()) return;
   const next = !state.radarActive;
   if (liveApi()) {
     try {
@@ -682,7 +712,15 @@ $('#radar-toggle').addEventListener('click', async () => {
           await api.radarDeactivate();
         });
       }
-    } catch (_) { return; }
+    } catch (e) {
+      if (e && e.code === 'UNAUTHORIZED') {
+        clearProtoSession();
+        try { api.clearSession(); } catch (_) { /* ignore */ }
+        feedback('busy', t('t_auth_required'));
+        show('v-phone');
+      }
+      return;
+    }
   }
   state.radarActive = next;
   const btn = $('#radar-toggle'), st = $('#radar-state');
@@ -1133,7 +1171,9 @@ async function bootApi() {
       } catch (_) {
         // Stale tokens: stay online, clear session, return to phone auth.
         try { api.clearSession(); } catch (__) { /* ignore */ }
+        clearProtoSession();
         state.meId = 'proto-alex';
+        state.radarActive = false;
         setOfflineUi(false, false);
         setApiBanner('busy', t('t_auth_required'));
         applyEntitlements({ plan: 'FREE', capabilities: { dailySignals: 2, activeConnectionTickets: 1 } });
@@ -1162,6 +1202,9 @@ async function bootApi() {
       return;
     }
 
+    // No OTP session on public product — drop any ghost protocol UI session.
+    clearProtoSession();
+    state.radarActive = false;
     setOfflineUi(false, false);
     setApiBanner('busy', t('t_auth_required'));
     feedback('busy', t('t_auth_required'));
@@ -1190,6 +1233,26 @@ async function bootApi() {
 function restoreSessionIfAny() {
   const saved = readSession();
   if (!saved) return;
+
+  const resumeViews = new Set([
+    'v-radar', 'v-signal', 'v-selfie', 'v-ticket', 'v-mission-meet', 'v-mission-mode', 'v-outcome', 'v-cooldown',
+  ]);
+  const wantsProtocol = saved.viewId && resumeViews.has(saved.viewId);
+
+  // Hosted product: never dump users onto Radar with dead CTAs when OTP tokens are gone.
+  if (wantsProtocol && api && api.productPath && !isAuthedSession()) {
+    clearProtoSession();
+    state.radarActive = false;
+    state.signalId = null;
+    state.connectionId = null;
+    state.connectionState = null;
+    state.hasIncomingSignal = false;
+    syncRadarEmpty();
+    syncSignalEmpty();
+    setPhase('idle');
+    return;
+  }
+
   if (saved.signalId) state.signalId = saved.signalId;
   if (saved.connectionId) state.connectionId = saved.connectionId;
   if (saved.connectionState) state.connectionState = saved.connectionState;
@@ -1213,10 +1276,7 @@ function restoreSessionIfAny() {
   }
   syncRadarEmpty();
   syncSignalEmpty();
-  const resumeViews = new Set([
-    'v-radar', 'v-signal', 'v-selfie', 'v-ticket', 'v-mission-meet', 'v-mission-mode', 'v-outcome', 'v-cooldown',
-  ]);
-  if (saved.viewId && resumeViews.has(saved.viewId) && saved.viewId !== 'v-splash') {
+  if (wantsProtocol && saved.viewId !== 'v-splash') {
     show(saved.viewId);
     feedback('info', t('t_session_restored'));
   } else if (saved.phase && saved.phase !== 'offline') {
