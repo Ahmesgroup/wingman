@@ -161,7 +161,7 @@ describe("S18 production providers", () => {
     const { createOtpVerificationFromEnv } = await import("./twilio-verify.js");
     const verify = createOtpVerificationFromEnv();
     expect(verify?.name).toBe("twilio_verify_misconfigured");
-    await expect(verify!.start("+33612345678")).rejects.toMatchObject({ code: "OTP_RATE_LIMITED" });
+    await expect(verify!.start("+33612345678")).rejects.toMatchObject({ code: "OTP_INVALID" });
     process.env.OTP_PROVIDER = prev.OTP_PROVIDER;
     process.env.TWILIO_ACCOUNT_SID = prev.TWILIO_ACCOUNT_SID;
     process.env.TWILIO_AUTH_TOKEN = prev.TWILIO_AUTH_TOKEN;

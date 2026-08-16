@@ -217,8 +217,8 @@ Open Wingman site
 
 ```text
 [ ] S27B GREEN  — real Twilio Verify SMS proven via website (Evidence Pack complete)
-[x] S27B OPEN   — code/product path may be shipped; phone evidence via website missing or incomplete
-[ ] S27B BLOCKED — provider/infra (no Verify Service / Auth Token / Twilio outage)
+[ ] S27B OPEN   — code/product path may be shipped; phone evidence via website missing or incomplete
+[x] S27B BLOCKED — provider/infra (TWILIO_AUTH_TOKEN missing on wingman-api Production; Verify SID/Account SID/OTP_PROVIDER set)
 ```
 
 ---

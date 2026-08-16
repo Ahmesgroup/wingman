@@ -159,7 +159,8 @@ export function createOtpVerificationFromEnv(
       return {
         name: "twilio_verify_misconfigured",
         async start() {
-          throw new AuthError("OTP_RATE_LIMITED", "SMS verification is not configured yet");
+          // Not OTP_RATE_LIMITED — UI should surface this message (ops must paste TWILIO_AUTH_TOKEN).
+          throw new AuthError("OTP_INVALID", "SMS verification is not configured yet");
         },
         async check() {
           throw new AuthError("OTP_INVALID", "SMS verification is not configured yet");
