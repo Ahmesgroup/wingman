@@ -307,7 +307,8 @@ const I18N = {
     admin_pending: 'PENDING', admin_review: 'UNDER REVIEW', admin_resolved: 'RESOLVED', admin_c1: '3 independent reports · category: Off-platform contact', admin_c2: '1 report · Harassment · evidence sealed', admin_c3: 'Dismissed — coordinated false reports detected', admin_back: '← Back to app',
     nav_radar: 'Radar', nav_signal: 'Signal', nav_pulse: 'Pulse', nav_settings: 'Settings',
     t_signal_sent: 'Signal sent · silent expiry in 10 min', t_mood: 'Mood updated', t_blocked: 'Blocked: contact details are not allowed', t_active: "You're visible on the Radar", t_invisible: "You're invisible",
-    t_api_mock: 'Field test · demo loop', t_api_live: 'Connected to Wingman API',
+    t_api_mock: 'Demo mode — not connected', t_api_live: 'Connected',
+    t_api_unreachable: 'Can\'t reach Wingman — try again', t_api_unconfigured: 'App misconfigured — contact coordinator',
     t_field_build: 'Field test build',
     t_loading: 'Loading…', t_accepting: 'Opening connection…', t_selfie: 'Sending selfie…', t_approving: 'Confirming…',
     t_meet: 'Opening Mission Meet…', t_ticket: 'Holding ticket…', t_chat: 'Sending…', t_outcome: 'Saving outcome…',
@@ -370,7 +371,8 @@ const I18N = {
     admin_pending: 'EN ATTENTE', admin_review: 'EN REVUE', admin_resolved: 'RÉSOLU', admin_c1: '3 signalements indépendants · catégorie : Contact hors plateforme', admin_c2: '1 signalement · Harcèlement · preuve scellée', admin_c3: 'Rejeté — faux signalements coordonnés détectés', admin_back: '← Retour à l\'app',
     nav_radar: 'Radar', nav_signal: 'Signal', nav_pulse: 'Pulse', nav_settings: 'Réglages',
     t_signal_sent: 'Signal envoyé · expiration silencieuse dans 10 min', t_mood: 'Humeur mise à jour', t_blocked: 'Bloqué : les coordonnées ne sont pas autorisées', t_active: 'Vous êtes visible sur le Radar', t_invisible: 'Vous êtes invisible',
-    t_api_mock: 'Test terrain · boucle démo', t_api_live: 'Connecté à l\'API Wingman',
+    t_api_mock: 'Mode démo — non connecté', t_api_live: 'Connecté',
+    t_api_unreachable: 'Wingman injoignable — réessayez', t_api_unconfigured: 'App mal configurée — contactez le coordinateur',
     t_field_build: 'Build test terrain',
     t_loading: 'Chargement…', t_accepting: 'Ouverture de la connexion…', t_selfie: 'Envoi du selfie…', t_approving: 'Confirmation…',
     t_meet: 'Ouverture Mission Meet…', t_ticket: 'Ticket en cours…', t_chat: 'Envoi…', t_outcome: 'Enregistrement…',
@@ -1089,10 +1091,25 @@ async function bootApi() {
   setLoading(true, t('t_loading'));
   try {
     api = await WingmanApi.bootstrapApi({ userId: state.meId });
-    state.apiLive = !api.useMock;
-    if (!state.apiLive) {
-      setApiBanner('mock', t('t_api_mock'));
-      feedback('busy', t('t_api_mock'));
+    const product = Boolean(api.productPath);
+    state.apiLive = !api.useMock && !api.unreachable && Boolean(api.baseUrl);
+
+    if (!api.baseUrl && product) {
+      setApiBanner('error', t('t_api_unconfigured'));
+      feedback('error', t('t_api_unconfigured'));
+      applyEntitlements({ plan: 'FREE', capabilities: { dailySignals: 2, activeConnectionTickets: 1 } });
+      return;
+    }
+
+    if (api.unreachable || !state.apiLive) {
+      if (product) {
+        setOfflineUi(true, false);
+        setApiBanner('offline', t('t_api_unreachable'));
+        feedback('offline', t('t_api_unreachable'));
+      } else {
+        setApiBanner('mock', t('t_api_mock'));
+        feedback('busy', t('t_api_mock'));
+      }
       applyEntitlements({ plan: 'FREE', capabilities: { dailySignals: 2, activeConnectionTickets: 1 } });
       return;
     }
@@ -1108,6 +1125,7 @@ async function bootApi() {
       } catch (_) { /* ignore */ }
       setApiBanner('live', t('t_api_live'));
       feedback('success', t('t_auth_ok'));
+      await refreshAuthMode();
       return;
     }
 
@@ -1133,11 +1151,21 @@ async function bootApi() {
     setApiBanner('busy', t('t_auth_required'));
     feedback('busy', t('t_auth_required'));
     applyEntitlements({ plan: 'FREE', capabilities: { dailySignals: 2, activeConnectionTickets: 1 } });
+    await refreshAuthMode();
   } catch (_) {
-    if (api) api.setUseMock(true);
-    state.apiLive = false;
-    setApiBanner('mock', t('t_api_mock'));
-    feedback('busy', t('t_api_mock'));
+    if (api && api.productPath) {
+      api.setUseMock(false);
+      api.setUnreachable(true);
+      state.apiLive = false;
+      setOfflineUi(true, false);
+      setApiBanner('offline', t('t_api_unreachable'));
+      feedback('offline', t('t_api_unreachable'));
+    } else {
+      if (api) api.setUseMock(true);
+      state.apiLive = false;
+      setApiBanner('mock', t('t_api_mock'));
+      feedback('busy', t('t_api_mock'));
+    }
     applyEntitlements({ plan: 'FREE', capabilities: { dailySignals: 2, activeConnectionTickets: 1 } });
   } finally {
     setLoading(false);
@@ -1421,8 +1449,10 @@ $$('#otp-inputs input').forEach((inp, idx, arr) => {
 async function requestOtpForPhone(phone) {
   const errEl = $('#phone-error') || $('#otp-error');
   if (errEl) errEl.textContent = '';
-  if (!api || api.useMock) {
-    feedback('busy', t('t_api_mock'));
+  if (!api || api.useMock || api.unreachable || !api.baseUrl) {
+    const msg = (api && api.productPath) ? t('t_api_unreachable') : t('t_api_mock');
+    feedback('busy', msg);
+    if (errEl) errEl.textContent = msg;
     return false;
   }
   try {
@@ -1482,8 +1512,12 @@ $('#otp-verify-btn') && $('#otp-verify-btn').addEventListener('click', async () 
     if (errEl) errEl.textContent = t('t_otp_bad');
     return;
   }
-  if (!api || api.useMock) {
-    feedback('busy', t('t_api_mock'));
+  if (!api || api.useMock || api.unreachable || !api.baseUrl) {
+    const msg = (api && api.productPath) ? t('t_api_unreachable') : t('t_api_mock');
+    feedback('busy', msg);
+    if (errEl) errEl.textContent = msg;
+    // Public product path: never skip auth into the demo profile.
+    if (api && api.productPath) return;
     show('v-profile');
     return;
   }
@@ -1508,8 +1542,6 @@ $('#otp-verify-btn') && $('#otp-verify-btn').addEventListener('click', async () 
   }
 });
 
-refreshAuthMode();
-
 applyLang();
 sizeCanvas();
 startRadar();
@@ -1518,7 +1550,7 @@ syncRadarEmpty();
 syncSignalEmpty();
 applyEntitlements({ plan: 'FREE', capabilities: { dailySignals: 2, activeConnectionTickets: 1 } });
 
-/* Field-test product surface: hide lab chips unless ?qa=1 */
+/* Product surface: hide lab chips unless ?qa=1 */
 (function configureFieldTestSurface() {
   const q = new URLSearchParams(location.search);
   const qa = q.get('qa') === '1';
@@ -1529,6 +1561,8 @@ applyEntitlements({ plan: 'FREE', capabilities: { dailySignals: 2, activeConnect
 
 bootApi().then(() => {
   restoreSessionIfAny();
+  return refreshAuthMode();
+}).then(() => {
   if (/[?&]smoke=1\b/.test(location.search)) runP4Smoke();
 });
 window.__wingmanRunP4Smoke = runP4Smoke;

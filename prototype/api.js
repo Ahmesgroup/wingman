@@ -3,6 +3,11 @@
  * - Session mode: Bearer + x-device-id (S27 field path)
  * - Dev header mode: x-user-id only when explicitly allowed (local AUTH_ALLOW_DEV)
  * Never posts card data. Checkout unused while payments disabled.
+ *
+ * API base URL (production testers never set this):
+ *   1. window.__WINGMAN_CONFIG__.apiUrl from config.js (WINGMAN_API_URL at Vercel build)
+ *   2. ?api= / localStorage wingman_api_base — localhost or ?qa=1 tooling only
+ *   3. http://localhost:3000 on localhost
  */
 (function (global) {
   'use strict';
@@ -10,9 +15,6 @@
   const params = (typeof location !== 'undefined' && location.search)
     ? new URLSearchParams(location.search)
     : null;
-  const DEFAULT_BASE = (params && params.get('api'))
-    || (typeof localStorage !== 'undefined' && localStorage.getItem('wingman_api_base'))
-    || 'http://localhost:3000';
 
   const AUTH_ACCESS = 'wingman_access_token';
   const AUTH_REFRESH = 'wingman_refresh_token';
@@ -30,6 +32,46 @@
     } catch (_) { /* ignore */ }
   }
 
+  function hostname() {
+    return typeof location !== 'undefined' ? location.hostname : '';
+  }
+
+  function isLocalHost() {
+    const host = hostname();
+    return host === 'localhost' || host === '127.0.0.1';
+  }
+
+  /** Explicit lab tooling — never the default public product path. */
+  function allowApiOverride() {
+    if (isLocalHost()) return true;
+    return Boolean(params && params.get('qa') === '1');
+  }
+
+  function bakedApiUrl() {
+    try {
+      const cfg = global.__WINGMAN_CONFIG__;
+      const url = cfg && typeof cfg.apiUrl === 'string' ? cfg.apiUrl.trim() : '';
+      return url.replace(/\/$/, '');
+    } catch (_) {
+      return '';
+    }
+  }
+
+  function resolveApiBase() {
+    if (allowApiOverride()) {
+      const fromQuery = params && params.get('api');
+      if (fromQuery) return String(fromQuery).replace(/\/$/, '');
+      const fromLs = lsGet('wingman_api_base');
+      if (fromLs) return String(fromLs).replace(/\/$/, '');
+    }
+    const baked = bakedApiUrl();
+    if (baked) return baked;
+    if (isLocalHost()) return 'http://localhost:3000';
+    return '';
+  }
+
+  const DEFAULT_BASE = resolveApiBase();
+
   function ensureDeviceId() {
     let id = lsGet(AUTH_DEVICE);
     if (!id) {
@@ -42,19 +84,21 @@
   /** Dev header only on localhost / explicit ?devauth=1 — never on public Vercel field surface. */
   function allowDevHeader() {
     if (params && params.get('devauth') === '1') return true;
-    const host = typeof location !== 'undefined' ? location.hostname : '';
-    return host === 'localhost' || host === '127.0.0.1';
+    return isLocalHost();
   }
 
   function createApiClient(opts) {
     opts = opts || {};
-    const baseUrl = (opts.baseUrl || DEFAULT_BASE).replace(/\/$/, '');
+    const baseUrl = (opts.baseUrl || DEFAULT_BASE || '').replace(/\/$/, '');
     let userId = opts.userId || lsGet(AUTH_USER) || null;
     let accessToken = lsGet(AUTH_ACCESS);
     let refreshToken = lsGet(AUTH_REFRESH);
     let deviceId = ensureDeviceId();
     let useMock = opts.useMock === true;
+    let unreachable = false;
     const preferDevHeader = opts.preferDevHeader === true && allowDevHeader();
+    // Public hosted surface (not localhost, not ?qa=1) — never silent demo / ?api= tooling.
+    const productPath = !isLocalHost() && !(params && params.get('qa') === '1');
 
     function persistSession(sess) {
       if (!sess) return;
@@ -81,6 +125,11 @@
     }
 
     async function rawFetch(method, path, body, headersExtra) {
+      if (!baseUrl) {
+        const err = new Error('API base URL not configured');
+        err.code = 'API_UNCONFIGURED';
+        throw err;
+      }
       const headers = Object.assign({ Accept: 'application/json' }, headersExtra || {});
       if (body !== undefined) headers['Content-Type'] = 'application/json';
       const res = await fetch(baseUrl + path, {
@@ -162,11 +211,14 @@
       get baseUrl() { return baseUrl; },
       get userId() { return userId; },
       get useMock() { return useMock; },
+      get unreachable() { return unreachable; },
+      get productPath() { return productPath; },
       get deviceId() { return deviceId; },
       get hasSession() { return Boolean(accessToken); },
       get preferDevHeader() { return preferDevHeader; },
       setUserId: setUserId,
       setUseMock: function (v) { useMock = Boolean(v); },
+      setUnreachable: function (v) { unreachable = Boolean(v); },
       persistSession: persistSession,
       clearSession: clearSession,
       asUser: asUser,
@@ -174,6 +226,7 @@
       refreshSession: refreshSession,
 
       live: async function () {
+        if (!baseUrl) return false;
         const res = await fetch(baseUrl + '/internal/live', { headers: { Accept: 'application/json' } });
         return res.ok;
       },
@@ -237,19 +290,45 @@
     opts = opts || {};
     const api = createApiClient(opts);
     try {
+      if (!api.baseUrl) {
+        // Product host without baked WINGMAN_API_URL — do not pretend demo is live product.
+        api.setUseMock(!api.productPath);
+        api.setUnreachable(true);
+        return api;
+      }
       const ok = await Promise.race([
         api.live(),
-        new Promise(function (_, rej) { setTimeout(function () { rej(new Error('timeout')); }, 1500); }),
+        new Promise(function (_, rej) { setTimeout(function () { rej(new Error('timeout')); }, 2500); }),
       ]);
-      api.setUseMock(!ok);
-      if (ok && api.hasSession) {
-        await api.refreshSession().catch(function () { /* keep access until 401 */ });
+      if (ok) {
+        api.setUseMock(false);
+        api.setUnreachable(false);
+        if (api.hasSession) {
+          await api.refreshSession().catch(function () { /* keep access until 401 */ });
+        }
+      } else if (api.productPath) {
+        // Keep real client; surface offline — never silent demo on public product URL.
+        api.setUseMock(false);
+        api.setUnreachable(true);
+      } else {
+        api.setUseMock(true);
+        api.setUnreachable(true);
       }
     } catch (_) {
-      api.setUseMock(true);
+      if (api.productPath) {
+        api.setUseMock(false);
+        api.setUnreachable(true);
+      } else {
+        api.setUseMock(true);
+        api.setUnreachable(true);
+      }
     }
     return api;
   }
 
-  global.WingmanApi = { createApiClient: createApiClient, bootstrapApi: bootstrapApi };
+  global.WingmanApi = {
+    createApiClient: createApiClient,
+    bootstrapApi: bootstrapApi,
+    resolveApiBase: resolveApiBase,
+  };
 })(typeof window !== 'undefined' ? window : globalThis);

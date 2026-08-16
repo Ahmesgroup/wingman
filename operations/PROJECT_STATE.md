@@ -17,9 +17,9 @@ CLIENT UI P1–P4                     DONE (`078d308` surface field-test)
 CLIENT polish loop                  STOPPED — no redesign / polish-by-habit
 PAYMENTS                            OFF (architecture dormant)
 DESTINY (public field)              OUT until own gates
-ACTIVE                              LIVE FIELD TEST — S27A OPEN (field-test auth code; not certified)
+ACTIVE                              LIVE FIELD TEST — product path = public site only (S27A/S27B OPEN)
 S27A                                Field-test identity Evidence Pack — see S27_IDENTITY_OTP.md
-S27B                                Production SMS OTP — OPEN (Twilio Verify wired; phone evidence pending)
+S27B                                Production SMS OTP via website — OPEN (Twilio Verify wired; phone evidence pending)
 S27A verdict                        GREEN | OPEN — never “almost”; SMS delivery is S27B only
 S28+                                BLOCKED until S27A GREEN (no parallel)
 ```
@@ -27,8 +27,8 @@ S28+                                BLOCKED until S27A GREEN (no parallel)
 ## Live Field Test board (protocol — not engines)
 
 ```text
-S27A Field-Test Identity                       NEXT
-S27B Production SMS OTP                        OPEN (Twilio Verify code; evidence pending)
+S27A Field-Test Identity                       NEXT (via website)
+S27B Production SMS OTP                        OPEN (website + Twilio Verify; evidence pending)
 S28  Production Persistence Certification      BLOCKED until S27A GREEN
 S29  Real Multi-user Realtime                  QUEUED
 S30  Real Radar & Geo Field Test               QUEUED
@@ -38,6 +38,11 @@ S33  Safety & Field-test Controls              QUEUED
 S34  Live Field Test Certification             QUEUED
      → GO PILOT | FIX LIST CLOSED | NO-GO
 ```
+
+## Product DoD (testers)
+
+> Open https://wingman-prototype.vercel.app/ → enter your number → follow the app.  
+> No Nest URL, no `?api=`, no `?qa=1`, no fixed OTP in Twilio production mode, no `x-user-id` / seed / DB hacks.
 
 Gate chain:
 
@@ -73,3 +78,4 @@ Two real phones, two real numbers, Signal with app closed on B, real selfie + mu
 | `MEASUREMENT_LEARNING_ENABLED` | `false` | Forbidden until after S26 Review |
 | `PAYMENTS_ENABLED` | `false` | No checkout |
 | `AUTH_ALLOW_DEV` | local/dev only | Must be off on public production (S27) |
+| `WINGMAN_API_URL` | prototype Vercel | Bakes API origin into public client (`config.js`); testers never set |

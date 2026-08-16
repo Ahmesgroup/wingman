@@ -55,6 +55,8 @@ REAL USERS → REAL PHONES → REAL OTP → REAL RADAR → REAL SIGNAL
 
 > Pape opens Wingman with a **real number** on phone A. Igor (or another tester) opens with a **real number** on phone B. Both exist as real accounts. A sends a Signal. B receives it **even with the app closed**. Both complete **real selfie exchange** and **mutual validation**, start **Mission Meet**, finish Mission, return to Radar — **without** fake users, manual DB edits, QA buttons, required refresh, or developer help.
 
+**Igor checklist (product only):** Open Wingman → enter your number → follow the app. No Nest URL, no `?api=`, no API knowledge required.
+
 Repeat on multiple devices. Only then is Wingman a **testable product**, not only a strong technical implementation.
 
 ## Lab vs product surface

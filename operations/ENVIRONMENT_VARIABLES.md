@@ -49,3 +49,12 @@ See [`PROJECT_STATE.md`](./PROJECT_STATE.md).
 | `TWILIO_VERIFY_SERVICE_SID` | empty | Verify Service SID `VA…` required when `OTP_PROVIDER=twilio_verify` |
 | `TWILIO_FROM_E164` | empty | From number for `SMS_PROVIDER=twilio` Programmable SMS only — **not** required for Verify OTP |
 | `SMS_PROVIDER` | `console` | `console` \| `noop` \| `twilio` (Programmable SMS port; separate from Verify OTP) |
+
+## Public web client (`wingman-prototype`)
+
+| Variable | Default | Notes |
+|----------|---------|-------|
+| `WINGMAN_API_URL` | empty | **Production/Preview on Vercel.** HTTPS origin of Nest API (e.g. `https://wingman-api-three.vercel.app`). Baked into `config.js` at build via `prototype/scripts/write-config.mjs`. Testers never set this; no `?api=` on the public product URL. |
+
+Local prototype without the var → `http://localhost:3000`. Overrides `?api=` / `localStorage.wingman_api_base` only on localhost or `?qa=1`.
+
