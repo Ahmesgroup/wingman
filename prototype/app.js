@@ -1127,6 +1127,7 @@ async function bootApi() {
         setOfflineUi(false, false);
         setApiBanner('live', t('t_api_live'));
         feedback('success', t('t_auth_ok'));
+        if (state.phase === 'offline' || !state.phase) setPhase('idle');
         await refreshAuthMode();
         return;
       } catch (_) {
@@ -1218,8 +1219,10 @@ function restoreSessionIfAny() {
   if (saved.viewId && resumeViews.has(saved.viewId) && saved.viewId !== 'v-splash') {
     show(saved.viewId);
     feedback('info', t('t_session_restored'));
-  } else if (saved.phase) {
+  } else if (saved.phase && saved.phase !== 'offline') {
     setPhase(saved.phase);
+  } else {
+    setPhase('idle');
   }
 }
 

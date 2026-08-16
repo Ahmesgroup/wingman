@@ -364,12 +364,15 @@ p.lead{color:var(--t-secondary);font-size:14px;line-height:1.55;font-weight:500}
 .pill:active{transform:scale(.97)}
 .pill[aria-pressed="true"]{background:rgba(124,92,252,.22);color:#fff;border-color:rgba(124,92,252,.55)}
 
-.form-scroll{padding-bottom:calc(112px + var(--safe-bottom))!important}
-.form-cta-spacer{height:8px}
+.form-scroll{padding-bottom:calc(132px + var(--safe-bottom))!important}
+.form-cta-spacer{height:16px;flex-shrink:0}
 .form-sticky-cta{
   position:sticky;bottom:calc(12px + var(--safe-bottom));z-index:5;
-  margin-top:8px;box-shadow:0 12px 32px rgba(0,0,0,.45)
+  margin-top:12px;box-shadow:0 12px 32px rgba(0,0,0,.45)
 }
+/* Profile / consent: keep sticky CTA from covering the last fields */
+#v-profile .form-scroll,#v-consent .body.pad{padding-bottom:calc(148px + var(--safe-bottom))!important}
+body.field-test .phase-strip[data-phase="offline"]{display:none!important}
 
 @media (max-width:375px){
   .otp{gap:5px}
