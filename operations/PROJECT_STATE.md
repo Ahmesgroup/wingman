@@ -19,7 +19,7 @@ PAYMENTS                            OFF (architecture dormant)
 DESTINY (public field)              OUT until own gates
 ACTIVE                              LIVE FIELD TEST — product path = public site only (S27A/S27B OPEN)
 S27A                                Field-test identity Evidence Pack — see S27_IDENTITY_OTP.md
-S27B                                Production SMS OTP via website — OPEN (Twilio Verify wired; phone evidence pending)
+S27B                                Production SMS OTP via website — BLOCKED (TWILIO_AUTH_TOKEN missing; product path wired)
 S27A verdict                        GREEN | OPEN — never “almost”; SMS delivery is S27B only
 S28+                                BLOCKED until S27A GREEN (no parallel)
 ```
