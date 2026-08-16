@@ -653,6 +653,15 @@ p.lead{color:var(--t-secondary);font-size:14px;line-height:1.5}
 }
 
 body.field-test .qa-only{display:none!important}
+/* Public product: one primary CTA — hide prototype chrome (lang / motion chips) */
+body.field-test .top-controls{display:none!important}
+body.field-test .api-banner{display:none!important}
+.btn-link{
+  display:block;width:100%;margin-top:10px;padding:10px;background:transparent;border:none;
+  color:var(--t-secondary);font-size:13px;font-weight:600;text-align:center;text-decoration:underline;
+  text-underline-offset:3px;min-height:var(--touch-min)
+}
+.btn-link:active{opacity:.75}
 body.field-test .brand-tag{letter-spacing:1.2px}
 .api-banner.mock{background:rgba(124,92,252,.16);color:var(--air)}
 
