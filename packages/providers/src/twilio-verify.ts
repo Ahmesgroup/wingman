@@ -144,9 +144,27 @@ export function createOtpVerificationFromEnv(
     const authToken = env.TWILIO_AUTH_TOKEN;
     const serviceSid = env.TWILIO_VERIFY_SERVICE_SID;
     if (!accountSid || !authToken || !serviceSid) {
-      throw new Error(
-        "TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_VERIFY_SERVICE_SID required for OTP_PROVIDER=twilio_verify",
+      // Boot must stay up; block SMS at request time until ops pastes TWILIO_AUTH_TOKEN (never invent).
+      console.error(
+        JSON.stringify({
+          ts: new Date().toISOString(),
+          level: "error",
+          service: "twilio-verify",
+          msg: "verify.misconfigured_missing_credentials",
+          hasAccountSid: Boolean(accountSid),
+          hasAuthToken: Boolean(authToken),
+          hasServiceSid: Boolean(serviceSid),
+        }),
       );
+      return {
+        name: "twilio_verify_misconfigured",
+        async start() {
+          throw new AuthError("OTP_RATE_LIMITED", "SMS verification is not configured yet");
+        },
+        async check() {
+          throw new AuthError("OTP_INVALID", "SMS verification is not configured yet");
+        },
+      };
     }
     return new TwilioVerifyProvider({
       accountSid,

@@ -158,7 +158,7 @@ TWILIO_VERIFY_SERVICE_SID=<VA… Verify Service SID — never commit>
 
 Unset or leave empty for S27B: `FIELD_TEST_OTP_CODE`, `FIELD_TEST_PHONE_ALLOWLIST`.
 
-If `TWILIO_AUTH_TOKEN` is missing → **BLOCKED** for real SMS (do not invent token). Site may still show phone UI; Send code fails until token is set.
+If `TWILIO_AUTH_TOKEN` is missing → **S27B BLOCKED** for real SMS (do not invent token). API stays up; Send code fails with a clear unavailable error until the token is set on `wingman-api`.
 
 ### Expected production flow (user-visible)
 

@@ -147,6 +147,27 @@ describe("S18 production providers", () => {
     expect(mapTwilioVerifyHttpError(400, { code: 99999 })).toBeInstanceOf(AuthError);
   });
 
+  it("twilio_verify without Auth Token boots as misconfigured (blocks SMS, no crash)", async () => {
+    const prev = {
+      OTP_PROVIDER: process.env.OTP_PROVIDER,
+      TWILIO_ACCOUNT_SID: process.env.TWILIO_ACCOUNT_SID,
+      TWILIO_AUTH_TOKEN: process.env.TWILIO_AUTH_TOKEN,
+      TWILIO_VERIFY_SERVICE_SID: process.env.TWILIO_VERIFY_SERVICE_SID,
+    };
+    process.env.OTP_PROVIDER = "twilio_verify";
+    process.env.TWILIO_ACCOUNT_SID = "ACtest";
+    process.env.TWILIO_VERIFY_SERVICE_SID = "VAtest";
+    delete process.env.TWILIO_AUTH_TOKEN;
+    const { createOtpVerificationFromEnv } = await import("./twilio-verify.js");
+    const verify = createOtpVerificationFromEnv();
+    expect(verify?.name).toBe("twilio_verify_misconfigured");
+    await expect(verify!.start("+33612345678")).rejects.toMatchObject({ code: "OTP_RATE_LIMITED" });
+    process.env.OTP_PROVIDER = prev.OTP_PROVIDER;
+    process.env.TWILIO_ACCOUNT_SID = prev.TWILIO_ACCOUNT_SID;
+    process.env.TWILIO_AUTH_TOKEN = prev.TWILIO_AUTH_TOKEN;
+    process.env.TWILIO_VERIFY_SERVICE_SID = prev.TWILIO_VERIFY_SERVICE_SID;
+  });
+
   it("mobile push fans out to android+ios and cleans invalid tokens", async () => {
     const store = new MemoryDeviceTokenStore();
     await store.upsert({
