@@ -22,6 +22,15 @@ export function normalizePhoneE164(phone: string): string {
   return s.startsWith("+") ? s : `+${s}`;
 }
 
+/** E.164: + then country code (non-zero) and subscriber digits, 8–15 digits total after +. */
+export function assertValidPhoneE164(phone: string): string {
+  const normalized = normalizePhoneE164(phone);
+  if (!/^\+[1-9]\d{7,14}$/.test(normalized)) {
+    throw new AuthError("PHONE_INVALID", "Phone must be a valid E.164 number");
+  }
+  return normalized;
+}
+
 export function parseFieldTestAllowlist(): string[] {
   return (process.env.FIELD_TEST_PHONE_ALLOWLIST ?? "")
     .split(",")

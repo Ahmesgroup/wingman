@@ -35,4 +35,18 @@ describe("AuthService", () => {
       expect(["SESSION_REVOKED", "SESSION_INVALID"]).toContain((e as AuthError).code);
     }
   });
+
+  it("external OTP challenge completes without local code hash", () => {
+    const auth = new AuthService("pepper");
+    const { challengeId, deliveryCode, debugCode } = auth.requestOtp("+33600000003", {
+      external: true,
+    });
+    expect(challengeId).toBeTruthy();
+    expect(deliveryCode).toBe("");
+    expect(debugCode).toBeUndefined();
+    expect(() => auth.verifyOtp("+33600000003", "123456", "device-x")).toThrow(AuthError);
+    const session = auth.completeExternalOtp("+33600000003", "device-x");
+    expect(session.accessToken).toBeTruthy();
+    expect(() => auth.completeExternalOtp("+33600000003", "device-x")).toThrow(AuthError);
+  });
 });

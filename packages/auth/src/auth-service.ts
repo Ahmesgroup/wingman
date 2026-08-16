@@ -6,6 +6,7 @@ export class AuthError extends Error {
       | "OTP_INVALID"
       | "OTP_EXPIRED"
       | "OTP_RATE_LIMITED"
+      | "PHONE_INVALID"
       | "PHONE_NOT_ALLOWED"
       | "SESSION_INVALID"
       | "SESSION_REVOKED"
@@ -21,6 +22,8 @@ export interface OtpChallenge {
   id: string;
   phoneLookup: string;
   codeHash: string;
+  /** When true, code is owned by an external verifier (e.g. Twilio Verify). */
+  external: boolean;
   attempts: number;
   maxAttempts: number;
   createdAt: Date;
@@ -91,7 +94,7 @@ export class AuthService {
 
   requestOtp(
     phoneE164: string,
-    options?: { deliveryCode?: string },
+    options?: { deliveryCode?: string; external?: boolean },
   ): { challengeId: string; deliveryCode: string; debugCode?: string } {
     const lookup = this.phoneLookup(phoneE164);
     const t = this.now().getTime();
@@ -102,14 +105,17 @@ export class AuthService {
     }
     this.otpRequests.push({ phoneLookup: lookup, at: t });
 
-    const code =
-      options?.deliveryCode && /^\d{6}$/.test(options.deliveryCode)
+    const external = options?.external === true;
+    const code = external
+      ? ""
+      : options?.deliveryCode && /^\d{6}$/.test(options.deliveryCode)
         ? options.deliveryCode
         : String(Math.floor(100000 + Math.random() * 900000));
     const challenge: OtpChallenge = {
       id: newId("otp"),
       phoneLookup: lookup,
-      codeHash: hash(code, this.pepper),
+      codeHash: external ? "" : hash(code, this.pepper),
+      external,
       attempts: 0,
       maxAttempts: 5,
       createdAt: this.now(),
@@ -120,7 +126,7 @@ export class AuthService {
     return {
       challengeId: challenge.id,
       deliveryCode: code,
-      debugCode: process.env.AUTH_DEBUG_OTP === "true" ? code : undefined,
+      debugCode: !external && process.env.AUTH_DEBUG_OTP === "true" ? code : undefined,
     };
   }
 
@@ -130,13 +136,9 @@ export class AuthService {
     refreshToken: string;
     expiresAt: Date;
   } {
-    const lookup = this.phoneLookup(phoneE164);
-    const challengeId = this.otpByPhone.get(lookup);
-    if (!challengeId) throw new AuthError("OTP_INVALID", "No OTP challenge");
-    const challenge = this.otps.get(challengeId);
-    if (!challenge || challenge.consumedAt) throw new AuthError("OTP_INVALID", "Invalid OTP");
-    if (this.now().getTime() >= challenge.expiresAt.getTime()) {
-      throw new AuthError("OTP_EXPIRED", "OTP expired");
+    const challenge = this.requireActiveChallenge(phoneE164);
+    if (challenge.external) {
+      throw new AuthError("OTP_INVALID", "External OTP must be completed via verifier");
     }
     challenge.attempts += 1;
     if (challenge.attempts > challenge.maxAttempts) {
@@ -147,6 +149,48 @@ export class AuthService {
     if (expected.length !== actual.length || !timingSafeEqual(expected, actual)) {
       throw new AuthError("OTP_INVALID", "Invalid OTP code");
     }
+    return this.consumeChallenge(phoneE164, challenge, deviceId);
+  }
+
+  /**
+   * After an external verifier (Twilio Verify) approved the code.
+   * Still enforces local challenge presence + expiry; does not trust client code.
+   */
+  completeExternalOtp(phoneE164: string, deviceId: string): {
+    userId: string;
+    accessToken: string;
+    refreshToken: string;
+    expiresAt: Date;
+  } {
+    const challenge = this.requireActiveChallenge(phoneE164);
+    if (!challenge.external) {
+      throw new AuthError("OTP_INVALID", "Challenge is not external");
+    }
+    return this.consumeChallenge(phoneE164, challenge, deviceId);
+  }
+
+  private requireActiveChallenge(phoneE164: string): OtpChallenge {
+    const lookup = this.phoneLookup(phoneE164);
+    const challengeId = this.otpByPhone.get(lookup);
+    if (!challengeId) throw new AuthError("OTP_INVALID", "No OTP challenge");
+    const challenge = this.otps.get(challengeId);
+    if (!challenge || challenge.consumedAt) throw new AuthError("OTP_INVALID", "Invalid OTP");
+    if (this.now().getTime() >= challenge.expiresAt.getTime()) {
+      throw new AuthError("OTP_EXPIRED", "OTP expired");
+    }
+    return challenge;
+  }
+
+  private consumeChallenge(
+    phoneE164: string,
+    challenge: OtpChallenge,
+    deviceId: string,
+  ): {
+    userId: string;
+    accessToken: string;
+    refreshToken: string;
+    expiresAt: Date;
+  } {
     challenge.consumedAt = this.now();
     const userId = this.ensureUser(phoneE164);
     this.devices.set(deviceId, { id: deviceId, userId });

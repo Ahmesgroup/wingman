@@ -432,6 +432,8 @@ See [`operations/S17_WEBSOCKET.md`](../operations/S17_WEBSOCKET.md).
 
 See [`operations/S18_PROVIDERS.md`](../operations/S18_PROVIDERS.md).
 
+**S27B note (not GREEN):** `OTP_PROVIDER=twilio_verify` wires `TwilioVerifyProvider` + external OTP challenges in `@wingman/auth`. Certification + env: [`operations/S27_IDENTITY_OTP.md`](../operations/S27_IDENTITY_OTP.md). Do not claim production SMS GREEN without real-phone Evidence Pack.
+
 ---
 
 ## 19. Sprint delivery — S19 (Billing → Entitlements)

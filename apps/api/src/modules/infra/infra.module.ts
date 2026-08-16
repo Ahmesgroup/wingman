@@ -13,6 +13,7 @@ import {
 import {
   ApnsPushProvider,
   ConsoleSmsProvider,
+  createOtpVerificationFromEnv,
   createSmsProviderFromEnv,
   FcmPushProvider,
   LoggingPushTransport,
@@ -20,6 +21,7 @@ import {
   MobilePushTransport,
   OtpDeliveryService,
   type DeviceTokenStore,
+  type OtpVerificationProvider,
   type SmsProvider,
 } from "@wingman/providers";
 import type { WingmanEngine } from "@wingman/domain";
@@ -95,6 +97,22 @@ function buildSms(): SmsProvider {
   }
 }
 
+function buildOtpVerification(): OtpVerificationProvider | null {
+  try {
+    return createOtpVerificationFromEnv();
+  } catch (e) {
+    console.error(
+      JSON.stringify({
+        level: "error",
+        msg: "otp.verify_provider_config_failed",
+        error: e instanceof Error ? e.message : String(e),
+      }),
+    );
+    // Fail closed for misconfigured Verify — do not silently fall back to local OTP in prod intent.
+    throw e;
+  }
+}
+
 function deviceStore(): DeviceTokenStore {
   if (!sharedDeviceStore) sharedDeviceStore = sharedInfra.deviceTokens ?? new MemoryDeviceTokenStore();
   return sharedDeviceStore;
@@ -162,7 +180,8 @@ function buildProtocolRepo(): Promise<{ repo: ProtocolRepository; prisma: Prisma
     },
     {
       provide: OTP_DELIVERY,
-      useFactory: (auth: AuthService, sms: SmsProvider) => new OtpDeliveryService(auth, sms),
+      useFactory: (auth: AuthService, sms: SmsProvider) =>
+        new OtpDeliveryService(auth, sms, buildOtpVerification()),
       inject: [AUTH_SERVICE_TOKEN, SMS_PROVIDER],
     },
     {

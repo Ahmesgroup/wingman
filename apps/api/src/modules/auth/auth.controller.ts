@@ -2,8 +2,8 @@ import { Body, Controller, Get, Headers, Inject, Injectable, Optional, Post } fr
 import {
   AuthService,
   assertFieldTestPhoneAllowed,
+  assertValidPhoneE164,
   isFieldTestAuthMode,
-  normalizePhoneE164,
 } from "@wingman/auth";
 import type { WingmanEngine } from "@wingman/domain";
 import type { OtpDeliveryService } from "@wingman/providers";
@@ -39,16 +39,22 @@ export class AuthApiService {
   ) {}
 
   mode() {
+    const otpProvider = (process.env.OTP_PROVIDER ?? "local").trim().toLowerCase();
     return {
       fieldTest: isFieldTestAuthMode(),
       authAllowDev: process.env.AUTH_ALLOW_DEV === "true",
+      otpProvider: isFieldTestAuthMode()
+        ? "field_test"
+        : otpProvider === "twilio_verify" || otpProvider === "twilio-verify"
+          ? "twilio_verify"
+          : "local",
       publicProd:
         process.env.WINGMAN_PUBLIC_PROD === "true" || process.env.NODE_ENV === "production",
     };
   }
 
   async requestOtp(phoneE164: string) {
-    const phone = normalizePhoneE164(phoneE164);
+    const phone = assertValidPhoneE164(phoneE164);
     if (isFieldTestAuthMode()) assertFieldTestPhoneAllowed(phone);
 
     const actorKey = `otp:${simpleHash(phone)}`;
@@ -65,11 +71,11 @@ export class AuthApiService {
     };
   }
 
-  verify(body: { phoneE164: string; code: string; deviceId: string }) {
-    const phone = normalizePhoneE164(body.phoneE164);
+  async verify(body: { phoneE164: string; code: string; deviceId: string }) {
+    const phone = assertValidPhoneE164(body.phoneE164);
     if (isFieldTestAuthMode()) assertFieldTestPhoneAllowed(phone);
 
-    const session = this.auth.verifyOtp(phone, body.code, body.deviceId);
+    const session = await this.otpDelivery.verifyAndComplete(phone, body.code, body.deviceId);
     // Ensure protocol engine knows this real identity (no demo seed / x-user-id).
     // Do not overwrite an existing profile on re-login.
     if (!this.engine.users.has(session.userId)) {
@@ -120,7 +126,9 @@ export class AuthController {
   }
 
   @Post("otp/verify")
-  verify(@Body(new ZodValidationPipe(VerifyOtpSchema)) body: { phoneE164: string; code: string; deviceId: string }) {
+  async verify(
+    @Body(new ZodValidationPipe(VerifyOtpSchema)) body: { phoneE164: string; code: string; deviceId: string },
+  ) {
     return this.authApi.verify(body);
   }
 

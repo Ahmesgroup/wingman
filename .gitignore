@@ -11,3 +11,5 @@ apps/workers/dist
 packages/*/dist
 
 scripts/msg-s*.txt
+
+.vercel

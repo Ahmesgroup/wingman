@@ -19,7 +19,7 @@ PAYMENTS                            OFF (architecture dormant)
 DESTINY (public field)              OUT until own gates
 ACTIVE                              LIVE FIELD TEST — S27A OPEN (field-test auth code; not certified)
 S27A                                Field-test identity Evidence Pack — see S27_IDENTITY_OTP.md
-S27B                                Production SMS OTP — OPEN / deferred (Twilio later)
+S27B                                Production SMS OTP — OPEN (Twilio Verify wired; phone evidence pending)
 S27A verdict                        GREEN | OPEN — never “almost”; SMS delivery is S27B only
 S28+                                BLOCKED until S27A GREEN (no parallel)
 ```
@@ -28,7 +28,7 @@ S28+                                BLOCKED until S27A GREEN (no parallel)
 
 ```text
 S27A Field-Test Identity                       NEXT
-S27B Production SMS OTP                        OPEN (deferred)
+S27B Production SMS OTP                        OPEN (Twilio Verify code; evidence pending)
 S28  Production Persistence Certification      BLOCKED until S27A GREEN
 S29  Real Multi-user Realtime                  QUEUED
 S30  Real Radar & Geo Field Test               QUEUED

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { AuthService } from "@wingman/auth";
+import { AuthError, AuthService } from "@wingman/auth";
 import { InvalidDeviceError, NotificationOrchestrator } from "@wingman/notifications";
 import {
   ApnsPushProvider,
@@ -9,6 +9,8 @@ import {
   MobilePushTransport,
   ReliableSmsProvider,
   TwilioSmsProvider,
+  TwilioVerifyProvider,
+  mapTwilioVerifyHttpError,
 } from "./index.js";
 import { OtpDeliveryService } from "./otp-delivery.js";
 
@@ -82,12 +84,67 @@ describe("S18 production providers", () => {
     const res = await delivery.requestAndDeliver("+35211111111");
     expect(res.fieldTest).toBe(true);
     expect(inner.sent).toHaveLength(0);
-    const session = auth.verifyOtp("+35211111111", "482913", "d1");
+    const session = await delivery.verifyAndComplete("+35211111111", "482913", "d1");
     expect(session.accessToken).toBeTruthy();
     await expect(delivery.requestAndDeliver("+35299999999")).rejects.toThrow();
     delete process.env.AUTH_FIELD_TEST_MODE;
     delete process.env.FIELD_TEST_OTP_CODE;
     delete process.env.FIELD_TEST_PHONE_ALLOWLIST;
+  });
+
+  it("Twilio Verify start/check maps errors and issues session without SMS body", async () => {
+    delete process.env.AUTH_FIELD_TEST_MODE;
+    delete process.env.AUTH_DEBUG_OTP;
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ sid: "VExxx", status: "pending" }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ sid: "VExxx", status: "approved" }),
+      }) as unknown as typeof fetch;
+    const verify = new TwilioVerifyProvider({
+      accountSid: "ACtest",
+      authToken: "secret",
+      serviceSid: "VAtest",
+      fetchImpl,
+      timeoutMs: 2000,
+    });
+    const auth = new AuthService("pepper");
+    const sms = new ConsoleSmsProvider();
+    const delivery = new OtpDeliveryService(auth, sms, verify);
+    const req = await delivery.requestAndDeliver("+33612345678");
+    expect(req.challengeId).toBeTruthy();
+    expect(req.debugCode).toBeUndefined();
+    expect(sms.sent).toHaveLength(0);
+    const session = await delivery.verifyAndComplete("+33612345678", "123456", "dev-1");
+    expect(session.accessToken).toBeTruthy();
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+  });
+
+  it("Twilio Verify wrong code stays OTP_INVALID", async () => {
+    const fetchImpl = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({ status: "pending" }),
+    })) as unknown as typeof fetch;
+    const verify = new TwilioVerifyProvider({
+      accountSid: "ACtest",
+      authToken: "secret",
+      serviceSid: "VAtest",
+      fetchImpl,
+    });
+    await expect(verify.check("+33612345678", "000000")).rejects.toMatchObject({
+      code: "OTP_INVALID",
+    });
+  });
+
+  it("maps Twilio Verify HTTP codes into AuthError", () => {
+    expect(mapTwilioVerifyHttpError(429, { code: 60203 }).code).toBe("OTP_RATE_LIMITED");
+    expect(mapTwilioVerifyHttpError(404, { code: 20404 }).code).toBe("OTP_EXPIRED");
+    expect(mapTwilioVerifyHttpError(400, { code: 60200 }).code).toBe("PHONE_INVALID");
+    expect(mapTwilioVerifyHttpError(400, { code: 99999 })).toBeInstanceOf(AuthError);
   });
 
   it("mobile push fans out to android+ios and cleans invalid tokens", async () => {

@@ -43,3 +43,9 @@ See [`PROJECT_STATE.md`](./PROJECT_STATE.md).
 | `FIELD_TEST_PHONE_ALLOWLIST` | empty | Comma-separated E.164 numbers allowed to auth in field-test mode |
 | `AUTH_DEBUG_OTP` | unset/`false` | Never expose OTP in HTTP on public builds |
 | `AUTH_PEPPER` | required | Session/OTP hashing pepper |
+| `OTP_PROVIDER` | `local` | `local` = AuthService code + `SmsProvider`; `twilio_verify` = Twilio Verify (S27B). Field-test mode overrides |
+| `TWILIO_ACCOUNT_SID` | empty | Twilio account (server only; never commit) |
+| `TWILIO_AUTH_TOKEN` | empty | Twilio auth token (server only; never commit) |
+| `TWILIO_VERIFY_SERVICE_SID` | empty | Verify Service SID `VA…` required when `OTP_PROVIDER=twilio_verify` |
+| `TWILIO_FROM_E164` | empty | From number for `SMS_PROVIDER=twilio` Programmable SMS only — **not** required for Verify OTP |
+| `SMS_PROVIDER` | `console` | `console` \| `noop` \| `twilio` (Programmable SMS port; separate from Verify OTP) |
