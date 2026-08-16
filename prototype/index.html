@@ -14,7 +14,8 @@
 <link rel="icon" href="icon-192.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-192.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Sora:wght@600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -35,6 +36,7 @@
   <div class="phone">
     <div class="notch" aria-hidden="true"></div>
     <div class="screen" id="main-screen" role="main">
+      <div class="screen-atmosphere" aria-hidden="true"></div>
       <div class="offline-banner hidden" id="offline-banner" role="status">
         <span id="offline-banner-text">Offline — server timers keep running</span>
         <button type="button" class="banner-action hidden" id="reconnect-btn" data-i18n="t_reconnect">Reconnect</button>
@@ -51,12 +53,12 @@
 
       <!-- 1. SPLASH -->
       <section class="view active" id="v-splash" data-noflow aria-hidden="false" aria-label="Splash">
-        <div class="mission-mode">
-          <div class="mm-ring" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg></div>
-          <h1 class="big" data-autofocus>Wingman</h1>
-          <p class="lead center" data-i18n="splash_tag">Make the first acquaintance easy.</p>
-          <p class="small muted" data-i18n="splash_love">Love is in the air.</p>
-          <button type="button" class="btn btn-primary mt" data-go="v-onboard1" data-i18n="splash_cta">Begin</button>
+        <div class="mission-mode splash-hero">
+          <div class="mm-ring splash-ring" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg></div>
+          <h1 class="big brand-hero" data-autofocus>Wingman</h1>
+          <p class="lead center splash-tag" data-i18n="splash_tag">Make the first acquaintance easy.</p>
+          <p class="small muted splash-sub" data-i18n="splash_love">A quiet protocol for the first move.</p>
+          <button type="button" class="btn btn-primary mt splash-cta" data-go="v-onboard1" data-i18n="splash_cta">Begin</button>
         </div>
       </section>
 
@@ -96,7 +98,7 @@
       <section class="view" id="v-phone" data-noflow>
         <div class="statusbar"><span class="time">21:47</span><span>Wingman</span></div>
         <div class="topbar"><div class="logo">WING<b>MAN</b></div><div class="subtitle" data-i18n="phone_sub">Verify your number</div></div>
-        <div class="body pad form-scroll">
+        <div class="body pad form-scroll auth-compose">
           <h2 class="head" data-i18n="phone_title">Enter your phone</h2>
           <p class="lead mb" data-i18n="phone_body">We send a 6-digit code. Your number is never shown to anyone.</p>
           <div class="field">
@@ -112,7 +114,7 @@
       <section class="view" id="v-otp" data-noflow>
         <div class="statusbar"><span class="time">21:47</span><span>Wingman</span></div>
         <div class="topbar"><div class="logo">WING<b>MAN</b></div><div class="subtitle" data-i18n="otp_sub">Enter the code</div></div>
-        <div class="body pad form-scroll">
+        <div class="body pad form-scroll auth-compose">
           <h2 class="head" data-i18n="otp_title">6-digit code</h2>
           <p class="lead" id="otp-sent-to" data-i18n="otp_body">Sent to your phone</p>
           <p class="small muted center mt" id="otp-field-test-note" hidden data-i18n="otp_field_note">Field test verification — no SMS is sent. Use the code from your test coordinator.</p>
@@ -165,7 +167,7 @@
             <input id="pf-height" type="number" value="" placeholder="178" inputmode="numeric" min="120" max="230" enterkeyhint="next">
           </div>
           <div class="field"><label id="pf-interests-label" data-i18n="pf_interests">Interests (max 5)</label>
-            <div class="pillset pillset-wrap" role="group" aria-labelledby="pf-interests-label"><button type="button" class="pill" aria-pressed="true" aria-label="Music">🎵 Music</button><button type="button" class="pill" aria-pressed="true" aria-label="Travel">🌍 Travel</button><button type="button" class="pill" aria-pressed="true" aria-label="Food">🍕 Food</button><button type="button" class="pill" aria-pressed="false" aria-label="Fitness">🏋️ Fitness</button><button type="button" class="pill" aria-pressed="false" aria-label="Art">🎨 Art</button></div>
+            <div class="pillset pillset-wrap" role="group" aria-labelledby="pf-interests-label"><button type="button" class="pill" aria-pressed="true" aria-label="Music">Music</button><button type="button" class="pill" aria-pressed="true" aria-label="Travel">Travel</button><button type="button" class="pill" aria-pressed="true" aria-label="Food">Food</button><button type="button" class="pill" aria-pressed="false" aria-label="Fitness">Fitness</button><button type="button" class="pill" aria-pressed="false" aria-label="Art">Art</button></div>
           </div>
           <div class="field">
             <label for="pf-bio" data-i18n="pf_bio">Daily bio (150 max)</label>

@@ -261,7 +261,7 @@ async function tryReconnect() {
 /* ---------------------------------------------------------------- i18n ---- */
 const I18N = {
   en: {
-    brandtag: 'Make the first acquaintance easy', splash_tag: 'Make the first acquaintance easy.', splash_love: 'Love is in the air.', splash_cta: 'Begin',
+    brandtag: 'Make the first acquaintance easy', splash_tag: 'Make the first acquaintance easy.', splash_love: 'A quiet protocol for the first move.', splash_cta: 'Begin',
     next: 'Next', ob_eyebrow: 'The problem',
     ob1_title: 'You cross paths. Nothing happens.', ob1_body: "Every day you pass someone you'd like to meet — and say nothing. Wingman is built for that exact moment.",
     ob2_eyebrow: 'The solution', ob2_title: 'A quiet protocol, not a swipe feed.', ob2_body: 'No public profiles. No endless chat. A short, private path from "someone\'s near" to "let\'s meet."',
@@ -325,7 +325,7 @@ const I18N = {
     t_session_restored: 'Session restored',
   },
   fr: {
-    brandtag: 'Facilitez la première rencontre', splash_tag: "Facilitez la première rencontre.", splash_love: "L'amour est dans l'air.", splash_cta: 'Commencer',
+    brandtag: 'Facilitez la première rencontre', splash_tag: "Facilitez la première rencontre.", splash_love: 'Un protocole discret pour le premier pas.', splash_cta: 'Commencer',
     next: 'Suivant', ob_eyebrow: 'Le problème',
     ob1_title: 'Vous vous croisez. Rien ne se passe.', ob1_body: "Chaque jour, vous croisez quelqu'un que vous aimeriez rencontrer — sans rien dire. Wingman est fait pour cet instant précis.",
     ob2_eyebrow: 'La solution', ob2_title: 'Un protocole discret, pas un fil de swipe.', ob2_body: "Pas de profils publics. Pas de chat infini. Un chemin court et privé de « quelqu'un est proche » à « on se voit ».",
@@ -1117,17 +1117,28 @@ async function bootApi() {
     // S27 session path — real identity from OTP tokens
     if (api.hasSession && api.userId) {
       state.meId = api.userId;
-      const ents = await api.entitlements();
-      applyEntitlements(ents);
       try {
-        const ps = await api.paymentsStatus();
-        if (ps && ps.paymentsEnabled) console.warn('[wingman] payments unexpectedly enabled');
-      } catch (_) { /* ignore */ }
-      setOfflineUi(false, false);
-      setApiBanner('live', t('t_api_live'));
-      feedback('success', t('t_auth_ok'));
-      await refreshAuthMode();
-      return;
+        const ents = await api.entitlements();
+        applyEntitlements(ents);
+        try {
+          const ps = await api.paymentsStatus();
+          if (ps && ps.paymentsEnabled) console.warn('[wingman] payments unexpectedly enabled');
+        } catch (_) { /* ignore */ }
+        setOfflineUi(false, false);
+        setApiBanner('live', t('t_api_live'));
+        feedback('success', t('t_auth_ok'));
+        await refreshAuthMode();
+        return;
+      } catch (_) {
+        // Stale tokens: stay online, clear session, return to phone auth.
+        try { api.clearSession(); } catch (__) { /* ignore */ }
+        state.meId = 'proto-alex';
+        setOfflineUi(false, false);
+        setApiBanner('busy', t('t_auth_required'));
+        applyEntitlements({ plan: 'FREE', capabilities: { dailySignals: 2, activeConnectionTickets: 1 } });
+        await refreshAuthMode();
+        return;
+      }
     }
 
     // Local lab only: x-user-id + seed (never on public Vercel field surface)
@@ -1210,6 +1221,26 @@ function restoreSessionIfAny() {
   } else if (saved.phase) {
     setPhase(saved.phase);
   }
+}
+
+/** After OTP session exists, don't trap the user on splash/phone again. */
+function resumeAuthedFunnelIfNeeded() {
+  if (!api || !api.hasSession || !api.userId) return;
+  const funnel = new Set([
+    'v-splash', 'v-onboard1', 'v-onboard2', 'v-onboard3', 'v-phone', 'v-otp',
+  ]);
+  const current = state.viewId || 'v-splash';
+  if (!funnel.has(current)) return;
+  const saved = readSession();
+  const resumeViews = new Set([
+    'v-radar', 'v-signal', 'v-selfie', 'v-ticket', 'v-mission-meet', 'v-mission-mode', 'v-outcome', 'v-cooldown',
+    'v-profile', 'v-consent',
+  ]);
+  if (saved && saved.viewId && resumeViews.has(saved.viewId)) {
+    show(saved.viewId);
+    return;
+  }
+  show('v-profile');
 }
 
 /* boot */
@@ -1566,6 +1597,7 @@ bootApi().then(() => {
   restoreSessionIfAny();
   return refreshAuthMode();
 }).then(() => {
+  resumeAuthedFunnelIfNeeded();
   if (/[?&]smoke=1\b/.test(location.search)) runP4Smoke();
 });
 window.__wingmanRunP4Smoke = runP4Smoke;
