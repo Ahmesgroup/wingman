@@ -9,9 +9,10 @@ import { METRICS } from "../../common/observability.interceptor.js";
 import { Public } from "../../common/public.decorator.js";
 import { WINGMAN_ENGINE } from "../../engine/engine.tokens.js";
 import type { NotificationOrchestrator } from "@wingman/notifications";
-import { EPHEMERAL_STORE, NOTIFICATION_ORCH, PRISMA_CLIENT, PROTOCOL_MIRROR } from "../infra/infra.tokens.js";
+import { EPHEMERAL_STORE, MEDIA_STORE, NOTIFICATION_ORCH, PRISMA_CLIENT, PROTOCOL_MIRROR } from "../infra/infra.tokens.js";
 import { RealtimeAppService } from "../realtime/realtime-app.service.js";
 import { MeasurementGate } from "../measurement/measurement.module.js";
+import type { MediaStore } from "@wingman/media";
 
 @Injectable()
 export class InternalService {
@@ -21,6 +22,7 @@ export class InternalService {
     @Inject(EPHEMERAL_STORE) private readonly ephemeral: EphemeralStore,
     @Inject(PROTOCOL_MIRROR) private readonly mirror: ProtocolPersistenceMirror,
     @Inject(PRISMA_CLIENT) private readonly prisma: PrismaClient | null,
+    @Inject(MEDIA_STORE) private readonly media: MediaStore,
     private readonly realtime: RealtimeAppService,
     @Inject(NOTIFICATION_ORCH) private readonly notifications: NotificationOrchestrator,
     @Optional() private readonly measurement?: MeasurementGate,
@@ -57,6 +59,11 @@ export class InternalService {
         }
       }
       if (["EXPIRED", "CANCELLED", "BLOCKED", "COMPLETED", "FAILED"].includes(c.state)) {
+        try {
+          await this.media.deleteByConnection(id);
+        } catch {
+          /* best-effort purge */
+        }
         await this.realtime.publish({
           type: "connection.closed",
           aggregateId: id,
@@ -68,6 +75,11 @@ export class InternalService {
           payload: { connectionId: id, state: c.state },
         });
       }
+    }
+    try {
+      await this.media.purgeExpired(this.engine.clock.now());
+    } catch {
+      /* best-effort TTL sweep */
     }
     return result;
   }
@@ -123,11 +135,25 @@ export class InternalService {
       databaseOk = false;
       databaseDetail = "not-configured";
     }
+    let mediaOk = true;
+    let mediaDetail = this.media.name;
+    try {
+      mediaOk = await this.media.ping();
+      if (!mediaOk) mediaDetail = `${this.media.name}:ping-failed`;
+    } catch (e) {
+      mediaOk = false;
+      mediaDetail = e instanceof Error ? e.message : "media failure";
+    }
+    if (process.env.WINGMAN_PUBLIC_PROD === "true" && this.media.name === "memory") {
+      mediaOk = false;
+      mediaDetail = "memory-not-allowed-in-public-prod";
+    }
     return buildReadiness({
       domain: { ok: true },
       ephemeral: { ok: redisOk, detail: redisDetail },
       persistence: { ok: persistenceOk, detail: persistenceDetail },
       database: { ok: databaseOk, detail: databaseDetail },
+      media: { ok: mediaOk, detail: mediaDetail },
       destinyFlag: { ok: true, detail: String(this.engine.destinyEnabled) },
     });
   }

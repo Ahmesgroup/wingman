@@ -12,7 +12,7 @@ Destiny OFF · Payments OFF · No fake public peers · No `x-user-id` on public 
 |------|--------|
 | Protocol wiring | **improved** |
 | Production durability | **GO (infra)** — steps 1–5 complete |
-| Private selfie media | **OPEN** |
+| Private selfie media | **WIRED (infra)** — Evidence Pack still open |
 | Two-phone Evidence Pack | **NOT STARTED / BLOCKED** |
 | PRODUCT PROTOCOL READY | **NO** |
 
@@ -23,7 +23,8 @@ Destiny OFF · Payments OFF · No fake public peers · No `x-user-id` on public 
 | `GET /internal/ready` | ephemeral=memory, persistence=memory, database=not-configured | **ephemeral=redis, persistence=prisma, database=postgres, ready=true** |
 | Durability cert | n/a | identity+connection marker survived Production redeploy |
 
-S28 detail: [`S28_PRODUCTION_PERSISTENCE.md`](./S28_PRODUCTION_PERSISTENCE.md).
+S28 detail: [`S28_PRODUCTION_PERSISTENCE.md`](./S28_PRODUCTION_PERSISTENCE.md).  
+S31 detail: [`S31_PRIVATE_SELFIE_MEDIA.md`](./S31_PRIVATE_SELFIE_MEDIA.md) — Vercel Blob private + camera upload path.
 
 ## Protocol readiness matrix
 
@@ -33,7 +34,7 @@ S28 detail: [`S28_PRODUCTION_PERSISTENCE.md`](./S28_PRODUCTION_PERSISTENCE.md).
 | REAL PROFILE | `#profile-next-btn` → `POST /me/profile` | `GET/POST /me` | Engine + mirror (`ProtocolIdentity`) | none | **Durability GO (infra)** | Removed `data-go` skip | **PASS wire** / durable **GO (infra)** |
 | REAL RADAR | `radarActivate` + `candidatesToDots` | `/radar/*` | Presence ephemeral (Redis target) | `radar.changed` | Must re-activate | Ghost dots removed | **PASS alone=0** / geo hardcode remains |
 | REAL SIGNAL | send as self; receive via WS | `/signals` | Engine + mirror | `signal.received` | Durability IN PROGRESS | Sender no longer fakes incoming | **PASS wire** / Evidence Pack NOT STARTED |
-| REAL SELFIE A/B | own opaque `mediaId` only | `POST .../selfie` | Connection state only | `validation.updated` | Connection id | Peer impersonation gated to lab | **OPEN** (private media) |
+| REAL SELFIE A/B | camera → private upload → opaque `mediaId` | `POST .../media` + `POST .../selfie` + authorized `GET .../media/:id` | private Blob + Connection | `validation.updated` | Connection id | Peer impersonation gated to lab | **WIRED (infra)** / Evidence Pack **NOT STARTED** |
 | REAL MUTUAL | approve as initiator | `POST .../approve` | Connection | `validation.updated` | if durable | — | **PASS wire** |
 | REAL MISSION CHAT | `message` + WS + `GET .../messages` | messages + `mission.message` | Redis ephemeral target | `mission.message` | Durability IN PROGRESS | No fake chat states on product | **PASS wire** / durable IN PROGRESS |
 | REAL MISSION MODE | meet-now / lets-meet / finish | connection transitions | Connection | `mission.updated` | if durable | — | **PASS wire** |
@@ -57,11 +58,11 @@ S28 detail: [`S28_PRODUCTION_PERSISTENCE.md`](./S28_PRODUCTION_PERSISTENCE.md).
 | S28 | **GO (infra)** — Neon + Upstash; fail-closed; ready=prisma/redis/postgres; durability cert passed |
 | S29 | **PARTIAL wire** — Redis live; multi-phone Evidence Pack later |
 | S30 | **PARTIAL** — hardcoded Luxembourg coords remain |
-| S31 | **OPEN** — no private media storage provider in repo |
+| S31 | **WIRED (infra)** — `@wingman/media` + Vercel Blob private; Evidence Pack NOT STARTED |
 | S32–S34 | **QUEUED / BLOCKED** upstream |
 
 ## PRODUCT PROTOCOL READY
 
 **= NO**
 
-Two-phone Evidence Pack remains **NOT STARTED**. Private selfie media remains **OPEN**.
+Two-phone Evidence Pack remains **NOT STARTED**. Private selfie media is **WIRED (infra)** but not GREEN until field evidence.

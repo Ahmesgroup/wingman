@@ -274,6 +274,72 @@
       acceptSignal: function (id, opts) { return request('POST', '/signals/' + id + '/accept', {}, opts); },
 
       connection: function (id, opts) { return request('GET', '/connections/' + id, undefined, opts); },
+      uploadSelfieMedia: async function (id, blob, opts) {
+        opts = opts || {};
+        if (useMock) {
+          const err = new Error('MOCK_MODE');
+          err.code = 'MOCK_MODE';
+          throw err;
+        }
+        if (!baseUrl) {
+          const err = new Error('API base URL not configured');
+          err.code = 'API_UNCONFIGURED';
+          throw err;
+        }
+        const headers = { Accept: 'application/json' };
+        if (accessToken && !opts.forceDevHeader) {
+          headers.Authorization = 'Bearer ' + accessToken;
+          headers['x-device-id'] = deviceId;
+        } else if (preferDevHeader || opts.forceDevHeader) {
+          headers['x-user-id'] = opts.userId || userId || 'proto-alex';
+        } else {
+          const err = new Error('Not authenticated');
+          err.code = 'UNAUTHORIZED';
+          throw err;
+        }
+        const form = new FormData();
+        form.append('file', blob, 'selfie.jpg');
+        const res = await fetch(baseUrl + '/connections/' + id + '/media', {
+          method: 'POST',
+          headers: headers,
+          body: form,
+        });
+        const text = await res.text();
+        let data = null;
+        try { data = text ? JSON.parse(text) : null; } catch (_) { data = { raw: text }; }
+        if (!res.ok) {
+          const err = new Error((data && data.error && data.error.message) || res.statusText);
+          err.status = res.status;
+          err.body = data;
+          err.code = data && data.error && data.error.code;
+          throw err;
+        }
+        return data;
+      },
+      mediaUrl: function (id, mediaId) {
+        return baseUrl + '/connections/' + id + '/media/' + encodeURIComponent(mediaId);
+      },
+      fetchMediaBlob: async function (id, mediaId, opts) {
+        opts = opts || {};
+        if (!baseUrl) throw Object.assign(new Error('API base URL not configured'), { code: 'API_UNCONFIGURED' });
+        const headers = { Accept: 'image/*' };
+        if (accessToken && !opts.forceDevHeader) {
+          headers.Authorization = 'Bearer ' + accessToken;
+          headers['x-device-id'] = deviceId;
+        } else if (preferDevHeader || opts.forceDevHeader) {
+          headers['x-user-id'] = opts.userId || userId || 'proto-alex';
+        } else {
+          throw Object.assign(new Error('Not authenticated'), { code: 'UNAUTHORIZED' });
+        }
+        const res = await fetch(baseUrl + '/connections/' + id + '/media/' + encodeURIComponent(mediaId), {
+          method: 'GET',
+          headers: headers,
+        });
+        if (!res.ok) {
+          throw Object.assign(new Error('Media fetch failed'), { status: res.status, code: 'MEDIA_FETCH_FAILED' });
+        }
+        return res.blob();
+      },
       selfie: function (id, body, opts) { return request('POST', '/connections/' + id + '/selfie', body, opts); },
       approve: function (id, opts) { return request('POST', '/connections/' + id + '/approve', {}, opts); },
       meetNow: function (id, opts) { return request('POST', '/connections/' + id + '/meet-now', {}, opts); },

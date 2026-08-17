@@ -45,13 +45,124 @@ function allowPeerSim() {
   return Boolean(api && api.preferDevHeader && !api.productPath);
 }
 
-function opaqueMediaId() {
+/** @type {MediaStream | null} */
+let selfieStream = null;
+/** @type {string | null} */
+let peerPreviewUrl = null;
+
+function stopSelfieCamera() {
+  if (selfieStream) {
+    selfieStream.getTracks().forEach((t) => t.stop());
+    selfieStream = null;
+  }
+  const video = $('#selfie-video');
+  if (video) {
+    video.srcObject = null;
+    video.classList.remove('is-live');
+  }
+}
+
+function setSelfieCamError(msg) {
+  const el = $('#selfie-cam-error');
+  if (!el) return;
+  if (!msg) {
+    el.textContent = '';
+    el.classList.add('hidden');
+    return;
+  }
+  el.textContent = msg;
+  el.classList.remove('hidden');
+}
+
+async function startSelfieCamera() {
+  setSelfieCamError('');
+  const video = $('#selfie-video');
+  const preview = $('#selfie-preview');
+  if (preview) {
+    preview.classList.add('hidden');
+    preview.removeAttribute('src');
+  }
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    setSelfieCamError(state.lang === 'fr'
+      ? 'Caméra indisponible sur cet appareil.'
+      : 'Camera unavailable on this device.');
+    return false;
+  }
   try {
-    if (globalThis.crypto && typeof globalThis.crypto.randomUUID === 'function') {
-      return 'm_' + globalThis.crypto.randomUUID().replace(/-/g, '');
+    stopSelfieCamera();
+    selfieStream = await navigator.mediaDevices.getUserMedia({
+      audio: false,
+      video: { facingMode: { ideal: 'user' }, width: { ideal: 720 }, height: { ideal: 960 } },
+    });
+    if (video) {
+      video.srcObject = selfieStream;
+      video.classList.add('is-live');
+      await video.play().catch(() => {});
     }
-  } catch (_) { /* ignore */ }
-  return 'm_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+    return true;
+  } catch (e) {
+    const denied = e && (e.name === 'NotAllowedError' || e.name === 'PermissionDeniedError');
+    setSelfieCamError(denied
+      ? (state.lang === 'fr'
+        ? 'Permission caméra refusée. Autorisez la caméra pour envoyer un selfie — pas de galerie.'
+        : 'Camera permission denied. Allow the camera to send a selfie — gallery is blocked.')
+      : (state.lang === 'fr'
+        ? 'Impossible d’ouvrir la caméra.'
+        : 'Could not open the camera.'));
+    return false;
+  }
+}
+
+function captureSelfieBlob() {
+  const video = $('#selfie-video');
+  const canvas = $('#selfie-canvas');
+  if (!video || !canvas || !selfieStream) {
+    throw Object.assign(new Error('Camera not ready'), { code: 'CAMERA_NOT_READY' });
+  }
+  const w = video.videoWidth || 480;
+  const h = video.videoHeight || 640;
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw Object.assign(new Error('Canvas unavailable'), { code: 'CAMERA_NOT_READY' });
+  ctx.drawImage(video, 0, 0, w, h);
+  const stamp = $('#selfie-stamp');
+  if (stamp) {
+    ctx.fillStyle = 'rgba(0,0,0,0.45)';
+    ctx.fillRect(8, h - 28, Math.min(w - 16, 220), 20);
+    ctx.fillStyle = '#e8eefc';
+    ctx.font = '12px monospace';
+    ctx.fillText(stamp.textContent || new Date().toISOString(), 12, h - 14);
+  }
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (!blob) reject(Object.assign(new Error('Capture failed'), { code: 'CAPTURE_FAILED' }));
+      else resolve(blob);
+    }, 'image/jpeg', 0.85);
+  });
+}
+
+async function showPeerSelfieIfAny(conn) {
+  if (!liveApi() || !conn || !api) return;
+  const peerMediaId = state.meId === conn.initiatorId
+    ? conn.recipientSelfieMediaId
+    : conn.initiatorSelfieMediaId;
+  if (!peerMediaId) return;
+  try {
+    const blob = await api.fetchMediaBlob(state.connectionId, peerMediaId);
+    if (peerPreviewUrl) URL.revokeObjectURL(peerPreviewUrl);
+    peerPreviewUrl = URL.createObjectURL(blob);
+    const img = $('#selfie-preview');
+    const video = $('#selfie-video');
+    if (img) {
+      img.src = peerPreviewUrl;
+      img.classList.remove('hidden');
+    }
+    if (video) video.classList.add('hidden');
+    stopSelfieCamera();
+  } catch (_) {
+    /* stay blocking — do not invent peer media */
+  }
 }
 
 const SESSION_KEY = 'wingman_proto_session_v1';
@@ -350,7 +461,7 @@ const I18N = {
     send_signal: 'Send a Signal', close: 'Close',
     signal_sub: 'Signals received', signal_title: 'Someone wants to discover you', signal_body: 'Respond before it silently expires. No one is ever told they were declined.', open: 'Open', sig_expired: 'Expired — 2 min ago',
     signal_silent: 'No "decline" button exists. Silent expiration is the only failure signal.',
-    s_live: 'Liveness verified', s_stamp: 'Timestamped', s_gallery: 'Gallery blocked', s_send: 'Take & send selfie', s_letexpire: 'Let it expire', s_approve: 'Approve',
+    s_live: 'Live capture', s_stamp: 'Timestamped', s_gallery: 'Gallery blocked', s_send: 'Take & send selfie', s_letexpire: 'Let it expire', s_approve: 'Approve',
     s_note: 'The app blocks saving and sharing through its own interface; it cannot prevent every external capture.',
     confirmed: 'Connection confirmed',
     ticket_sub: 'Connection Ticket', ticket_badge: '🎟 Ticket active', ticket_title: "Can't meet right now?", ticket_body: 'Hold this opportunity — up to 2 hours on Free. No chat until you both open Mission Meet.', ticket_open: "I'm available now", ticket_later: 'Later',
@@ -414,7 +525,7 @@ const I18N = {
     send_signal: 'Envoyer un Signal', close: 'Fermer',
     signal_sub: 'Signaux reçus', signal_title: 'Quelqu\'un veut vous découvrir', signal_body: 'Répondez avant l\'expiration silencieuse. Personne n\'est jamais informé d\'un refus.', open: 'Ouvrir', sig_expired: 'Expiré — il y a 2 min',
     signal_silent: 'Aucun bouton « Refuser ». L\'expiration silencieuse est le seul signal d\'échec.',
-    s_live: 'Vivacité vérifiée', s_stamp: 'Horodaté', s_gallery: 'Galerie bloquée', s_send: 'Prendre & envoyer', s_letexpire: 'Laisser expirer', s_approve: 'Approuver',
+    s_live: 'Capture live', s_stamp: 'Horodaté', s_gallery: 'Galerie bloquée', s_send: 'Prendre & envoyer', s_letexpire: 'Laisser expirer', s_approve: 'Approuver',
     s_note: 'L\'app empêche l\'enregistrement et le partage via ses propres interfaces ; elle ne peut empêcher toute capture externe.',
     confirmed: 'Connexion confirmée',
     ticket_sub: 'Connection Ticket', ticket_badge: '🎟 Ticket actif', ticket_title: 'Pas dispo maintenant ?', ticket_body: 'Gardez cette opportunité — jusqu\'à 2 h en Gratuit. Pas de chat avant d\'ouvrir Mission Meet à deux.', ticket_open: 'Je suis dispo', ticket_later: 'Plus tard',
@@ -844,10 +955,13 @@ function onEnter(id) {
     $('#selfie-validate').classList.add('hidden'); $('#selfie-send').classList.remove('hidden');
     const stamp = $('#selfie-stamp');
     const now = new Date();
-    stamp.textContent = `2026-07-10 · ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+    stamp.textContent = `${now.toISOString().slice(0, 10)} · ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
     if (stopSelfie) stopSelfie();
     stopSelfie = makeTimer({ durationSec: 300, textEl: $('#selfie-timer'), barEl: $('#selfie-bar'),
-      onExpire: () => { feedback('busy', state.lang === 'fr' ? 'Expiré silencieusement' : 'Silently expired'); show('v-radar'); } });
+      onExpire: () => { stopSelfieCamera(); feedback('busy', state.lang === 'fr' ? 'Expiré silencieusement' : 'Silently expired'); show('v-radar'); } });
+    void startSelfieCamera();
+  } else {
+    stopSelfieCamera();
   }
   if (id === 'v-confirmed') {
     setPhase('match', t('t_phase_match'));
@@ -901,6 +1015,7 @@ async function refreshConnectionUi() {
   if (st === 'WAITING_FOR_INITIATOR_APPROVAL' || st === 'MUTUALLY_VALIDATED') {
     $('#selfie-send').classList.add('hidden');
     $('#selfie-validate').classList.remove('hidden');
+    void showPeerSelfieIfAny(conn);
   }
   if (st === 'MUTUALLY_VALIDATED' && state.viewId === 'v-selfie') {
     show('v-confirmed');
@@ -908,29 +1023,56 @@ async function refreshConnectionUi() {
   return conn;
 }
 
-/* selfie send — own side only; opaque mediaId (no peer impersonation) */
+/* selfie send — camera capture → private upload → opaque mediaId (no peer impersonation on product path) */
 $('#selfie-send').addEventListener('click', async () => {
   if (state.busy) return;
   if (liveApi() && state.connectionId) {
     try {
       await withLoading(t('t_selfie'), async () => {
-        const mediaId = opaqueMediaId();
-        await api.selfie(state.connectionId, { mediaId: mediaId });
-        if (allowPeerSim() && state.peerId) {
-          await api.selfie(state.connectionId, { mediaId: opaqueMediaId() }, { userId: state.peerId });
+        const camOk = selfieStream || await startSelfieCamera();
+        if (!camOk) {
+          feedback('busy', state.lang === 'fr' ? 'Caméra requise' : 'Camera required');
+          throw Object.assign(new Error('Camera required'), { code: 'CAMERA_DENIED' });
         }
+        let blob;
+        try {
+          blob = await captureSelfieBlob();
+        } catch (e) {
+          feedback('busy', state.lang === 'fr' ? 'Capture impossible' : 'Capture failed');
+          throw e;
+        }
+        let uploaded;
+        try {
+          uploaded = await api.uploadSelfieMedia(state.connectionId, blob);
+        } catch (e) {
+          const slow = e && (e.code === 'API_UNCONFIGURED' || e.status === 408 || e.status >= 500);
+          feedback('busy', slow
+            ? (state.lang === 'fr' ? 'Réseau lent — réessayez' : 'Slow network — try again')
+            : (state.lang === 'fr' ? 'Envoi selfie échoué' : 'Selfie upload failed'));
+          throw e;
+        }
+        if (!uploaded || !uploaded.mediaId) {
+          feedback('busy', state.lang === 'fr' ? 'Media opaque manquant' : 'Opaque media missing');
+          throw Object.assign(new Error('No mediaId'), { code: 'MEDIA_MISSING' });
+        }
+        await api.selfie(state.connectionId, { mediaId: uploaded.mediaId });
+        if (allowPeerSim() && state.peerId) {
+          // Lab-only: peer also must upload real bytes — tiny JPEG, never forged protocol mediaId alone.
+          const peerBlob = new Blob([new Uint8Array([0xff, 0xd8, 0xff, 0xd9])], { type: 'image/jpeg' });
+          const peerUp = await api.uploadSelfieMedia(state.connectionId, peerBlob, { userId: state.peerId });
+          await api.selfie(state.connectionId, { mediaId: peerUp.mediaId }, { userId: state.peerId });
+        }
+        stopSelfieCamera();
         await refreshConnectionUi();
       });
     } catch (_) { return; }
   } else if (api && api.productPath) {
     feedback('busy', t('t_api_unreachable'));
     return;
-  }
-  setPhase('validation', t('t_phase_validation'));
-  feedback('busy', t('t_validation'));
-  if (!liveApi()) {
-    $('#selfie-send').classList.add('hidden');
-    $('#selfie-validate').classList.remove('hidden');
+  } else {
+    // Offline / non-live: stay honest — do not invent a sent selfie on the product path.
+    feedback('busy', state.lang === 'fr' ? 'API requise pour le selfie' : 'API required for selfie');
+    return;
   }
 });
 

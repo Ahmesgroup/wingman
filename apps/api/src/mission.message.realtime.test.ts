@@ -61,8 +61,11 @@ describe("mission.message realtime", () => {
       const accept = await request(server).post(`/signals/${signalId}/accept`).set("x-user-id", "b").expect(201);
       const connectionId = accept.body.connection.id;
 
-      await request(server).post(`/connections/${connectionId}/selfie`).set("x-user-id", "a").send({ mediaId: "ma" }).expect(201);
-      await request(server).post(`/connections/${connectionId}/selfie`).set("x-user-id", "b").send({ mediaId: "mb" }).expect(201);
+      const { uploadSelfieMedia } = await import("./testing/selfie-media.js");
+      const mediaA = await uploadSelfieMedia(server, connectionId, "a");
+      const mediaB = await uploadSelfieMedia(server, connectionId, "b");
+      await request(server).post(`/connections/${connectionId}/selfie`).set("x-user-id", "a").send({ mediaId: mediaA }).expect(201);
+      await request(server).post(`/connections/${connectionId}/selfie`).set("x-user-id", "b").send({ mediaId: mediaB }).expect(201);
       await request(server).post(`/connections/${connectionId}/approve`).set("x-user-id", "a").expect(201);
       await request(server).post(`/connections/${connectionId}/meet-now`).set("x-user-id", "a").expect(201);
 

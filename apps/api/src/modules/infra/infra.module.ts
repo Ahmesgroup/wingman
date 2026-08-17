@@ -24,6 +24,7 @@ import {
   type OtpVerificationProvider,
   type SmsProvider,
 } from "@wingman/providers";
+import { createMediaStoreFromEnv, MemoryMediaStore, type MediaStore } from "@wingman/media";
 import type { WingmanEngine } from "@wingman/domain";
 import { LOGGER, METRICS } from "../../common/observability.interceptor.js";
 import { WINGMAN_ENGINE } from "../../engine/engine.tokens.js";
@@ -33,6 +34,7 @@ import {
   AUTH_SERVICE_TOKEN,
   DEVICE_TOKEN_STORE,
   EPHEMERAL_STORE,
+  MEDIA_STORE,
   NOTIFICATION_ORCH,
   OTP_DELIVERY,
   PRISMA_CLIENT,
@@ -51,6 +53,7 @@ export type InfraOptions = {
   prisma?: PrismaClient;
   sms?: SmsProvider;
   deviceTokens?: DeviceTokenStore;
+  media?: MediaStore;
   /** When true, skip OnModuleInit hydrate (tests that inject pre-seeded engines). */
   skipHydrate?: boolean;
 };
@@ -107,6 +110,39 @@ function buildSms(): SmsProvider {
       }),
     );
     return new ConsoleSmsProvider();
+  }
+}
+
+function buildMedia(): MediaStore {
+  if (sharedInfra.media) return sharedInfra.media;
+  if (isPublicProd()) {
+    const token = (process.env.MEDIA_BLOB_READ_WRITE_TOKEN ?? process.env.BLOB_READ_WRITE_TOKEN ?? "").trim();
+    const provider = (process.env.MEDIA_PROVIDER ?? "").trim().toLowerCase();
+    if (!token || (provider && provider !== "vercel_blob")) {
+      throw new Error(
+        "Private selfie media required in public production: set MEDIA_PROVIDER=vercel_blob and BLOB_READ_WRITE_TOKEN (or MEDIA_BLOB_READ_WRITE_TOKEN)",
+      );
+    }
+    process.env.MEDIA_PROVIDER = "vercel_blob";
+  }
+  try {
+    return createMediaStoreFromEnv();
+  } catch (e) {
+    if (isPublicProd()) {
+      throw new Error(
+        `Media store unavailable in public production (no memory fallback): ${
+          e instanceof Error ? e.message : String(e)
+        }`,
+      );
+    }
+    console.error(
+      JSON.stringify({
+        level: "error",
+        msg: "media.provider_config_fallback_memory",
+        error: e instanceof Error ? e.message : String(e),
+      }),
+    );
+    return new MemoryMediaStore();
   }
 }
 
@@ -206,6 +242,10 @@ function buildProtocolRepo(): Promise<{ repo: ProtocolRepository; prisma: Prisma
       useFactory: () => buildSms(),
     },
     {
+      provide: MEDIA_STORE,
+      useFactory: () => buildMedia(),
+    },
+    {
       provide: OTP_DELIVERY,
       useFactory: (auth: AuthService, sms: SmsProvider) =>
         new OtpDeliveryService(auth, sms, buildOtpVerification()),
@@ -244,6 +284,7 @@ function buildProtocolRepo(): Promise<{ repo: ProtocolRepository; prisma: Prisma
     AUTH_SERVICE_TOKEN,
     DEVICE_TOKEN_STORE,
     SMS_PROVIDER,
+    MEDIA_STORE,
     OTP_DELIVERY,
     NOTIFICATION_ORCH,
     PROTOCOL_REPO,

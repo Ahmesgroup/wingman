@@ -5,8 +5,9 @@
 **Active track:** [`LIVE_FIELD_TEST.md`](./LIVE_FIELD_TEST.md) — S27–S34 protocol productionization  
 **Protocol matrix:** [`PROTOCOL_READINESS.md`](./PROTOCOL_READINESS.md) · Evidence: [`EVIDENCE_PACK_TWO_PHONE.md`](./EVIDENCE_PACK_TWO_PHONE.md)  
 **PRODUCT PROTOCOL READY:** **NO** (2026-08-17)  
-**Locked status:** Protocol wiring **improved** · Production durability **GO (infra)** · Private selfie media **OPEN** · Two-phone Evidence Pack **NOT STARTED / BLOCKED**  
+**Locked status:** Protocol wiring **improved** · Production durability **GO (infra)** · Private selfie media **WIRED (infra)** · Two-phone Evidence Pack **NOT STARTED / BLOCKED**  
 **S28:** [`S28_PRODUCTION_PERSISTENCE.md`](./S28_PRODUCTION_PERSISTENCE.md) — Neon + Upstash live; `/internal/ready` = prisma/redis/postgres; durability cert passed  
+**S31:** [`S31_PRIVATE_SELFIE_MEDIA.md`](./S31_PRIVATE_SELFIE_MEDIA.md) — Vercel Blob private + camera→upload→opaque id; Evidence Pack still open  
 **Related:** [`S26_MEASUREMENT.md`](./S26_MEASUREMENT.md), [`CLIENT_MOBILE_PAYMENT_READINESS.md`](./CLIENT_MOBILE_PAYMENT_READINESS.md), [`FIELD_TEST.md`](./FIELD_TEST.md)
 
 ```text
@@ -38,7 +39,7 @@ S27B Production SMS OTP                        OPEN (Twilio Verify; evidence lat
 S28  Production Persistence Certification      GO (infra)
 S29  Real Multi-user Realtime                  PARTIAL wire
 S30  Real Radar & Geo Field Test               PARTIAL (alone=0; hardcode geo remains)
-S31  Real Selfie Exchange                      OPEN (no private media store)
+S31  Real Selfie Exchange                      WIRED (infra) — Evidence Pack NOT STARTED
 S32  Push & Closed-app Protocol                QUEUED
 S33  Safety & Field-test Controls              QUEUED
 S34  Live Field Test Certification             QUEUED

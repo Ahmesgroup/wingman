@@ -24,7 +24,7 @@
 | 4. Redeploy | **DONE** |
 | 5. Durability scenario | **DONE** — marker identity+connection survived Production redeploy (`scripts/s28-durability-cert.mjs`) |
 | 6. Human A/B Evidence Pack | **NOT STARTED** |
-| 7. Private selfie media | **OPEN** (no storage provider package in repo) |
+| 7. Private selfie media | **WIRED (infra)** — Vercel Blob private `wingman-selfies` (cdg1); Evidence Pack open |
 
 ## Provisioned (2026-08-17)
 

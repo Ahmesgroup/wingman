@@ -7,3 +7,4 @@ export const PRISMA_CLIENT = Symbol("PRISMA_CLIENT");
 export const SMS_PROVIDER = Symbol("SMS_PROVIDER");
 export const OTP_DELIVERY = Symbol("OTP_DELIVERY");
 export const DEVICE_TOKEN_STORE = Symbol("DEVICE_TOKEN_STORE");
+export const MEDIA_STORE = Symbol("MEDIA_STORE");

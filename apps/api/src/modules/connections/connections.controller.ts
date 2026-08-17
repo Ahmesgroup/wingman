@@ -1,12 +1,27 @@
-import { Body, Controller, Get, Inject, Injectable, Optional, Param, Post } from "@nestjs/common";
-import { DomainError, type WingmanEngine } from "@wingman/domain";
+import {
+  Body,
+  Controller,
+  Get,
+  Header,
+  Inject,
+  Injectable,
+  Optional,
+  Param,
+  Post,
+  StreamableFile,
+  UploadedFile,
+  UseInterceptors,
+} from "@nestjs/common";
+import { FileInterceptor } from "@nestjs/platform-express";
+import { DomainError, WINDOWS_MS, type WingmanEngine } from "@wingman/domain";
 import { MissionMessageSchema, OutcomeSchema, SelfieSchema } from "@wingman/contracts";
+import type { MediaStore } from "@wingman/media";
 import type { NotificationOrchestrator } from "@wingman/notifications";
 import type { ProtocolPersistenceMirror } from "@wingman/persistence";
 import { CurrentUser } from "../../common/auth.js";
 import { ZodValidationPipe } from "../../common/zod-validation.pipe.js";
 import { WINGMAN_ENGINE } from "../../engine/engine.tokens.js";
-import { NOTIFICATION_ORCH, PROTOCOL_MIRROR } from "../infra/infra.tokens.js";
+import { MEDIA_STORE, NOTIFICATION_ORCH, PROTOCOL_MIRROR } from "../infra/infra.tokens.js";
 import { RealtimeAppService } from "../realtime/realtime-app.service.js";
 import { MeasurementGate } from "../measurement/measurement.module.js";
 
@@ -20,6 +35,7 @@ export class ConnectionsService {
     @Inject(WINGMAN_ENGINE) private readonly engine: WingmanEngine,
     @Inject(NOTIFICATION_ORCH) private readonly notifications: NotificationOrchestrator,
     @Inject(PROTOCOL_MIRROR) private readonly mirror: ProtocolPersistenceMirror,
+    @Inject(MEDIA_STORE) private readonly media: MediaStore,
     private readonly realtime: RealtimeAppService,
     @Optional() private readonly measurement?: MeasurementGate,
   ) {}
@@ -28,6 +44,63 @@ export class ConnectionsService {
     const connection = this.engine.connections.get(id);
     if (!connection) throw new DomainError("CONNECTION_NOT_FOUND", "Not found");
     return { connection, serverTime: this.engine.clock.now().toISOString() };
+  }
+
+  private requireParticipant(id: string, userId: string) {
+    const c = this.engine.connections.get(id);
+    if (!c) throw new DomainError("CONNECTION_NOT_FOUND", "Not found");
+    if (userId !== c.initiatorId && userId !== c.recipientId) {
+      throw new DomainError("NOT_FOUND", "Not a participant");
+    }
+    return c;
+  }
+
+  async uploadMedia(id: string, userId: string, file: { buffer: Buffer; mimetype?: string; size: number }) {
+    const c = this.requireParticipant(id, userId);
+    if (!file?.buffer?.length) {
+      throw new DomainError("VALIDATION_REQUIRED", "Selfie file required");
+    }
+    const contentType = (file.mimetype || "application/octet-stream").split(";")[0]!.trim().toLowerCase();
+    try {
+      const meta = await this.media.put({
+        connectionId: id,
+        uploaderId: userId,
+        contentType,
+        body: new Uint8Array(file.buffer),
+        expiresAt: c.expiresAt ?? new Date(Date.now() + WINDOWS_MS.SELFIE),
+      });
+      return {
+        mediaId: meta.mediaId,
+        contentType: meta.contentType,
+        byteLength: meta.byteLength,
+        expiresAt: meta.expiresAt.toISOString(),
+      };
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      if (msg.startsWith("UNSUPPORTED_MEDIA_TYPE")) {
+        throw new DomainError("VALIDATION_REQUIRED", "Unsupported media type", { contentType });
+      }
+      if (msg.startsWith("MEDIA_SIZE_INVALID")) {
+        throw new DomainError("VALIDATION_REQUIRED", "Media size invalid");
+      }
+      throw e;
+    }
+  }
+
+  async getMedia(id: string, userId: string, mediaId: string) {
+    const c = this.requireParticipant(id, userId);
+    const bytes = await this.media.getBytes(mediaId);
+    if (!bytes || bytes.meta.connectionId !== id) {
+      throw new DomainError("NOT_FOUND", "Media not found");
+    }
+    const isUploader = bytes.meta.uploaderId === userId;
+    const bound =
+      c.initiatorSelfieMediaId === mediaId || c.recipientSelfieMediaId === mediaId;
+    // Own upload may be previewed; peer access only after opaque id is bound on Connection.
+    if (!isUploader && !bound) {
+      throw new DomainError("NOT_FOUND", "Media not found");
+    }
+    return bytes;
   }
 
   private async publishConnection(connection: { id: string; initiatorId: string; recipientId: string; state: string }, type: "validation.updated" | "mission.updated" | "connection.closed") {
@@ -47,6 +120,10 @@ export class ConnectionsService {
   async selfie(id: string, userId: string, mediaId: string) {
     const c = this.engine.connections.get(id);
     if (!c) throw new DomainError("CONNECTION_NOT_FOUND", "Not found");
+    const meta = await this.media.getMeta(mediaId);
+    if (!meta || meta.connectionId !== id || meta.uploaderId !== userId) {
+      throw new DomainError("NOT_FOUND", "Opaque mediaId not registered for this connection uploader");
+    }
     const event = userId === c.initiatorId ? "initiator_selfie" : "recipient_selfie";
     const connection = this.engine.applyConnection(id, event, userId, { mediaId });
     await this.mirror.mirrorConnection(id);
@@ -119,6 +196,13 @@ export class ConnectionsService {
         });
       }
       safeNotify(this.notifications);
+    }
+    if (closed) {
+      try {
+        await this.media.deleteByConnection(id);
+      } catch {
+        /* purge best-effort; lifecycle backstop remains */
+      }
     }
     await this.publishConnection(connection, closed ? "connection.closed" : "mission.updated");
     return connection;
@@ -202,6 +286,32 @@ export class ConnectionsController {
     return this.connections.get(id);
   }
 
+  @Post(":id/media")
+  @UseInterceptors(FileInterceptor("file", { limits: { fileSize: 2_500_000 } }))
+  async uploadMedia(
+    @CurrentUser() userId: string,
+    @Param("id") id: string,
+    @UploadedFile() file: Express.Multer.File | undefined,
+  ) {
+    if (!file) throw new DomainError("VALIDATION_REQUIRED", "Selfie file required");
+    return this.connections.uploadMedia(id, userId, file);
+  }
+
+  @Get(":id/media/:mediaId")
+  @Header("Cache-Control", "no-store, private")
+  @Header("Content-Disposition", "inline")
+  async getMedia(
+    @CurrentUser() userId: string,
+    @Param("id") id: string,
+    @Param("mediaId") mediaId: string,
+  ): Promise<StreamableFile> {
+    const bytes = await this.connections.getMedia(id, userId, mediaId);
+    return new StreamableFile(Buffer.from(bytes.body), {
+      type: bytes.meta.contentType,
+      disposition: "inline",
+    });
+  }
+
   @Post(":id/selfie")
   async selfie(
     @CurrentUser() userId: string,
@@ -249,7 +359,7 @@ export class ConnectionsController {
 
   @Post(":id/not-this-time")
   async notThisTime(@CurrentUser() userId: string, @Param("id") id: string) {
-    return { connection: await this.connections.apply(id, "not_this_time", userId) };
+    return { connection: await this.connections.apply(id, "not_this-time", userId) };
   }
 
   @Post(":id/messages")

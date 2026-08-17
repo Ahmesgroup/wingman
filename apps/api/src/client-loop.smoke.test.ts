@@ -56,15 +56,18 @@ describe("client loop smoke (prototype path)", () => {
     const connectionId = accept.body.connection.id as string;
     expect(accept.body.connection.state).toBe("WAITING_FOR_INITIATOR_SELFIE");
 
+    const { uploadSelfieMedia } = await import("./testing/selfie-media.js");
+    const mediaMe = await uploadSelfieMedia(server, connectionId, ME);
+    const mediaPeer = await uploadSelfieMedia(server, connectionId, PEER);
     await request(server)
       .post(`/connections/${connectionId}/selfie`)
       .set("x-user-id", ME)
-      .send({ mediaId: `media-${ME}` })
+      .send({ mediaId: mediaMe })
       .expect(201);
     await request(server)
       .post(`/connections/${connectionId}/selfie`)
       .set("x-user-id", PEER)
-      .send({ mediaId: `media-${PEER}` })
+      .send({ mediaId: mediaPeer })
       .expect(201);
     await request(server).post(`/connections/${connectionId}/approve`).set("x-user-id", ME).expect(201);
 

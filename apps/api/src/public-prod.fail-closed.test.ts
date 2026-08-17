@@ -9,6 +9,9 @@ describe("S28 public production fail-closed", () => {
     delete process.env.POSTGRES_PRISMA_URL;
     delete process.env.REDIS_URL;
     delete process.env.OTP_PROVIDER;
+    delete process.env.BLOB_READ_WRITE_TOKEN;
+    delete process.env.MEDIA_BLOB_READ_WRITE_TOKEN;
+    delete process.env.MEDIA_PROVIDER;
     setInfraOverrides({});
   });
 
@@ -31,6 +34,20 @@ describe("S28 public production fail-closed", () => {
     setInfraOverrides({});
     await expect(createNestApp({})).rejects.toThrow(
       /DATABASE_URL|POSTGRES_PRISMA_URL|REDIS_URL|public production|ECONNREFUSED|unreachable/i,
+    );
+  });
+
+  it("refuses memory media when blob token missing under WINGMAN_PUBLIC_PROD", async () => {
+    process.env.WINGMAN_PUBLIC_PROD = "true";
+    process.env.DATABASE_URL = "postgresql://invalid:invalid@127.0.0.1:1/wingman";
+    process.env.REDIS_URL = "redis://127.0.0.1:1";
+    delete process.env.BLOB_READ_WRITE_TOKEN;
+    delete process.env.MEDIA_BLOB_READ_WRITE_TOKEN;
+    delete process.env.MEDIA_PROVIDER;
+    delete process.env.OTP_PROVIDER;
+    setInfraOverrides({});
+    await expect(createNestApp({})).rejects.toThrow(
+      /media|BLOB_READ_WRITE_TOKEN|REDIS_URL|DATABASE_URL|public production|ECONNREFUSED|unreachable/i,
     );
   });
 });

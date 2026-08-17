@@ -139,15 +139,18 @@ describe("S20 G1 multi-instance certification", () => {
       .set("x-user-id", "b")
       .expect(201);
     const connectionId = accept.body.connection.id as string;
+    const { uploadSelfieMedia } = await import("./testing/selfie-media.js");
+    const mediaA = await uploadSelfieMedia(server, connectionId, "a");
+    const mediaB = await uploadSelfieMedia(server, connectionId, "b");
     await request(server)
       .post(`/connections/${connectionId}/selfie`)
       .set("x-user-id", "a")
-      .send({ mediaId: "ma" })
+      .send({ mediaId: mediaA })
       .expect(201);
     await request(server)
       .post(`/connections/${connectionId}/selfie`)
       .set("x-user-id", "b")
-      .send({ mediaId: "mb" })
+      .send({ mediaId: mediaB })
       .expect(201);
     await request(server).post(`/connections/${connectionId}/approve`).set("x-user-id", "a").expect(201);
     await request(server).post(`/connections/${connectionId}/meet-now`).set("x-user-id", "a").expect(201);

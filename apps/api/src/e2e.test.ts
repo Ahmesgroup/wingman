@@ -3,6 +3,7 @@ import request from "supertest";
 import { FakeClock, WingmanEngine, WINDOWS_MS } from "@wingman/domain";
 import { MemoryEphemeralStore } from "@wingman/ephemeral";
 import { createNestApp } from "./testing/create-nest-app.js";
+import { uploadSelfieMedia } from "./testing/selfie-media.js";
 
 describe("Nest API e2e protocol", () => {
   it("completes loop over HTTP without frontend", async () => {
@@ -47,15 +48,17 @@ describe("Nest API e2e protocol", () => {
     const accept = await request(server).post(`/signals/${signalId}/accept`).set("x-user-id", "b").expect(201);
     const connectionId = accept.body.connection.id;
 
+    const mediaA = await uploadSelfieMedia(server, connectionId, "a");
+    const mediaB = await uploadSelfieMedia(server, connectionId, "b");
     await request(server)
       .post(`/connections/${connectionId}/selfie`)
       .set("x-user-id", "a")
-      .send({ mediaId: "ma" })
+      .send({ mediaId: mediaA })
       .expect(201);
     await request(server)
       .post(`/connections/${connectionId}/selfie`)
       .set("x-user-id", "b")
-      .send({ mediaId: "mb" })
+      .send({ mediaId: mediaB })
       .expect(201);
     await request(server).post(`/connections/${connectionId}/approve`).set("x-user-id", "a").expect(201);
     await request(server).post(`/connections/${connectionId}/meet-now`).set("x-user-id", "a").expect(201);

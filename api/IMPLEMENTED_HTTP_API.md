@@ -46,7 +46,9 @@ This document lists **routes that exist in code today**. Product API docs under 
 | POST | `/signals/:id/cancel` | Sender |
 | POST | `/signals/:id/accept` | Creates Connection + locks |
 | GET | `/connections/:id` | `{ connection, serverTime }` |
-| POST | `/connections/:id/selfie` | `{ mediaId }` opaque only |
+| POST | `/connections/:id/media` | multipart `file` → private store → `{ mediaId, contentType, byteLength, expiresAt }` |
+| GET | `/connections/:id/media/:mediaId` | Authorized stream (`Cache-Control: no-store, private`); peer only after bind |
+| POST | `/connections/:id/selfie` | `{ mediaId }` opaque only — must be registered upload for actor |
 | POST | `/connections/:id/approve` | Initiator → `MUTUALLY_VALIDATED` |
 | POST | `/connections/:id/meet-now` | → `MISSION_MEET_ACTIVE` |
 | POST | `/connections/:id/ticket` | Hold ticket |

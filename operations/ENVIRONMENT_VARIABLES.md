@@ -18,6 +18,16 @@ secret store, never committed; peppers/keys rotate via versioning.
 
 See [`S28_PRODUCTION_PERSISTENCE.md`](./S28_PRODUCTION_PERSISTENCE.md).
 
+## Media / selfies (S31)
+
+| Variable | Default | Notes |
+|----------|---------|-------|
+| `MEDIA_PROVIDER` | `memory` (local) | `memory` \| `vercel_blob`. Public prod requires `vercel_blob`. |
+| `BLOB_READ_WRITE_TOKEN` | unset | Vercel Blob RW token (private store) |
+| `MEDIA_BLOB_READ_WRITE_TOKEN` | unset | Optional alias for `BLOB_READ_WRITE_TOKEN` |
+
+See [`S31_PRIVATE_SELFIE_MEDIA.md`](./S31_PRIVATE_SELFIE_MEDIA.md).
+
 ## Payments (fail-closed defaults)
 
 | Variable | Default | Notes |

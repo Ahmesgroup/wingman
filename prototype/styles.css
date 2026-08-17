@@ -469,8 +469,11 @@ body.field-test .phase-strip[data-phase="offline"]{display:none!important}
 .selfie-stage{background:#04060d;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center}
 .timer-text{font-family:var(--font-display);font-size:34px;font-weight:700;letter-spacing:1px}
 .selfie-frame{width:220px;height:260px;border-radius:var(--r-card);background:linear-gradient(160deg,#141b33,#0c1122);border:1px solid var(--map-border);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;margin:18px 0;position:relative;overflow:hidden}
-.selfie-frame .cam{width:52px;height:52px;stroke:var(--air);fill:none;stroke-width:1.6}
-.selfie-frame .stamp{position:absolute;bottom:10px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--air);opacity:.85}
+.selfie-frame .cam{width:52px;height:52px;stroke:var(--air);fill:none;stroke-width:1.6;z-index:1}
+.selfie-frame .stamp{position:absolute;bottom:10px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--air);opacity:.85;z-index:2}
+.selfie-video,.selfie-preview{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1);z-index:0}
+.selfie-video.is-live ~ .cam,.selfie-preview:not(.hidden) ~ .cam{opacity:0}
+#selfie-cam-error{max-width:320px;color:#f0a0a0;text-align:center}
 .selfie-badges{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:16px}
 .badge{font-size:11px;padding:5px 10px;border-radius:999px;display:flex;align-items:center;gap:5px}
 .badge.ok{background:rgba(64,211,156,.12);color:var(--success)}
