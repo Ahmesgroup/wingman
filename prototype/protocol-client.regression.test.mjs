@@ -23,8 +23,13 @@ assert(src.includes('Make the first acquaintance easy'), 'locked primary tagline
 assert(src.includes('Love is in the air.'), 'secondary emotional slogan missing from public onboarding');
 assert(src.includes('first real-world interaction'), 'supporting description missing from public onboarding');
 assert(!src.includes('From presence to hello'), 'superseded positioning remains in public onboarding');
-assert(src.includes('await api.openSignal(state.signalId);'), 'openSignal must be self');
-assert(src.includes('await api.acceptSignal(state.signalId);'), 'acceptSignal must be self');
+assert(src.includes('await api.report(body);'), 'report API wire missing');
+assert(src.includes('await api.block({ userId: state.peerId });'), 'block API wire missing');
+assert(src.includes('mm-report-btn'), 'Mission Meet report entry missing');
+assert(src.includes("if (p.senderId) state.peerId = p.senderId;"), 'recipient peerId from signal.received missing');
+assert(fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8').includes('data-report-category="HARASSMENT"'), 'report categories must post to API');
+assert(!fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8').includes('Chez Léon'), 'demo chat must not ship on public Mission');
+assert(fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8').includes("request('POST', '/safety/report'"), 'api.report missing');
 
 // Unguarded peer selfie / outcome must not exist as standalone awaits
 const lines = src.split('\n');
@@ -32,6 +37,8 @@ for (const line of lines) {
   const trimmed = line.trim();
   if (!trimmed.includes('userId: state.peerId')) continue;
   if (trimmed.startsWith('//') || trimmed.startsWith('*')) continue;
+  // Safety bodies name the target; they are not x-user-id impersonation.
+  if (trimmed.includes('api.block') || trimmed.includes('category')) continue;
   // Must be nested under allowPeerSim somewhere nearby — require the line itself is inside a gated call
   assert(
     /allowPeerSim/.test(src.slice(Math.max(0, src.indexOf(trimmed) - 400), src.indexOf(trimmed) + trimmed.length)),

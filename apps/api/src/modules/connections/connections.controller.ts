@@ -208,6 +208,7 @@ export class ConnectionsService {
   }
 
   async message(id: string, userId: string, text: string) {
+    this.requireParticipant(id, userId);
     const message = this.engine.postMissionMessage(id, userId, text);
     const c = this.engine.connections.get(id);
     if (c) {

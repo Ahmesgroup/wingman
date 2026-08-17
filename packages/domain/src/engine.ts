@@ -448,6 +448,9 @@ export class WingmanEngine {
 
   postMissionMessage(connectionId: string, senderId: string, text: string) {
     const c = this.requireConnection(connectionId);
+    if (senderId !== c.initiatorId && senderId !== c.recipientId) {
+      throw new DomainError("NOT_FOUND", "Not a participant");
+    }
     if (c.state !== "MISSION_MEET_ACTIVE" && c.state !== "MISSION_CONFIRMED") {
       throw new DomainError("FORBIDDEN_TRANSITION", "Mission chat not active");
     }

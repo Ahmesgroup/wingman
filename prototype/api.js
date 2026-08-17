@@ -382,6 +382,7 @@
       outcome: function (id, body, opts) { return request('POST', '/connections/' + id + '/outcome', body, opts); },
       cooldownSkip: function (id, opts) { return request('POST', '/connections/' + id + '/cooldown/skip', {}, opts); },
       block: function (body, opts) { return request('POST', '/safety/block', body, opts); },
+      report: function (body, opts) { return request('POST', '/safety/report', body, opts); },
     };
   }
 

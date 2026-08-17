@@ -1354,6 +1354,9 @@ async function refreshConnectionUi() {
   const conn = c && c.connection;
   if (!conn) return null;
   state.connectionState = conn.state;
+  if (conn.initiatorId && conn.recipientId) {
+    state.peerId = state.meId === conn.initiatorId ? conn.recipientId : conn.initiatorId;
+  }
   if (realtime) realtime.subscribeConnection(state.connectionId);
   const st = conn.state;
   if (st === 'WAITING_FOR_INITIATOR_APPROVAL' || st === 'MUTUALLY_VALIDATED') {
@@ -1447,6 +1450,10 @@ $('#open-signal-btn').addEventListener('click', async () => {
         const accept = await api.acceptSignal(state.signalId);
         state.connectionId = accept.connection && accept.connection.id;
         state.connectionState = accept.connection && accept.connection.state;
+        if (accept.connection) {
+          const conn = accept.connection;
+          state.peerId = state.meId === conn.initiatorId ? conn.recipientId : conn.initiatorId;
+        }
         if (realtime && state.connectionId) realtime.subscribeConnection(state.connectionId);
       });
     } catch (_) { return; }
@@ -1514,6 +1521,50 @@ $('#mm-not-btn').addEventListener('click', async () => {
     } catch (_) { return; }
   }
   show('v-outcome');
+});
+
+function hasLivePeer() {
+  return Boolean(state.peerId && state.peerId !== 'proto-peer' && state.peerId !== state.meId);
+}
+
+$('#mm-report-btn') && $('#mm-report-btn').addEventListener('click', () => {
+  if (!hasLivePeer() && api && api.productPath) {
+    feedback('busy', t('t_api_unreachable'));
+    return;
+  }
+  show('v-report');
+});
+
+document.querySelectorAll('#v-report [data-report-category]').forEach((btn) => {
+  btn.addEventListener('click', async () => {
+    if (state.busy) return;
+    const category = btn.getAttribute('data-report-category');
+    if (!category) return;
+    if (!liveApi() || !hasLivePeer()) {
+      if (api && api.productPath) {
+        feedback('busy', t('t_api_unreachable'));
+        return;
+      }
+      show('v-report-done');
+      return;
+    }
+    try {
+      await withLoading(t('t_loading'), async () => {
+        const body = { userId: state.peerId, category };
+        if (state.connectionId) body.connectionId = state.connectionId;
+        await api.report(body);
+        await api.block({ userId: state.peerId });
+      });
+      state.signalId = null;
+      state.connectionId = null;
+      state.connectionState = null;
+      state.hasIncomingSignal = false;
+      syncSignalEmpty();
+      show('v-report-done');
+    } catch (_) {
+      feedback('busy', t('t_api_unreachable'));
+    }
+  });
 });
 
 $('#mode-continue-btn').addEventListener('click', async () => {
@@ -2269,6 +2320,7 @@ function handleRealtimeEvent(env) {
   const p = env.payload || {};
   if (env.type === 'signal.received') {
     state.signalId = p.signalId || env.aggregateId;
+    if (p.senderId) state.peerId = p.senderId;
     state.hasIncomingSignal = true;
     syncSignalEmpty();
     markSignalArrive();

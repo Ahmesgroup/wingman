@@ -16,6 +16,7 @@ already near each other — or who repeatedly cross paths through Destiny Connec
 - **S28 GO (infra):** Neon Postgres (`wingman-pg`) + Upstash Redis (`wingman-redis`) on `wingman-api` Production; Prisma migrations applied; public prod **fail-closed**; `/internal/ready` = prisma/redis/postgres; durability cert passed after redeploy. See [`S28_PRODUCTION_PERSISTENCE.md`](./S28_PRODUCTION_PERSISTENCE.md).
 - Selfie media: **WIRED (infra)** — Vercel Blob private + camera upload path; Evidence Pack **NOT STARTED**.
 - Two-phone Evidence Pack: **NOT STARTED / BLOCKED** (next human gate after S28 infra). [`EVIDENCE_PACK_TWO_PHONE.md`](./EVIDENCE_PACK_TWO_PHONE.md).
+- Mission Meet **Report & block** now posts `/safety/report` then `/safety/block` (was a local screen only). That does not fill Evidence Pack row 19.
 
 ## Phase change
 

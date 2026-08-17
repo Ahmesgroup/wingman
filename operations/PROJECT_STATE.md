@@ -46,7 +46,7 @@ S29  Real Multi-user Realtime                  PARTIAL wire
 S30  Real Radar & Geo Field Test               PARTIAL (alone=0; hardcode geo remains)
 S31  Real Selfie Exchange                      WIRED (infra) — Evidence Pack NOT STARTED
 S32  Push & Closed-app Protocol                QUEUED
-S33  Safety & Field-test Controls              QUEUED
+S33  Safety & Field-test Controls              PARTIAL wire (report/block API from Mission Meet)
 S34  Live Field Test Certification             QUEUED
 S35  Product Protocol V2                       EXPERIMENT SPEC ONLY (flag false)
      → GO PILOT | FIX LIST CLOSED | NO-GO

@@ -23,6 +23,10 @@ function authHeaders(session: { accessToken: string }, deviceId: string) {
   };
 }
 
+function candidateIds(body: { candidates?: { userId: string }[] }): string[] {
+  return (body.candidates ?? []).map((candidate) => candidate.userId);
+}
+
 function waitForEvent(socket: Socket, type: string): Promise<RealtimeEnvelope> {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => reject(new Error(`timeout waiting for ${type}`)), 4_000);
@@ -53,6 +57,23 @@ function connectSessionSocket(port: number, session: { accessToken: string }, de
   });
 }
 
+async function otpSession(
+  server: import("http").Server,
+  phoneE164: string,
+  deviceId: string,
+): Promise<{ userId: string; accessToken: string }> {
+  const requested = await request(server).post("/auth/otp/request").send({ phoneE164 }).expect(201);
+  expect(requested.body.debugCode).toMatch(/^\d{6}$/);
+  const session = (
+    await request(server)
+      .post("/auth/otp/verify")
+      .send({ phoneE164, code: requested.body.debugCode, deviceId })
+      .expect(201)
+  ).body;
+  expect(session.accessToken).toBeTruthy();
+  return session;
+}
+
 describe("two-session test-harness protocol", () => {
   afterEach(() => {
     for (const [key, value] of Object.entries(priorEnv)) {
@@ -62,11 +83,12 @@ describe("two-session test-harness protocol", () => {
   });
 
   it(
-    "uses test-only OTP sessions through radar, private selfie, live mission chat, outcome and cooldown",
+    "uses test-only OTP sessions through radar 0/1, selfie authz, live chat both ways, third-user deny, reconnect, outcome and cooldown",
     async () => {
       // AUTH_DEBUG_OTP is accepted only while NODE_ENV=test (see AuthService).
       process.env.AUTH_DEBUG_OTP = "true";
       process.env.AUTH_FIELD_TEST_MODE = "false";
+      process.env.AUTH_ALLOW_DEV = "false";
       process.env.OTP_PROVIDER = "local";
 
       const clock = new FakeClock(new Date("2026-08-17T18:00:00.000Z"));
@@ -85,32 +107,20 @@ describe("two-session test-harness protocol", () => {
 
       const deviceA = "test-browser-a";
       const deviceB = "test-browser-b";
-      const phoneA = "+15550000001";
-      const phoneB = "+15550000002";
-      const requestA = await request(server).post("/auth/otp/request").send({ phoneE164: phoneA }).expect(201);
-      const requestB = await request(server).post("/auth/otp/request").send({ phoneE164: phoneB }).expect(201);
-      expect(requestA.body.debugCode).toMatch(/^\d{6}$/);
-      expect(requestB.body.debugCode).toMatch(/^\d{6}$/);
-
-      const sessionA = (
-        await request(server)
-          .post("/auth/otp/verify")
-          .send({ phoneE164: phoneA, code: requestA.body.debugCode, deviceId: deviceA })
-          .expect(201)
-      ).body;
-      const sessionB = (
-        await request(server)
-          .post("/auth/otp/verify")
-          .send({ phoneE164: phoneB, code: requestB.body.debugCode, deviceId: deviceB })
-          .expect(201)
-      ).body;
+      const deviceC = "test-browser-c";
+      const sessionA = await otpSession(server, "+15550000001", deviceA);
+      const sessionB = await otpSession(server, "+15550000002", deviceB);
+      const sessionC = await otpSession(server, "+15550000003", deviceC);
       expect(sessionA.userId).not.toBe(sessionB.userId);
+      expect(sessionC.userId).not.toBe(sessionA.userId);
 
       const a = authHeaders(sessionA, deviceA);
       const b = authHeaders(sessionB, deviceB);
+      const c = authHeaders(sessionC, deviceC);
       for (const [headers, profile] of [
         [a, { gender: "MALE", interestedIn: ["WOMEN"], firstName: "A", birthDate: "1995-01-01" }],
         [b, { gender: "FEMALE", interestedIn: ["MEN"], firstName: "B", birthDate: "1996-01-01" }],
+        [c, { gender: "MALE", interestedIn: ["WOMEN"], firstName: "C", birthDate: "1994-01-01" }],
       ] as const) {
         await request(server).post("/me/profile").set(headers).send(profile).expect(201);
         await request(server)
@@ -122,10 +132,22 @@ describe("two-session test-harness protocol", () => {
 
       await request(server).post("/radar/activate").set(a).send({ lat: 48.8566, lng: 2.3522 }).expect(201);
       const alone = await request(server).get("/radar/candidates").set(a).expect(200);
-      expect(alone.body.candidates).toEqual([]);
+      expect(candidateIds(alone.body)).toEqual([]);
+
       await request(server).post("/radar/activate").set(b).send({ lat: 48.8567, lng: 2.3523 }).expect(201);
-      const candidates = await request(server).get("/radar/candidates").set(a).expect(200);
-      expect(candidates.body.candidates.map((candidate: { userId: string }) => candidate.userId)).toContain(sessionB.userId);
+      const afterB = await request(server).get("/radar/candidates").set(a).expect(200);
+      const afterA = await request(server).get("/radar/candidates").set(b).expect(200);
+      expect(candidateIds(afterB.body)).toEqual([sessionB.userId]);
+      expect(candidateIds(afterA.body)).toEqual([sessionA.userId]);
+
+      await request(server).post("/radar/deactivate").set(b).expect(201);
+      const disappeared = await request(server).get("/radar/candidates").set(a).expect(200);
+      expect(candidateIds(disappeared.body)).toEqual([]);
+      await request(server).post("/radar/activate").set(b).send({ lat: 48.8567, lng: 2.3523 }).expect(201);
+      const reappearedA = await request(server).get("/radar/candidates").set(a).expect(200);
+      const reappearedB = await request(server).get("/radar/candidates").set(b).expect(200);
+      expect(candidateIds(reappearedA.body)).toEqual([sessionB.userId]);
+      expect(candidateIds(reappearedB.body)).toEqual([sessionA.userId]);
 
       const socketA = await connectSessionSocket(port, sessionA, deviceA);
       const socketB = await connectSessionSocket(port, sessionB, deviceB);
@@ -156,6 +178,10 @@ describe("two-session test-harness protocol", () => {
         .get(`/connections/${connectionId}/media/${mediaA.body.mediaId}`)
         .set(b)
         .expect(200);
+      await request(server)
+        .get(`/connections/${connectionId}/media/${mediaA.body.mediaId}`)
+        .set(c)
+        .expect(404);
       const mediaB = await request(server)
         .post(`/connections/${connectionId}/media`)
         .set(b)
@@ -169,18 +195,38 @@ describe("two-session test-harness protocol", () => {
       await request(server).post(`/connections/${connectionId}/approve`).set(a).expect(201);
       await request(server).post(`/connections/${connectionId}/meet-now`).set(a).expect(201);
 
+      await request(server).get(`/connections/${connectionId}`).set(c).expect(404);
+      await request(server).get(`/connections/${connectionId}/messages`).set(c).expect(404);
+      await request(server)
+        .post(`/connections/${connectionId}/messages`)
+        .set(c)
+        .send({ text: "third user should be denied" })
+        .expect(404);
+
+      await new Promise((resolve) => socketA.emit("subscribe", { connectionId, missionId: connectionId }, resolve));
       await new Promise((resolve) => socketB.emit("subscribe", { connectionId, missionId: connectionId }, resolve));
-      const receivedMessage = waitForEvent(socketB, "mission.message");
+      const receivedByB = waitForEvent(socketB, "mission.message");
       await request(server)
         .post(`/connections/${connectionId}/messages`)
         .set(a)
-        .send({ text: "Meet by the entrance" })
+        .send({ text: "At the agreed spot" })
         .expect(201);
-      expect((await receivedMessage).payload.text).toBe("Meet by the entrance");
+      expect((await receivedByB).payload.text).toBe("At the agreed spot");
+      const receivedByA = waitForEvent(socketA, "mission.message");
+      await request(server)
+        .post(`/connections/${connectionId}/messages`)
+        .set(b)
+        .send({ text: "On my way" })
+        .expect(201);
+      expect((await receivedByA).payload.text).toBe("On my way");
+
       socketB.close();
       const reconnectedB = await connectSessionSocket(port, sessionB, deviceB);
       const history = await request(server).get(`/connections/${connectionId}/messages`).set(b).expect(200);
-      expect(history.body.messages).toHaveLength(1);
+      expect(history.body.messages.map((m: { text: string }) => m.text)).toEqual([
+        "At the agreed spot",
+        "On my way",
+      ]);
 
       await request(server).post(`/connections/${connectionId}/lets-meet`).set(a).expect(201);
       await request(server).post(`/connections/${connectionId}/finish`).set(a).expect(201);
@@ -194,6 +240,83 @@ describe("two-session test-harness protocol", () => {
 
       socketA.close();
       reconnectedB.close();
+      await app.close();
+    },
+    35_000,
+  );
+
+  it(
+    "session-auth block and report remove the peer from Radar without developer headers",
+    async () => {
+      process.env.AUTH_DEBUG_OTP = "true";
+      process.env.AUTH_FIELD_TEST_MODE = "false";
+      process.env.AUTH_ALLOW_DEV = "false";
+      process.env.OTP_PROVIDER = "local";
+
+      const clock = new FakeClock(new Date("2026-08-17T18:20:00.000Z"));
+      const auth = new AuthService("two-session-block-pepper");
+      const app = await createNestApp({
+        auth,
+        engine: new WingmanEngine({ clock }),
+        ephemeral: new MemoryEphemeralStore(),
+        media: new MemoryMediaStore(),
+        useDevAuth: false,
+        skipHydrate: true,
+      });
+      const server = app.getHttpServer();
+
+      const deviceA = "block-browser-a";
+      const deviceB = "block-browser-b";
+      const sessionA = await otpSession(server, "+15550000011", deviceA);
+      const sessionB = await otpSession(server, "+15550000012", deviceB);
+      const a = authHeaders(sessionA, deviceA);
+      const b = authHeaders(sessionB, deviceB);
+      await request(server)
+        .post("/me/profile")
+        .set(a)
+        .send({ gender: "MALE", interestedIn: ["WOMEN"], firstName: "A", birthDate: "1995-01-01" })
+        .expect(201);
+      await request(server)
+        .post("/me/profile")
+        .set(b)
+        .send({ gender: "FEMALE", interestedIn: ["MEN"], firstName: "B", birthDate: "1996-01-01" })
+        .expect(201);
+      await request(server).post("/privacy/consent").set(a).send({ purpose: "radar", policyVersion: "v1" }).expect(201);
+      await request(server).post("/privacy/consent").set(b).send({ purpose: "radar", policyVersion: "v1" }).expect(201);
+      await request(server).post("/radar/activate").set(a).send({ lat: 48.8566, lng: 2.3522 }).expect(201);
+      await request(server).post("/radar/activate").set(b).send({ lat: 48.8567, lng: 2.3523 }).expect(201);
+      expect(candidateIds((await request(server).get("/radar/candidates").set(a).expect(200)).body)).toEqual([
+        sessionB.userId,
+      ]);
+
+      const signal = await request(server)
+        .post("/signals")
+        .set(a)
+        .set("idempotency-key", "two-session-block")
+        .send({ receiverId: sessionB.userId, source: "RADAR" })
+        .expect(201);
+      await request(server).post(`/signals/${signal.body.signal.id}/open`).set(b).expect(201);
+      const accepted = await request(server).post(`/signals/${signal.body.signal.id}/accept`).set(b).expect(201);
+      const connectionId = accepted.body.connection.id as string;
+
+      await request(server)
+        .post("/safety/report")
+        .set(a)
+        .send({ userId: sessionB.userId, category: "HARASSMENT", connectionId })
+        .expect(201);
+      await request(server).post("/safety/block").set(a).send({ userId: sessionB.userId }).expect(201);
+
+      const afterBlockA = await request(server).get("/radar/candidates").set(a).expect(200);
+      const afterBlockB = await request(server).get("/radar/candidates").set(b).expect(200);
+      expect(candidateIds(afterBlockA.body)).not.toContain(sessionB.userId);
+      expect(candidateIds(afterBlockB.body)).not.toContain(sessionA.userId);
+      await request(server)
+        .post("/signals")
+        .set(a)
+        .set("idempotency-key", "two-session-blocked-retry")
+        .send({ receiverId: sessionB.userId, source: "RADAR" })
+        .expect(403);
+
       await app.close();
     },
     25_000,

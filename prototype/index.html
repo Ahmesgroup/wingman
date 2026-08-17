@@ -429,9 +429,7 @@
         <div class="chat">
           <div class="chat-head"><span class="chat-obj" data-i18n="mm_obj">Decide where to meet</span><span class="timer-text" style="font-size:18px" id="mm-timer">15:00</span></div>
           <div class="timer-bar mb"><i id="mm-bar" style="width:100%"></i></div>
-          <div class="chat-log" id="chat-log">
-            <div class="msg them">Hey! Coffee at Chez Léon? ☕</div>
-          </div>
+          <div class="chat-log" id="chat-log"></div>
           <div class="chat-input">
             <input id="chat-field" data-i18n-ph="mm_ph" placeholder="Terrace side sounds good…">
             <button id="chat-send" aria-label="Send"><svg width="18" height="18" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><path d="M4 12l16-8-6 16-3-6z"/></svg></button>
@@ -441,6 +439,7 @@
             <button class="btn btn-love" id="mm-meet-btn" data-i18n="mm_meet">Let's meet</button>
             <button class="btn btn-ghost" id="mm-not-btn" data-i18n="mm_not">Not this time</button>
           </div>
+          <button type="button" class="btn btn-ghost mt-s" id="mm-report-btn" data-i18n="report_sub">Report & block</button>
         </div>
       </section>
 
@@ -546,7 +545,7 @@
             <button class="report-opt" data-i18n="set_export">Export my data (JSON)</button>
             <button class="report-opt" data-i18n="set_delete">Delete my account</button>
           </div>
-          <button class="report-opt" data-go="v-admin" data-i18n="set_admin">Admin moderation preview →</button>
+          <button class="report-opt qa-only" data-go="v-admin" data-i18n="set_admin">Admin moderation preview →</button>
         </div>
         <nav class="nav" data-navbar></nav>
       </section>
@@ -558,12 +557,12 @@
         <div class="body pad">
           <h2 class="head" data-i18n="report_title">What happened?</h2>
           <p class="lead mb" data-i18n="report_body">Blocking is instant and silent. The other person is never notified.</p>
-          <button class="report-opt" data-go="v-report-done" data-i18n="rc_harass">Harassment</button>
-          <button class="report-opt" data-go="v-report-done" data-i18n="rc_threat">Threat</button>
-          <button class="report-opt" data-go="v-report-done" data-i18n="rc_imp">Impersonation</button>
-          <button class="report-opt" data-go="v-report-done" data-i18n="rc_sexual">Sexual content</button>
-          <button class="report-opt" data-go="v-report-done" data-i18n="rc_minor">Minor safety</button>
-          <button class="report-opt" data-go="v-report-done" data-i18n="rc_contact">Off-platform contact</button>
+          <button type="button" class="report-opt" data-report-category="HARASSMENT" data-i18n="rc_harass">Harassment</button>
+          <button type="button" class="report-opt" data-report-category="THREAT" data-i18n="rc_threat">Threat</button>
+          <button type="button" class="report-opt" data-report-category="IMPERSONATION" data-i18n="rc_imp">Impersonation</button>
+          <button type="button" class="report-opt" data-report-category="SEXUAL_CONTENT" data-i18n="rc_sexual">Sexual content</button>
+          <button type="button" class="report-opt" data-report-category="MINOR_SAFETY" data-i18n="rc_minor">Minor safety</button>
+          <button type="button" class="report-opt" data-report-category="OFF_PLATFORM_CONTACT" data-i18n="rc_contact">Off-platform contact</button>
         </div>
       </section>
       <section class="view" id="v-report-done" data-noflow>

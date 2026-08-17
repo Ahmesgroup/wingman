@@ -33,21 +33,22 @@ verdict.
 S28 detail: [`S28_PRODUCTION_PERSISTENCE.md`](./S28_PRODUCTION_PERSISTENCE.md).  
 S31 detail: [`S31_PRIVATE_SELFIE_MEDIA.md`](./S31_PRIVATE_SELFIE_MEDIA.md) — Vercel Blob private + camera upload path.
 
-## Production smoke (2026-08-17 17:41 UTC)
+## Production smoke (2026-08-17 19:12 UTC)
 
 Public, read-only probes returned the following. No credentials, OTP values, tokens, phone numbers, or user data were
 used or recorded.
 
 | Check | Result |
 |-------|--------|
-| Auth mode | **PASS** — public production; Twilio Verify; field-test and developer-header auth disabled |
-| Readiness | **PASS** — ready; Redis ephemeral; Prisma/Postgres persistence; Vercel Blob media; Destiny false |
+| Auth mode | **PASS** — `otpProvider=twilio_verify`, `fieldTest=false`, `authAllowDev=false`, `publicProd=true` |
+| Readiness | **PASS** — `ready=true`; ephemeral=`redis`; persistence=`prisma`; database=`postgres`; media=`vercel_blob`; Destiny false |
+| Living Map default | **PASS (wire)** — `/internal/live` `livingMap=false`; public `config.js` `livingMap=false`; HTML default is `#radar-canvas` with `#living-map-root` hidden |
 | In-memory fallback | **PASS** — public-production boot tests refuse missing Redis, database, or private media configuration |
-| Public demo leakage | **PASS (wire)** — public client fails visibly rather than silently entering mock mode; public production rejects developer headers |
-| Two-session automated flow | **PASS (test harness only)** — two session-authenticated clients completed Radar-alone=0 → Signal → private selfie → realtime Mission chat/reconnect history → outcomes → cooldown |
+| Public demo leakage | **PASS (wire)** — public client fails visibly rather than silently entering mock mode; public production rejects developer headers; default Radar is canvas, not Living Map |
+| Two-session automated flow | **PASS (test harness only)** — session-authenticated clients completed Radar-alone=0 → mutual 1/1 → disappear/reconnect → Signal → private selfie (third user 404) → Mission chat both ways → reconnect history → outcomes → cooldown; separate harness block/report removes the pair from Radar |
 
 This is production wiring and a local CI-style simulation, not an Evidence Pack row. Real SMS and two human phones are
-still required.
+still required. **PRODUCT PROTOCOL READY = NO.**
 
 ## Protocol readiness matrix
 
@@ -62,6 +63,7 @@ still required.
 | REAL MISSION CHAT | `message` + WS + `GET .../messages` | messages + `mission.message` | Redis ephemeral target | `mission.message` | Durability IN PROGRESS | No fake chat states on product | **PASS wire** / durable IN PROGRESS |
 | REAL MISSION MODE | meet-now / lets-meet / finish | connection transitions | Connection | `mission.updated` | if durable | — | **PASS wire** |
 | REAL OUTCOME | own outcome only | `POST .../outcome` | Connection | `mission.updated` | if durable | Peer sim lab-only | **PASS wire** |
+| REAL BLOCK / REPORT | Mission Meet → category | `POST /safety/report` + `POST /safety/block` | Engine + mirror | `connection.closed` | block durable | Admin preview hidden on public field-test | **PASS wire** / Evidence Pack **NOT STARTED** |
 | REAL COOLDOWN → RADAR | cooldown UI + deactivate/activate | connection + presence | Presence ephemeral | — | presence no | — | **PASS wire** |
 
 ## Gate A / B / C
@@ -82,13 +84,15 @@ still required.
 | S29 | **PARTIAL wire** — Redis live; multi-phone Evidence Pack later |
 | S30 | **PARTIAL** — hardcoded Luxembourg coords remain |
 | S31 | **WIRED (infra)** — `@wingman/media` + Vercel Blob private; Evidence Pack NOT STARTED |
-| S32–S34 | **QUEUED / BLOCKED** upstream |
+| S32 | **QUEUED / BLOCKED** upstream |
+| S33 | **PARTIAL wire** — Mission Meet Report & block posts to `/safety/report` + `/safety/block`; Evidence Pack row 19 later |
+| S34 | **QUEUED / BLOCKED** upstream |
 | S35 V2 | **EXPERIMENT SPEC ONLY** — `PRODUCT_PROTOCOL_V2_ENABLED=false`; no engine merge |
 
 ## PRODUCT PROTOCOL READY
 
 **= NO**
 
-Two-phone Evidence Pack remains **NOT STARTED**. Private selfie media is **WIRED (infra)** but not GREEN until field evidence.
+Two-phone Evidence Pack remains **NOT STARTED** (human phones required). Private selfie media is **WIRED (infra)** but not GREEN until field evidence. Report & block is now posted from Mission Meet on the public client; that does not fill Evidence Pack row 19.
 
 V2 is documented separately in [`S35_PRODUCT_PROTOCOL_V2.md`](./S35_PRODUCT_PROTOCOL_V2.md). It cannot change this readiness verdict or become default Production before its own A/B gate and the V1 Evidence Pack.
