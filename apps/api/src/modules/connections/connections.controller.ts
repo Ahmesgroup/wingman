@@ -359,7 +359,7 @@ export class ConnectionsController {
 
   @Post(":id/not-this-time")
   async notThisTime(@CurrentUser() userId: string, @Param("id") id: string) {
-    return { connection: await this.connections.apply(id, "not_this-time", userId) };
+    return { connection: await this.connections.apply(id, "not_this_time", userId) };
   }
 
   @Post(":id/messages")
