@@ -437,7 +437,7 @@ async function tryReconnect() {
 /* ---------------------------------------------------------------- i18n ---- */
 const I18N = {
   en: {
-    brandtag: 'Make the first acquaintance easy', splash_tag: 'Make the first acquaintance easy.', splash_love: 'A quiet protocol for the first move.', splash_cta: 'Begin',
+    brandtag: 'From presence to hello', splash_tag: 'Wingman is a real-world connection facilitator.', splash_love: 'Discover mutual interest and say hello in real life.', splash_cta: 'Begin',
     next: 'Next', ob_eyebrow: 'The problem',
     ob1_title: 'You cross paths. Nothing happens.', ob1_body: "Every day you pass someone you'd like to meet — and say nothing. Wingman is built for that exact moment.",
     ob2_eyebrow: 'The solution', ob2_title: 'A quiet protocol, not a swipe feed.', ob2_body: 'No public profiles. No endless chat. A short, private path from "someone\'s near" to "let\'s meet."',

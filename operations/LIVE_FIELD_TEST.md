@@ -6,6 +6,7 @@
 **PRODUCT PROTOCOL READY:** **NO** — see [`PROTOCOL_READINESS.md`](./PROTOCOL_READINESS.md)  
 **This track ≠** advanced-engine / learning sprints (still blocked until S26 Review).  
 **This track =** productionize the **real multi-user protocol**.
+**Positioning:** Wingman is a real-world connection facilitator. It helps two people who are already near each other safely discover mutual interest and say hello in real life.
 
 ### 2026-08-17 engineering note (honest)
 

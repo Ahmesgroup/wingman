@@ -1,7 +1,7 @@
 # Wingman — Product & Engineering Specification
 
-> **Make the first acquaintance easy.** · *Love is in the air.*
-> Category: **social interaction facilitation technology** — not a traditional dating app.
+> **From presence to hello.**
+> Wingman is a real-world connection facilitator. It helps two people who are already near each other safely discover mutual interest and say hello in real life.
 
 **Status:** Foundation spec **plus executable backend (S0–S20)** — **Backend V1 certified GO** · **V1.1** starts at S21 (Radar Intelligence, feature-flagged).
 **Version:** 4.1 · **Region:** Single EU · **Owner:** Igor Chernikov · **Prepared by:** AHMES GROUP
@@ -14,9 +14,11 @@ backend engine + NestJS production envelope. Product specs remain under `docs/`,
 
 ## What Wingman is
 
-A real-time protocol that lowers the emotional cost of the first approach between two people who are
-already physically near each other. It deliberately refuses swipe feeds, public profile browsing,
+A real-world connection facilitator that lowers the emotional cost of the first approach between two
+people who are already physically near each other. It deliberately refuses swipe feeds, public profile browsing,
 endless chat, and any mechanic whose only effect is to increase time-in-app.
+
+Wingman does not help you collect matches. Wingman helps you make the first acquaintance.
 
 The core product rule: *a feature that increases time spent in the app without increasing the chance
 of a real interaction must be rejected.*

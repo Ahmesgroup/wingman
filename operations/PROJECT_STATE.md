@@ -6,6 +6,7 @@
 **Protocol matrix:** [`PROTOCOL_READINESS.md`](./PROTOCOL_READINESS.md) · Evidence: [`EVIDENCE_PACK_TWO_PHONE.md`](./EVIDENCE_PACK_TWO_PHONE.md)  
 **PRODUCT PROTOCOL READY:** **NO** (2026-08-17)  
 **Locked status:** Protocol wiring **improved** · Production durability **GO (infra)** · Private selfie media **WIRED (infra)** · Two-phone Evidence Pack **NOT STARTED / BLOCKED**  
+**Positioning:** Wingman is a real-world connection facilitator. It helps two people who are already near each other safely discover mutual interest and say hello in real life. **From presence to hello.**
 **S28:** [`S28_PRODUCTION_PERSISTENCE.md`](./S28_PRODUCTION_PERSISTENCE.md) — Neon + Upstash live; `/internal/ready` = prisma/redis/postgres; durability cert passed  
 **S31:** [`S31_PRIVATE_SELFIE_MEDIA.md`](./S31_PRIVATE_SELFIE_MEDIA.md) — Vercel Blob private + camera→upload→opaque id; Evidence Pack still open  
 **Related:** [`S26_MEASUREMENT.md`](./S26_MEASUREMENT.md), [`CLIENT_MOBILE_PAYMENT_READINESS.md`](./CLIENT_MOBILE_PAYMENT_READINESS.md), [`FIELD_TEST.md`](./FIELD_TEST.md)
@@ -29,6 +30,8 @@ S27A verdict                        OPEN — never “almost”
 S28                                 GO (infra) — Neon+Upstash; fail-closed; durability cert passed
 S29                                 PARTIAL wire (WS + Redis live); multi-phone later
 Gate C profile                      WIRED POST /me/profile — durable GO (infra)
+S35 V2                              EXPERIMENT SPEC ONLY — flag false; no domain merge
+S36–S43 native                      DEFERRED — entry after V1 Evidence Pack GREEN
 ```
 
 ## Live Field Test board (protocol — not engines)
@@ -43,6 +46,7 @@ S31  Real Selfie Exchange                      WIRED (infra) — Evidence Pack N
 S32  Push & Closed-app Protocol                QUEUED
 S33  Safety & Field-test Controls              QUEUED
 S34  Live Field Test Certification             QUEUED
+S35  Product Protocol V2                       EXPERIMENT SPEC ONLY (flag false)
      → GO PILOT | FIX LIST CLOSED | NO-GO
 ```
 
@@ -65,6 +69,8 @@ REAL USERS → REAL PHONES → REAL OTP → REAL RADAR → REAL SIGNAL
 - Labs (`?qa=1`, Smoke, Offline) internal only  
 - No fake peer that can be mistaken for a real user on the public field path  
 - “CI green + Vercel” ≠ Field Test Ready  
+- Wingman does not help you collect matches. Wingman helps you make the first acquaintance.
+- `PRODUCT_PROTOCOL_V2_ENABLED=false`; V2 cannot merge Selfie into Signal or become default Production.
 
 ## DoD — Wingman Field Test Ready
 
@@ -86,3 +92,8 @@ Two real phones, two real numbers, Signal with app closed on B, real selfie + mu
 | `PAYMENTS_ENABLED` | `false` | No checkout |
 | `AUTH_ALLOW_DEV` | local/dev only | Must be off on public production (S27) |
 | `WINGMAN_API_URL` | prototype Vercel | Bakes API origin into public client (`config.js`); testers never set |
+| `PRODUCT_PROTOCOL_V2_ENABLED` | `false` | S35 experiment only; no Production-default V2 |
+
+## Deferred native track
+
+[`S36_S43_NATIVE_ROADMAP.md`](./S36_S43_NATIVE_ROADMAP.md) documents native sequencing only. No Expo project is authorized this sprint; V1 web Evidence Pack GREEN with two real users is the hard entry gate.

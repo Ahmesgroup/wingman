@@ -5,6 +5,7 @@
 **Surfaces:** https://wingman-prototype.vercel.app/ · https://wingman-api-three.vercel.app/
 
 Destiny OFF · Payments OFF · No fake public peers · No `x-user-id` on public prod.
+**Positioning:** Wingman is a real-world connection facilitator. It helps two people who are already near each other safely discover mutual interest and say hello in real life.
 
 ## Locked status (honest)
 
@@ -60,9 +61,12 @@ S31 detail: [`S31_PRIVATE_SELFIE_MEDIA.md`](./S31_PRIVATE_SELFIE_MEDIA.md) — V
 | S30 | **PARTIAL** — hardcoded Luxembourg coords remain |
 | S31 | **WIRED (infra)** — `@wingman/media` + Vercel Blob private; Evidence Pack NOT STARTED |
 | S32–S34 | **QUEUED / BLOCKED** upstream |
+| S35 V2 | **EXPERIMENT SPEC ONLY** — `PRODUCT_PROTOCOL_V2_ENABLED=false`; no engine merge |
 
 ## PRODUCT PROTOCOL READY
 
 **= NO**
 
 Two-phone Evidence Pack remains **NOT STARTED**. Private selfie media is **WIRED (infra)** but not GREEN until field evidence.
+
+V2 is documented separately in [`S35_PRODUCT_PROTOCOL_V2.md`](./S35_PRODUCT_PROTOCOL_V2.md). It cannot change this readiness verdict or become default Production before its own A/B gate and the V1 Evidence Pack.

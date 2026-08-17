@@ -2,6 +2,10 @@
 
 **Status:** Decided (V4.1) · Part of the Wingman product & engineering spec.
 
+## Product positioning
+Wingman is a real-world connection facilitator. It helps two people who are already near each other safely discover
+mutual interest and say hello in real life. **From presence to hello.**
+
 ## 1. Remove hesitation
 Reduce the emotional cost of the first move. No explicit rejection flow. Sequential selfie reveal. Silent expiration
 instead of rejection notifications.
@@ -19,3 +23,4 @@ not baked into one rigid formula (DECISION_LOG D-024).
 No public photos, no profile browsing, approximate location only, user-controlled visibility, per-purpose consent.
 
 **Decision rule:** any feature that increases time-in-app without increasing the chance of a real meeting is rejected.
+Wingman does not help you collect matches. Wingman helps you make the first acquaintance.

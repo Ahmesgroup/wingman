@@ -1,16 +1,18 @@
 # Product Requirements Document (PRD)
 
 **Product:** Wingman · **Version:** 4.1 · **Status:** Decided · **Owner:** Igor Chernikov
-**Taglines:** *Make the first acquaintance easy.* / *Love is in the air.*
-**Category:** Social interaction facilitation technology
+**Positioning:** *From presence to hello.*
+**Category:** Real-world connection facilitator
 **Related:** `PRODUCT_PRINCIPLES.md`, `SUCCESS_METRICS.md`, `BUSINESS_MODEL.md`, `architecture/STATE_MACHINES.md`
 
 ## 1. Overview
 
-Wingman is a real-time protocol that helps two people who are already physically close turn a mutual, real-life
-attraction into an actual meeting. It is not a swipe app, profile catalogue, social network, infinite messenger,
+Wingman is a real-world connection facilitator. It helps two people who are already near each other safely discover
+mutual interest and say hello in real life. It is not a swipe app, profile catalogue, social network, infinite messenger,
 or content platform. The product rule: any feature that increases time-in-app without increasing the chance of a
 real interaction must be rejected.
+
+Wingman does not help you collect matches. Wingman helps you make the first acquaintance.
 
 Core sequence: `RADAR → SIGNAL → SELFIE (initiator) → SELFIE (recipient) → MUTUAL VALIDATION → TICKET or MISSION
 MEET → MISSION MODE → OUTCOME → COOLDOWN → RADAR`. Parallel entry: `DESTINY PROMPT → DESTINY SIGNAL → protocol`.

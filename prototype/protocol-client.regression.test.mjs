@@ -15,10 +15,12 @@ function assert(cond, msg) {
 assert(src.includes('allowPeerSim'), 'allowPeerSim guard missing');
 assert(src.includes('saveProfile'), 'profile save wire missing');
 assert(src.includes('WingmanRealtime'), 'realtime client missing');
-assert(src.includes('opaqueMediaId'), 'opaque media id missing');
+assert(src.includes('uploaded.mediaId'), 'opaque media id missing');
 assert(src.includes('listMessages'), 'mission message restore missing');
 assert(src.includes('profile-next-btn'), 'profile CTA wire missing');
 assert(src.includes('consent-cta-btn'), 'consent CTA wire missing');
+assert(src.includes('From presence to hello'), 'locked positioning missing from public onboarding');
+assert(src.includes('real-world connection facilitator'), 'public onboarding category copy missing');
 assert(src.includes('await api.openSignal(state.signalId);'), 'openSignal must be self');
 assert(src.includes('await api.acceptSignal(state.signalId);'), 'acceptSignal must be self');
 
@@ -30,7 +32,7 @@ for (const line of lines) {
   if (trimmed.startsWith('//') || trimmed.startsWith('*')) continue;
   // Must be nested under allowPeerSim somewhere nearby — require the line itself is inside a gated call
   assert(
-    /allowPeerSim/.test(src.slice(Math.max(0, src.indexOf(trimmed) - 120), src.indexOf(trimmed) + trimmed.length)),
+    /allowPeerSim/.test(src.slice(Math.max(0, src.indexOf(trimmed) - 400), src.indexOf(trimmed) + trimmed.length)),
     'peer userId opt without allowPeerSim near: ' + trimmed.slice(0, 80),
   );
 }

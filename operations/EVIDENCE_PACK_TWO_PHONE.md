@@ -23,3 +23,17 @@ Never record OTP codes, tokens, or full phone numbers in shared docs.
 | 16 | Cooldown → Radar | | | | | Invisible/cooldown then return | | |
 
 **Infra prerequisites before claiming durable PASS:** Production `/internal/ready` shows Postgres persistence + Redis ephemeral (not `memory` / `not-configured`).
+
+## Current status
+
+All V1 rows are **NOT STARTED** as of 2026-08-17. Automated tests and infrastructure checks can establish wiring only; they do not populate a PASS row or make **PRODUCT PROTOCOL READY** green. Record a reproducible observation in every column before deciding PASS/FAIL.
+
+## S35 V2 A/B observations — separate and not readiness evidence
+
+V2 is an opt-in experiment only (`PRODUCT_PROTOCOL_V2_ENABLED=false` by default) and cannot replace the V1 Evidence Pack. Run this table only after all V1 rows pass with two real users. Never record identity, OTP, token, selfie, or exact location data.
+
+| Participant pseudonym | Device/browser | Timestamp (UTC) | Variant (V1/V2) | Expected | Observed | Completion / safety notes | GO / NO-GO |
+|---|---|---|---|---|---|---|---|
+| | | | | Private, silent, anti-contact flow understood; no developer assistance | NOT RUN | | |
+
+V2's user-facing sequence is `RADAR → SELFIE SIGNAL → SELFIE RESPONSE → MUTUAL → MISSION → OUTCOME → COOLDOWN`. Its Signal, Selfie, and Connection backend domains remain separate. Criteria are in [`S35_PRODUCT_PROTOCOL_V2.md`](./S35_PRODUCT_PROTOCOL_V2.md).
