@@ -56,7 +56,7 @@ Secrets never committed / never printed.
 ## Honest remaining for S31 GREEN
 
 - Two-phone Evidence Pack rows for camera A/B, peer-only visibility, expiry, permission denied, slow network
-- Confirm Production `/internal/ready` shows `media.detail=vercel_blob`
+- ~~Confirm Production `/internal/ready` shows `media.detail=vercel_blob`~~ **DONE** (2026-08-17 post-redeploy)
 - No claim of PRODUCT PROTOCOL READY until Evidence Pack + remaining S27–S34 gates
 
 ## Verify
