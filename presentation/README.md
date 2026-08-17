@@ -1,4 +1,4 @@
-# Wingman Presentation Suite
+﻿# Wingman Presentation Suite
 
 Investor-ready and user-ready PDF presentations for Wingman.
 
@@ -17,6 +17,7 @@ Investor-ready and user-ready PDF presentations for Wingman.
 
 ```bash
 npm install
+npx playwright install chromium
 npm run build
 ```
 
@@ -24,10 +25,9 @@ Sources live in `src/` (HTML + `shared.css`). Diagrams in `assets/diagrams/`. Sc
 
 ## 2026-08-17 positioning update
 
-The regenerated HTML sources lock the approved wording on Investor Deck cover and “What Wingman is” (slides 1–3),
-Master Presentation opening (page 3), User Overview closing (page 8), and the One Pager: “Wingman is a real-world
+The HTML sources and regenerated PDFs lock the approved wording on Investor Deck cover and "What Wingman is" (slides 1-3),
+Master Presentation opening (page 3), User Overview closing (page 8), and the One Pager: "Wingman is a real-world
 connection facilitator. It helps two people who are already near each other safely discover mutual interest and say
-hello in real life.” / “From presence to hello.”
+hello in real life." / "From presence to hello."
 
-PDF regeneration requires the Playwright Chromium binary. It was unavailable in this workspace, so existing PDF and
-QA artifacts are retained and must not be treated as proof that the new source wording has been rendered.
+PDF + QA artifacts were regenerated with Playwright Chromium on 2026-08-17 after the binary was installed in this workspace.
