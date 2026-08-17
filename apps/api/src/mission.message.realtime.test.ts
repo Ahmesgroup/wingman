@@ -60,6 +60,11 @@ describe("mission.message realtime", () => {
       await request(server).post(`/signals/${signalId}/open`).set("x-user-id", "b").expect(201);
       const accept = await request(server).post(`/signals/${signalId}/accept`).set("x-user-id", "b").expect(201);
       const connectionId = accept.body.connection.id;
+      await request(server).post("/dev/seed").send({ id: "c", gender: "MALE", interestedIn: ["WOMEN"] }).expect(201);
+
+      // Connection metadata and chat are private to the two participants.
+      await request(server).get(`/connections/${connectionId}`).set("x-user-id", "c").expect(404);
+      await request(server).get(`/connections/${connectionId}/messages`).set("x-user-id", "c").expect(404);
 
       const { uploadSelfieMedia } = await import("./testing/selfie-media.js");
       const mediaA = await uploadSelfieMedia(server, connectionId, "a");

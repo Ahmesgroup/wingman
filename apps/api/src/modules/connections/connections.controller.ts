@@ -40,9 +40,8 @@ export class ConnectionsService {
     @Optional() private readonly measurement?: MeasurementGate,
   ) {}
 
-  get(id: string) {
-    const connection = this.engine.connections.get(id);
-    if (!connection) throw new DomainError("CONNECTION_NOT_FOUND", "Not found");
+  get(id: string, userId: string) {
+    const connection = this.requireParticipant(id, userId);
     return { connection, serverTime: this.engine.clock.now().toISOString() };
   }
 
@@ -282,8 +281,8 @@ export class ConnectionsController {
   constructor(private readonly connections: ConnectionsService) {}
 
   @Get(":id")
-  get(@Param("id") id: string) {
-    return this.connections.get(id);
+  get(@CurrentUser() userId: string, @Param("id") id: string) {
+    return this.connections.get(id, userId);
   }
 
   @Post(":id/media")
