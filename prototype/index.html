@@ -107,8 +107,9 @@
           </div>
           <p class="small muted center mt" id="phone-error" role="alert"></p>
           <p class="small muted center mt" data-i18n="phone_note">Verification only — used to keep Wingman free of fake profiles.</p>
-          <div class="form-cta-spacer" aria-hidden="true"></div>
-          <button type="button" class="btn btn-primary form-sticky-cta" id="phone-send-btn" data-i18n="phone_cta">Send code</button>
+        </div>
+        <div class="form-footer">
+          <button type="button" class="btn btn-primary" id="phone-send-btn" data-i18n="phone_cta">Send code</button>
         </div>
       </section>
       <section class="view" id="v-otp" data-noflow>
@@ -122,9 +123,10 @@
             <input maxlength="1" inputmode="numeric" autocomplete="one-time-code" aria-label="digit 1"><input maxlength="1" inputmode="numeric" aria-label="digit 2"><input maxlength="1" inputmode="numeric" aria-label="digit 3"><input maxlength="1" inputmode="numeric" aria-label="digit 4"><input maxlength="1" inputmode="numeric" aria-label="digit 5"><input maxlength="1" inputmode="numeric" aria-label="digit 6">
           </div>
           <p class="small muted center mt" id="otp-error" role="alert"></p>
-          <div class="form-cta-spacer" aria-hidden="true"></div>
-          <button type="button" class="btn btn-primary form-sticky-cta" id="otp-verify-btn" data-i18n="otp_cta">Verify</button>
           <button type="button" class="btn-link" id="otp-resend-btn" data-i18n="otp_resend">Resend code</button>
+        </div>
+        <div class="form-footer">
+          <button type="button" class="btn btn-primary" id="otp-verify-btn" data-i18n="otp_cta">Verify</button>
         </div>
       </section>
 
@@ -173,8 +175,9 @@
             <label for="pf-bio" data-i18n="pf_bio">Daily bio (150 max)</label>
             <textarea id="pf-bio" rows="3" maxlength="150" placeholder="At the festival — looking for a good encounter" enterkeyhint="done"></textarea>
           </div>
-          <div class="form-cta-spacer" aria-hidden="true"></div>
-          <button class="btn btn-primary form-sticky-cta" data-go="v-consent" data-i18n="next">Next</button>
+        </div>
+        <div class="form-footer">
+          <button type="button" class="btn btn-primary" data-go="v-consent" data-i18n="next">Next</button>
         </div>
       </section>
 
@@ -182,7 +185,7 @@
       <section class="view" id="v-consent" data-noflow>
         <div class="statusbar"><span class="time">21:48</span><span>Wingman</span></div>
         <div class="topbar"><div class="logo">WING<b>MAN</b></div><div class="subtitle" data-i18n="consent_sub">Your choices</div></div>
-        <div class="body pad">
+        <div class="body pad form-scroll">
           <h2 class="head" data-i18n="consent_title">What you agree to</h2>
           <p class="lead mb" data-i18n="consent_body">Each purpose is separate. You can change these anytime in Settings.</p>
           <div class="consent-item consent-required">
@@ -205,7 +208,9 @@
             <div class="txt"><b id="c-analytics" data-i18n="c_analytics">Product analytics</b><p data-i18n="c_analytics_d">Optional. Helps improve Wingman.</p></div>
             <div class="switch" role="switch" aria-checked="false" tabindex="0" aria-labelledby="c-analytics"></div>
           </div>
-          <button class="btn btn-primary mt" data-go="v-radar" data-i18n="consent_cta">Agree & activate Radar</button>
+        </div>
+        <div class="form-footer">
+          <button type="button" class="btn btn-primary" data-go="v-radar" data-i18n="consent_cta">Agree & activate Radar</button>
         </div>
       </section>
 
@@ -230,7 +235,7 @@
             </div>
             <div class="stat-row">
               <div class="stat"><b id="stat-signals">2</b><span data-i18n="stat_signals">Signals left</span></div>
-              <div class="stat"><b id="stat-nearby">5</b><span data-i18n="stat_nearby">Nearby</span></div>
+              <div class="stat"><b id="stat-nearby">0</b><span data-i18n="stat_nearby">Nearby</span></div>
               <div class="stat"><b id="stat-tickets">1</b><span data-i18n="stat_tickets">Active ticket</span></div>
             </div>
             <div class="plan-chip" id="plan-chip"><span id="plan-label">FREE</span> · <span id="plan-detail">2 Signals today · 1 ticket</span></div>
@@ -516,6 +521,7 @@
 <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 <script src="config.js"></script>
 <script src="api.js"></script>
+<script src="radar-dots.js"></script>
 <script src="payments/payment-types.js"></script>
 <script src="payments/providers/disabled.js"></script>
 <script src="payments/providers/stripe.js"></script>

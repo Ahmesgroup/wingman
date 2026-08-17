@@ -191,10 +191,38 @@ function phaseLabel(phase) {
 function syncRadarEmpty() {
   const shell = $('.radar-shell');
   if (!shell) return;
-  shell.classList.toggle('is-empty', !state.radarActive);
+  const empty = WingmanRadarDots.isRadarVisuallyEmpty(state.radarActive, dots);
+  shell.classList.toggle('is-empty', empty);
   const dist = $('#radar-distance');
-  if (dist) dist.classList.toggle('hidden', !state.radarActive);
+  if (dist) dist.classList.toggle('hidden', empty);
+  const emptyEl = $('#radar-empty');
+  if (emptyEl) {
+    emptyEl.textContent = state.radarActive ? t('empty_radar_alone') : t('empty_radar');
+  }
   syncRadarA11yList();
+}
+
+function setNearbyCount(n) {
+  const el = $('#stat-nearby');
+  if (el) el.textContent = String(Math.max(0, n | 0));
+}
+
+/** Replace canvas dots from API candidates only — never invent density. */
+function applyRadarCandidates(cands) {
+  const list = (cands && cands.candidates) || [];
+  dots.length = 0;
+  const mapped = WingmanRadarDots.candidatesToDots(list, state.meId);
+  for (let i = 0; i < mapped.length; i++) dots.push(mapped[i]);
+  setNearbyCount(WingmanRadarDots.nearbyCountFromDots(dots));
+  syncRadarEmpty();
+  startRadar();
+}
+
+function clearRadarDots() {
+  dots.length = 0;
+  setNearbyCount(0);
+  syncRadarEmpty();
+  startRadar();
 }
 
 function syncRadarA11yList() {
@@ -208,8 +236,10 @@ function syncRadarA11yList() {
   list.setAttribute('aria-label', state.lang === 'fr' ? 'Personnes à proximité' : 'Nearby people');
   list.innerHTML = dots.map((d, i) => {
     const mood = d.mood === 'SUPER_READY' ? t('mood_ready') : d.mood === 'OPEN' ? t('mood_open') : t('mood_explore');
-    const age = state.lang === 'fr' ? d.ageFr : d.age;
-    return `<li><button type="button" class="sr-only-btn" data-dot="${i}">${age} · ${mood}</button></li>`;
+    const band = d.band === 'NEAR'
+      ? (state.lang === 'fr' ? 'Très proche' : 'Very close')
+      : (state.lang === 'fr' ? 'À proximité' : 'Nearby');
+    return `<li><button type="button" class="sr-only-btn" data-dot="${i}">${band} · ${mood}</button></li>`;
   }).join('');
   $$('[data-dot]', list).forEach(btn => {
     btn.addEventListener('click', () => openSheet(dots[Number(btn.dataset.dot)]));
@@ -333,7 +363,7 @@ const I18N = {
     t_meet: 'Opening Mission Meet…', t_ticket: 'Holding ticket…', t_chat: 'Sending…', t_outcome: 'Saving outcome…',
     t_timeout: 'Taking too long — try again', t_offline_blocked: 'Offline — try again', t_offline_banner: 'Offline — timers keep running on the server',
     t_reconnecting: 'Reconnecting…', t_reconnected: 'Back online', t_reconnect_fail: 'Still offline', t_reconnect: 'Reconnect',
-    empty_radar: 'Go active to see who’s nearby.', empty_signals: 'No Signals right now. When someone reaches out, it appears here.',
+    empty_radar: 'Go active to see who’s nearby.', empty_radar_alone: 'Nobody nearby right now.', empty_signals: 'No Signals right now. When someone reaches out, it appears here.',
     mood_shape_ring: ' · ring', mood_shape_solid: ' · solid', mood_shape_quiet: ' · quiet',
     a11y_skip: 'Skip to app', t_smoke_ok: 'P4 smoke OK', t_smoke_fail: 'P4 smoke failed',
     t_phase_idle: 'Ready', t_phase_available: 'Available on Radar', t_phase_busy: 'Busy', t_phase_unavailable: 'Unavailable',
@@ -397,7 +427,7 @@ const I18N = {
     t_meet: 'Ouverture Mission Meet…', t_ticket: 'Ticket en cours…', t_chat: 'Envoi…', t_outcome: 'Enregistrement…',
     t_timeout: 'Trop long — réessayez', t_offline_blocked: 'Hors ligne — réessayez', t_offline_banner: 'Hors ligne — les timers continuent côté serveur',
     t_reconnecting: 'Reconnexion…', t_reconnected: 'De retour en ligne', t_reconnect_fail: 'Toujours hors ligne', t_reconnect: 'Reconnecter',
-    empty_radar: 'Activez le Radar pour voir qui est à proximité.', empty_signals: 'Aucun Signal pour l’instant. Ils apparaîtront ici.',
+    empty_radar: 'Activez le Radar pour voir qui est à proximité.', empty_radar_alone: 'Personne à proximité pour l’instant.', empty_signals: 'Aucun Signal pour l’instant. Ils apparaîtront ici.',
     mood_shape_ring: ' · anneau', mood_shape_solid: ' · plein', mood_shape_quiet: ' · calme',
     a11y_skip: 'Aller à l’app', t_smoke_ok: 'Smoke P4 OK', t_smoke_fail: 'Smoke P4 échoué',
     t_phase_idle: 'Prêt', t_phase_available: 'Disponible sur le Radar', t_phase_busy: 'Occupé', t_phase_unavailable: 'Indisponible',
@@ -523,14 +553,8 @@ function sizeCanvas() {
 }
 const MOOD_COLORS = { SUPER_READY: '#FF4D67', OPEN: '#FFC857', EXPLORING: '#F4F5F7' };
 const MOOD_GLOW = { SUPER_READY: 'rgba(255,77,103,.34)', OPEN: 'rgba(255,200,87,.30)', EXPLORING: 'rgba(244,245,247,.20)' };
-// Fictional dots only.
-const dots = [
-  { x: .30, y: .30, mood: 'SUPER_READY', age: '26 · 168cm', ageFr: '26 · 168cm', bio: 'Fun night out ✨', bioFr: 'Sortie sympa ✨', tags: ['🎵', '🍷', '🌍'] },
-  { x: .68, y: .26, mood: 'OPEN', age: '29 · 175cm', ageFr: '29 · 175cm', bio: 'Coffee or a walk?', bioFr: 'Café ou balade ?', tags: ['☕', '📚', '🏃'] },
-  { x: .74, y: .62, mood: 'EXPLORING', age: '24 · 162cm', ageFr: '24 · 162cm', bio: 'Just exploring 🗺️', bioFr: 'Juste explorer 🗺️', tags: ['🎨', '🐶'] },
-  { x: .40, y: .70, mood: 'SUPER_READY', age: '31 · 180cm', ageFr: '31 · 180cm', bio: 'Up for a real meet', bioFr: 'Envie de vraie rencontre', tags: ['🎸', '🍕'] },
-  { x: .24, y: .55, mood: 'OPEN', age: '27 · 170cm', ageFr: '27 · 170cm', bio: 'New in town 🌆', bioFr: 'Nouvelle en ville 🌆', tags: ['📷', '🍜'] },
-];
+// Live eligible candidates only — starts empty (alone = 0 Nearby).
+const dots = [];
 let signalWave = null; // {x,y,t} — one-shot Signal (blue)
 let activateBurst = null; // {t} — one-shot Radar go-active
 let rafId = null;
@@ -619,12 +643,16 @@ canvas.addEventListener('click', e => {
   if (best) openSheet(best);
 });
 function openSheet(d) {
+  if (!d || !d.userId) return;
   currentDot = d;
   $('#sheet-mood').textContent = '● ' + t('mood_' + (d.mood === 'SUPER_READY' ? 'ready' : d.mood === 'OPEN' ? 'open' : 'explore'));
   $('#sheet-mood').style.color = MOOD_COLORS[d.mood];
-  $('#sheet-age').textContent = state.lang === 'fr' ? d.ageFr : d.age;
-  $('#sheet-bio').textContent = state.lang === 'fr' ? d.bioFr : d.bio;
-  $('#sheet-tags').innerHTML = d.tags.map(x => `<span>${x}</span>`).join('');
+  const band = d.band === 'NEAR'
+    ? (state.lang === 'fr' ? 'Très proche' : 'Very close')
+    : (state.lang === 'fr' ? 'À proximité' : 'Nearby');
+  $('#sheet-age').textContent = band;
+  $('#sheet-bio').textContent = (state.lang === 'fr' ? d.bioFr : d.bio) || (state.lang === 'fr' ? 'Profil anonyme' : 'Anonymous profile');
+  $('#sheet-tags').innerHTML = (d.tags || []).map(x => `<span>${x}</span>`).join('');
   const sheet = $('#dot-sheet');
   sheet.classList.add('open');
   sheet.setAttribute('aria-hidden', 'false');
@@ -644,12 +672,21 @@ canvas.addEventListener('keydown', e => {
     feedback('busy', state.lang === 'fr' ? 'Activez le Radar pour découvrir' : 'Go active to discover');
     return;
   }
+  if (!dots.length) {
+    feedback('busy', t('empty_radar_alone'));
+    return;
+  }
   openSheet(dots[0]);
 });
 $('#send-signal-btn').addEventListener('click', async () => {
   if (state.busy) return;
   if (!requireAuthOrPhone()) return;
   if (state.signalsLeft <= 0) { toast(state.lang === 'fr' ? 'Plus de signaux aujourd\'hui' : 'No signals left today'); return; }
+  const targetId = currentDot && currentDot.userId;
+  if (!targetId || targetId === state.meId) {
+    feedback('busy', t('empty_radar_alone'));
+    return;
+  }
   const w = canvas.clientWidth || 400; signalWave = { x: w / 2, y: 170, t: performance.now() };
   startRadar(); haptic('signalSent');
   $('#dot-sheet').classList.remove('open');
@@ -658,14 +695,9 @@ $('#send-signal-btn').addEventListener('click', async () => {
   if (liveApi()) {
     try {
       await withLoading(t('t_loading'), async () => {
-        // Ensure peer is on radar so signal is valid.
-        await api.radarActivate(
-          { lat: 49.6117, lng: 6.1320, visibility: 'ACTIVE' },
-          { userId: state.peerId },
-        );
         await api.radarActivate({ lat: 49.6116, lng: 6.1319, visibility: 'ACTIVE' });
         const res = await api.sendSignal(
-          { receiverId: state.peerId, source: 'RADAR' },
+          { receiverId: targetId, source: 'RADAR' },
           { idempotencyKey: 'proto-' + Date.now() },
         );
         state.signalId = res && res.signal && res.signal.id;
@@ -678,15 +710,12 @@ $('#send-signal-btn').addEventListener('click', async () => {
       setTimeout(() => show('v-signal'), motionMs(320, 0));
       return;
     } catch (_) {
-      /* fall through to demo */
+      feedback('error', t('t_api_unreachable'));
+      return;
     }
   }
-  state.signalId = state.signalId || ('demo-sig-' + Date.now());
-  state.hasIncomingSignal = true;
-  state.signalsLeft--; $('#stat-signals').textContent = state.signalsLeft;
-  setPhase('signal', t('t_phase_signal'));
-  feedback('signal', t('t_signal_sent'));
-  setTimeout(() => { state.hasIncomingSignal = true; show('v-signal'); }, motionMs(320, 0));
+  // Offline / unreachable product path: do not invent a demo peer Signal.
+  feedback('busy', t('t_api_unreachable'));
 });
 
 /* ------------------------------------------------------- radar toggle/mood */
@@ -699,17 +728,13 @@ $('#radar-toggle').addEventListener('click', async () => {
       if (next) {
         await withLoading(t('t_loading'), async () => {
           await api.radarActivate({ lat: 49.6116, lng: 6.1319, visibility: 'ACTIVE' });
-          await api.radarActivate(
-            { lat: 49.6117, lng: 6.1320, visibility: 'ACTIVE' },
-            { userId: state.peerId },
-          );
           const cands = await api.radarCandidates();
-          const list = (cands && cands.candidates) || [];
-          const el = $('#stat-nearby'); if (el) el.textContent = String(list.length || dots.length);
+          applyRadarCandidates(cands);
         });
       } else {
         await withLoading(t('t_loading'), async () => {
           await api.radarDeactivate();
+          clearRadarDots();
         });
       }
     } catch (e) {
@@ -721,6 +746,9 @@ $('#radar-toggle').addEventListener('click', async () => {
       }
       return;
     }
+  } else {
+    // Offline / mock: never invent nearby density.
+    clearRadarDots();
   }
   state.radarActive = next;
   const btn = $('#radar-toggle'), st = $('#radar-state');
@@ -1273,6 +1301,11 @@ function restoreSessionIfAny() {
       st.textContent = t('radar_active');
       st.classList.remove('invisible');
     }
+    // Re-hydrate from API only — never restore fictional density from session.
+    clearRadarDots();
+    if (liveApi()) {
+      api.radarCandidates().then(applyRadarCandidates).catch(() => clearRadarDots());
+    }
   }
   syncRadarEmpty();
   syncSignalEmpty();
@@ -1325,6 +1358,19 @@ if (window.visualViewport) {
 }
 window.addEventListener('orientationchange', () => setTimeout(syncVisualViewport, 200));
 syncVisualViewport();
+
+/* Keep focused form controls visible above the reserved form footer / keyboard. */
+document.addEventListener('focusin', (e) => {
+  const el = e.target;
+  if (!el || !el.matches) return;
+  if (!el.matches('input, textarea, select')) return;
+  const scroller = el.closest('.form-scroll');
+  if (!scroller) return;
+  setTimeout(() => {
+    try { el.scrollIntoView({ block: 'center', inline: 'nearest', behavior: state.reduceMotion ? 'auto' : 'smooth' }); }
+    catch (_) { try { el.scrollIntoView(true); } catch (__) { /* ignore */ } }
+  }, 50);
+});
 
 window.addEventListener('resize', () => { sizeCanvas(); startRadar(); syncVisualViewport(); });
 window.addEventListener('orientationchange', () => {
