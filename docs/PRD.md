@@ -1,18 +1,20 @@
 # Product Requirements Document (PRD)
 
-**Product:** Wingman · **Version:** 4.1 · **Status:** Decided · **Owner:** Igor Chernikov
-**Positioning:** *From presence to hello.*
-**Category:** Real-world connection facilitator
+**Product:** Wingman · **Version:** V3.1 · **Status:** Owner locked · **Owner:** Igor Chernikov
+**Primary tagline:** *Make the first acquaintance easy.*
+**Category:** Social Interaction Facilitation Technology
 **Related:** `PRODUCT_PRINCIPLES.md`, `SUCCESS_METRICS.md`, `BUSINESS_MODEL.md`, `architecture/STATE_MACHINES.md`
 
 ## 1. Overview
 
-Wingman is a real-world connection facilitator. It helps two people who are already near each other safely discover
-mutual interest and say hello in real life. It is not a swipe app, profile catalogue, social network, infinite messenger,
-or content platform. The product rule: any feature that increases time-in-app without increasing the chance of a
-real interaction must be rejected.
+Wingman facilitates the first real-world interaction between people who are already near each other — or who repeatedly
+cross paths through Destiny Connection. “Real-world connection facilitator” is explanatory wording only, not the
+category. **Love is in the air.** is a secondary emotional slogan; **One Connection at a Time.** is an operating
+principle, not the main brand promise. Wingman is not a swipe app, profile catalogue, social network, infinite
+messenger, or content platform. The product rule: any feature that increases time-in-app without increasing the chance
+of a real interaction must be rejected.
 
-Wingman does not help you collect matches. Wingman helps you make the first acquaintance.
+Wingman does not help users collect matches. Its primary promise is: **Make the first acquaintance easy.**
 
 Core sequence: `RADAR → SIGNAL → SELFIE (initiator) → SELFIE (recipient) → MUTUAL VALIDATION → TICKET or MISSION
 MEET → MISSION MODE → OUTCOME → COOLDOWN → RADAR`. Parallel entry: `DESTINY PROMPT → DESTINY SIGNAL → protocol`.
@@ -37,13 +39,13 @@ interest, no social facilitator, privacy worries. Existing apps solve remote dis
 **Optional:** languages, occupation, education.
 **Private:** phone, identity metadata, precise location, device info, consent history.
 
-**Mood dots:** Super ready / Open / Exploring. Mood never overrides visibility, permissions, or safety rules, and
-is conveyed by shape + animation as well as color.
+**Radar mood dots:** Super ready = red, Open = amber, Exploring = white. Mood never overrides visibility,
+permissions, or safety rules, and is conveyed by shape + animation as well as color.
 
 ## 5. Identity verification
 
 Phone OTP → real-time verification selfie (no gallery import) → on-device liveness → server analysis + token →
-**data-exchange consent** step. No feature unlocks before verification **and** consent. Verification media is never
+**Client Consent for Data Exchange** step. No feature unlocks before verification **and** consent. Verification media is never
 public, never downloadable, and deleted after validation. Liveness scope, biometric handling, and appeal are
 specified in `security/SELFIE_SECURITY.md` and `privacy/*` (subject to legal review).
 
@@ -61,13 +63,14 @@ Mission-mode, cooldown, and incompatible users.
 
 ## 8. Signal
 
-Express interest without exposing the other to rejection. Free 2/day, Wingman+ **20–25/day**. One active Signal per
+Express interest without exposing the other to rejection. Free 2/day, Wingman+ **25 Signals/day**. One active Signal per
 pair. No decline button; silent expiration after 10 minutes. Sources: Radar, Destiny, Rematch.
 
 ## 9. Selfie exchange
 
 Sequential, ephemeral: initiator selfie → 5-min window → recipient selfie → 5-min approval window → mutual
-validation opens Mission Meet. Real-time capture only, on-device liveness, **timestamped**, non-downloadable via the
+validation opens Mission Meet. Real-time capture only, on-device liveness, and the **exact capture timestamp**;
+non-downloadable via the
 app's own UI, opaque media ids, private storage, immediate deletion on expiry. No rejection notification ever. The
 "Verified Selfie Cache" (Wingman+/one-time) stores one liveness-checked, timestamped selfie for 24h.
 
@@ -77,8 +80,9 @@ PENDING → RESPONSE → CONNECTED → (or EXPIRED, silent). Absolute rule: no r
 
 ## 11. Connection Ticket
 
-Hold an opportunity. Free 1 active, up to **2h**; Wingman+ 2 active, up to **24h**, 1 renewal. No chat, no contact
-exchange, silent expiry. Availability → notify → confirm → Mission Meet (else silent expiry after 15 min).
+Hold an opportunity. Free: **1 active Ticket, up to 2h**. Wingman+: **2 active Tickets, up to 24h, one renewal**.
+No chat, no contact exchange, silent expiry. Availability → notify → confirm → Mission Meet (else silent expiry after
+15 min).
 
 ## 12. Mission Meet
 
@@ -94,7 +98,7 @@ Cool Down Skip (€0.99) documented with its product/safety trade-off.
 
 ## 14. Destiny Connection
 
-Off by default, separate opt-in, pausable. Coarse co-presence over repeated public crossings surfaces a discreet
+Private and off by default, separate opt-in, pausable. Coarse co-presence over repeated public crossings surfaces a discreet
 prompt; standard protocol resumes if both engage. No trajectory, date, address, or exact location shown. Sensitive
 feature — DPIA + abuse/stalking review; likely post-V1. Not described as "k-anonymity" (D-020).
 
@@ -128,7 +132,7 @@ legal review.
 ## 20. Business model
 
 Freemium. Free: full Radar, 2 signals/day, 1 ticket up to 2h, Pulse visible, Mission Meet 15 min, Destiny, Mood.
-Wingman+ €9.99/mo: 20–25 signals/day, 2 tickets up to 24h + renewal, verified selfie cache, dot view count,
+Wingman+ €9.99/mo: 25 Signals/day, 2 tickets up to 24h + renewal, verified selfie cache, dot view count,
 discovery priority (increases probability, never guarantees exposure), Pulse notifications, +5 min windows, Mission
 Meet 20 min. One-time: Night Pass €2.99, Event Pass €4.99, Verified Selfie €0.99, Rematch €1.99, Cool Down Skip
 €0.99. Never: boosted profiles, ads in the meeting flow, monetizing behavioral data.

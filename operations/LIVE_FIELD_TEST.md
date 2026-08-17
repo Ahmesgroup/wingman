@@ -6,7 +6,9 @@
 **PRODUCT PROTOCOL READY:** **NO** — see [`PROTOCOL_READINESS.md`](./PROTOCOL_READINESS.md)  
 **This track ≠** advanced-engine / learning sprints (still blocked until S26 Review).  
 **This track =** productionize the **real multi-user protocol**.
-**Positioning:** Wingman is a real-world connection facilitator. It helps two people who are already near each other safely discover mutual interest and say hello in real life.
+**Positioning:** Category = **Social Interaction Facilitation Technology**; primary tagline =
+**Make the first acquaintance easy.** Wingman facilitates the first real-world interaction between people who are
+already near each other — or who repeatedly cross paths through Destiny Connection.
 
 ### 2026-08-17 engineering note (honest)
 
@@ -46,6 +48,7 @@ REAL USERS → REAL PHONES → REAL OTP → REAL RADAR → REAL SIGNAL
 | **One active connection per person** (DB invariant, not UI-only) | LOCKED |
 | `?qa=1` / Smoke / Offline Labs = **internal only** | LOCKED |
 | No simulated “other user” that could be mistaken for a real person on the public field path | LOCKED |
+| S35 is false-by-default and must not merge domains before A/B GO | LOCKED |
 
 ## Sprint board
 
@@ -96,6 +99,13 @@ S27B must not be marked GREEN without real SMS delivery.
 
 `078d308` = surface ready to *begin* field work — **not** product proof.  
 `46632b7` = method lock that stops polish-by-habit.
+
+## Governance levels
+
+- **V3.1:** owner-decided authority; field work validates it rather than silently redefining it.
+- **S35:** optional experiment only (`PRODUCT_PROTOCOL_V2_ENABLED=false`); no Signal, private-selfie, Connection, or
+  mutual-validation domain/API/state merge before an A/B GO.
+- **Evidence Pack:** two-real-phone proof level. **PRODUCT PROTOCOL READY = NO** until it passes.
 
 ### Product DoD (blocks false positives)
 

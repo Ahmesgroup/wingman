@@ -1,10 +1,11 @@
 # Wingman — Product & Engineering Specification
 
-> **From presence to hello.**
-> Wingman is a real-world connection facilitator. It helps two people who are already near each other safely discover mutual interest and say hello in real life.
+> **Make the first acquaintance easy.**
+> **Category:** Social Interaction Facilitation Technology.
+> Wingman facilitates the first real-world interaction between people who are already near each other — or who repeatedly cross paths through Destiny Connection.
 
 **Status:** Foundation spec **plus executable backend (S0–S20)** — **Backend V1 certified GO** · **V1.1** starts at S21 (Radar Intelligence, feature-flagged).
-**Version:** 4.1 · **Region:** Single EU · **Owner:** Igor Chernikov · **Prepared by:** AHMES GROUP
+**Version:** V3.1 · **Region:** Single EU · **Owner:** Igor Chernikov · **Prepared by:** AHMES GROUP
 
 This repository is the complete design-and-engineering dossier for Wingman **and** the working
 backend engine + NestJS production envelope. Product specs remain under `docs/`, `architecture/`,
@@ -14,11 +15,14 @@ backend engine + NestJS production envelope. Product specs remain under `docs/`,
 
 ## What Wingman is
 
-A real-world connection facilitator that lowers the emotional cost of the first approach between two
-people who are already physically near each other. It deliberately refuses swipe feeds, public profile browsing,
-endless chat, and any mechanic whose only effect is to increase time-in-app.
+Wingman belongs to **Social Interaction Facilitation Technology**. It facilitates the first real-world interaction
+between people who are already near each other — or who repeatedly cross paths through Destiny Connection. “Real-world
+connection facilitator” may explain the product, but is not its category. Wingman deliberately refuses swipe feeds,
+public profile browsing, endless chat, and any mechanic whose only effect is to increase time-in-app.
 
-Wingman does not help you collect matches. Wingman helps you make the first acquaintance.
+**Primary tagline:** Make the first acquaintance easy.  
+**Secondary emotional slogan:** Love is in the air.  
+**Operating principle:** One Connection at a Time. It is not the main brand promise.
 
 The core product rule: *a feature that increases time spent in the app without increasing the chance
 of a real interaction must be rejected.*
@@ -32,7 +36,7 @@ Start here, then follow the links:
 3. `operations/S20_PRODUCTION_CERTIFICATION.md` — Backend V1 go/no-go certificate.
 4. `apps/BACKEND_README.md` — run/test the NestJS API.
 5. `docs/PRD.md` — the product requirements.
-6. `docs/FR_EXECUTIVE_SUMMARY.md` — résumé exécutif en français.
+6. `docs/EXECUTIVE_SUMMARY.md` / `docs/FR_EXECUTIVE_SUMMARY.md` — synchronized executive summaries.
 7. `architecture/SYSTEM_ARCHITECTURE.md` — how the system is built and why.
 8. `architecture/STATE_MACHINES.md` — the heart of the product: the connection protocol.
 9. `database/schema.prisma` + `database/DATABASE_INVARIANTS.md` — the data model and its guarantees.
@@ -80,6 +84,8 @@ A hidden **Admin moderation preview** link lives at the bottom of Settings.
 - **One active connection per user**, enforced by a database-level lock.
 - **Silent expiration only** — the product never sends a rejection.
 - **Consent is per-purpose, append-only, versioned.**
-- **Destiny Connection** is off by default and treated as sensitive / likely post-V1.
+- **Destiny Connection** is private, off by default, and treated as sensitive / likely post-V1.
+- **Governance levels:** V3.1 is owner-locked authority; S35 is a false-by-default experiment with no domain merge;
+  `PRODUCT PROTOCOL READY = NO` until the two-phone Evidence Pack passes.
 
 See `DECISION_LOG.md` for the full record and `architecture/ADR/` for the formal decisions.

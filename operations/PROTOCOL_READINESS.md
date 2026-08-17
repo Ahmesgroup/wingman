@@ -5,9 +5,15 @@
 **Surfaces:** https://wingman-prototype.vercel.app/ · https://wingman-api-three.vercel.app/
 
 Destiny OFF · Payments OFF · No fake public peers · No `x-user-id` on public prod.
-**Positioning:** Wingman is a real-world connection facilitator. It helps two people who are already near each other safely discover mutual interest and say hello in real life.
+**V3.1 positioning:** **Social Interaction Facilitation Technology** · **Make the first acquaintance easy.** Wingman
+facilitates the first real-world interaction between people who are already near each other — or who repeatedly cross
+paths through Destiny Connection.
 
 ## Locked status (honest)
+
+**Three levels:** V3.1 is owner-locked product authority; S35 is a false-by-default experiment with no domain merge;
+the Evidence Pack is the real-device proof level. Neither S35 nor infrastructure wiring can change the readiness
+verdict.
 
 | Area | Status |
 |------|--------|

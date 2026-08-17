@@ -5,7 +5,11 @@
 **Forbidden:** new engines / learning, payment enablement, general redesign, polish-by-habit  
 **Related:** [`FIELD_TEST.md`](./FIELD_TEST.md), [`PROJECT_STATE.md`](./PROJECT_STATE.md)
 
-**Positioning guardrail:** Wingman is a real-world connection facilitator. It helps two people who are already near each other safely discover mutual interest and say hello in real life. UI must not imply swipe browsing, match collection, or a V2 production-default flow.
+**Positioning guardrail:** Category = **Social Interaction Facilitation Technology**; primary tagline =
+**Make the first acquaintance easy.** Wingman facilitates the first real-world interaction between people who are
+already near each other — or who repeatedly cross paths through Destiny Connection. “Real-world connection
+facilitator” is explanatory only. UI must not imply swipe browsing, match collection, or an S35 production-default
+flow.
 
 ## Scope lock
 

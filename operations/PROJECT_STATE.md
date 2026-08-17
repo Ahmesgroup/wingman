@@ -6,7 +6,9 @@
 **Protocol matrix:** [`PROTOCOL_READINESS.md`](./PROTOCOL_READINESS.md) · Evidence: [`EVIDENCE_PACK_TWO_PHONE.md`](./EVIDENCE_PACK_TWO_PHONE.md)  
 **PRODUCT PROTOCOL READY:** **NO** (2026-08-17)  
 **Locked status:** Protocol wiring **improved** · Production durability **GO (infra)** · Private selfie media **WIRED (infra)** · Two-phone Evidence Pack **NOT STARTED / BLOCKED**  
-**Positioning:** Wingman is a real-world connection facilitator. It helps two people who are already near each other safely discover mutual interest and say hello in real life. **From presence to hello.**
+**Positioning:** **Social Interaction Facilitation Technology** · **Make the first acquaintance easy.** Wingman
+facilitates the first real-world interaction between people who are already near each other — or who repeatedly cross
+paths through Destiny Connection.
 **S28:** [`S28_PRODUCTION_PERSISTENCE.md`](./S28_PRODUCTION_PERSISTENCE.md) — Neon + Upstash live; `/internal/ready` = prisma/redis/postgres; durability cert passed  
 **S31:** [`S31_PRIVATE_SELFIE_MEDIA.md`](./S31_PRIVATE_SELFIE_MEDIA.md) — Vercel Blob private + camera→upload→opaque id; Evidence Pack still open  
 **Related:** [`S26_MEASUREMENT.md`](./S26_MEASUREMENT.md), [`CLIENT_MOBILE_PAYMENT_READINESS.md`](./CLIENT_MOBILE_PAYMENT_READINESS.md), [`FIELD_TEST.md`](./FIELD_TEST.md)
@@ -71,6 +73,8 @@ REAL USERS → REAL PHONES → REAL OTP → REAL RADAR → REAL SIGNAL
 - “CI green + Vercel” ≠ Field Test Ready  
 - Wingman does not help you collect matches. Wingman helps you make the first acquaintance.
 - `PRODUCT_PROTOCOL_V2_ENABLED=false`; V2 cannot merge Selfie into Signal or become default Production.
+- V3.1 is the owner-locked baseline; S35 and the Evidence Pack are separate evidence levels, not replacement product
+  definitions.
 
 ## DoD — Wingman Field Test Ready
 

@@ -7,7 +7,7 @@ Freemium with targeted one-time purchases; intentionally lean at launch.
 **Free:** full Radar, 2 signals/day, 1 Ticket up to 2h, Pulse visible (no notifications), Mission Meet 15 min,
 Destiny, Mood.
 
-**Wingman+ — €9.99/mo:** 20–25 signals/day, 2 Tickets up to 24h + 1 renewal, Verified Selfie Cache (24h), dot view
+**Wingman+ — €9.99/mo:** 25 Signals/day, 2 Tickets up to 24h + 1 renewal, Verified Selfie Cache (24h), dot view
 count, discovery priority (increases probability, never guarantees exposure), Pulse notifications, +5-min windows,
 Mission Meet 20 min.
 

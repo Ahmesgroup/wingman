@@ -1,13 +1,14 @@
 # Résumé exécutif (FR)
 
-**Produit :** Wingman · **Version :** 4.1 · **Statut :** Validé · **Responsable :** Igor Chernikov
+**Produit :** Wingman · **Version :** V3.1 · **Statut :** verrouillé par le responsable · **Responsable :** Igor Chernikov
 **Slogans :** *Facilitez la première rencontre.* / *L'amour est dans l'air.*
 **Catégorie :** technologie de facilitation d'interaction sociale
 
 ## Le produit en une phrase
 
-Wingman est un protocole en temps réel qui réduit le coût émotionnel du premier pas entre deux personnes déjà
-physiquement proches — sans swipe, sans profils publics, sans chat interminable, sans rejet explicite.
+Wingman facilite la première interaction dans le monde réel entre des personnes déjà proches — ou qui se croisent à
+plusieurs reprises via Destiny Connection — sans swipe, sans profils publics, sans chat interminable, sans rejet
+explicite. « facilitateur de connexion dans le monde réel » est une explication, pas une catégorie.
 
 ## Ce que Wingman n'est pas
 
@@ -20,7 +21,14 @@ chance d'une rencontre réelle est rejetée.
 `RADAR → SIGNAL → SELFIE (initiateur) → SELFIE (destinataire) → VALIDATION MUTUELLE → TICKET ou MISSION MEET →
 MODE MISSION → RÉSULTAT → COOLDOWN → RADAR`. Voie parallèle : `PROMPT DESTINY → SIGNAL DESTINY → protocole`.
 
-## Décisions d'architecture (V1)
+## Hiérarchie et gouvernance
+
+- **V3.1** : autorité produit verrouillée par le responsable.
+- **S35** : expérience opt-in, désactivée par défaut ; aucun merge d'état, d'API ou de domaine avant un GO A/B.
+- **Evidence Pack** : niveau de preuve sur deux téléphones réels. **PRODUCT PROTOCOL READY = NO** jusqu'à ce que
+  toutes les lignes du pack soient PASS sans assistance développeur.
+
+## Décisions d'architecture (V3.1)
 
 - **Monolithe modulaire NestJS**, région européenne unique. Pas de Rust, pas de base distribuée, pas de
   microservices en V1 — l'infrastructure mondiale était surdimensionnée alors que le domaine métier était
@@ -51,7 +59,7 @@ Jamais de profils boostés, de publicités dans le flux, ni de revente de donné
 
 ## Destiny Connection
 
-Fonctionnalité sensible, **désactivée par défaut**, opt-in distinct, mise en pause possible. Co-présence grossière
+Fonctionnalité sensible, privée, **désactivée par défaut**, opt-in distinct, mise en pause possible. Co-présence grossière
 sur des croisements publics répétés ; aucune trajectoire, date, adresse ou position exacte. DPIA et analyse
 anti-stalking requis ; probablement post-V1. Le mécanisme n'est pas qualifié de « k-anonymat ».
 

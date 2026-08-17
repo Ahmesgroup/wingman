@@ -19,8 +19,10 @@ assert(src.includes('uploaded.mediaId'), 'opaque media id missing');
 assert(src.includes('listMessages'), 'mission message restore missing');
 assert(src.includes('profile-next-btn'), 'profile CTA wire missing');
 assert(src.includes('consent-cta-btn'), 'consent CTA wire missing');
-assert(src.includes('From presence to hello'), 'locked positioning missing from public onboarding');
-assert(src.includes('real-world connection facilitator'), 'public onboarding category copy missing');
+assert(src.includes('Make the first acquaintance easy'), 'locked primary tagline missing from public onboarding');
+assert(src.includes('Love is in the air.'), 'secondary emotional slogan missing from public onboarding');
+assert(src.includes('first real-world interaction'), 'supporting description missing from public onboarding');
+assert(!src.includes('From presence to hello'), 'superseded positioning remains in public onboarding');
 assert(src.includes('await api.openSignal(state.signalId);'), 'openSignal must be self');
 assert(src.includes('await api.acceptSignal(state.signalId);'), 'acceptSignal must be self');
 

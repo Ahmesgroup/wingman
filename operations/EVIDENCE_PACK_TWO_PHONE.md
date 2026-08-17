@@ -1,6 +1,6 @@
 # Two-phone Evidence Pack — Wingman protocol
 
-**PRODUCT PROTOCOL READY requires every row PASS without developer assistance.**  
+**V3.1 is owner-locked authority. PRODUCT PROTOCOL READY requires every row PASS without developer assistance.**  
 Never record OTP codes, tokens, or full phone numbers in shared docs.
 
 | # | Step | Device | OS | Browser/PWA | Timestamp (UTC) | Expected | Observed | PASS/FAIL |
@@ -26,11 +26,15 @@ Never record OTP codes, tokens, or full phone numbers in shared docs.
 
 ## Current status
 
-All V1 rows are **NOT STARTED** as of 2026-08-17. Automated tests and infrastructure checks can establish wiring only; they do not populate a PASS row or make **PRODUCT PROTOCOL READY** green. Record a reproducible observation in every column before deciding PASS/FAIL.
+All V3.1 rows are **NOT STARTED** as of 2026-08-17. Automated tests and infrastructure checks can establish wiring
+only; they do not populate a PASS row or make **PRODUCT PROTOCOL READY** green. Record a reproducible observation in
+every column before deciding PASS/FAIL.
 
 ## S35 V2 A/B observations — separate and not readiness evidence
 
-V2 is an opt-in experiment only (`PRODUCT_PROTOCOL_V2_ENABLED=false` by default) and cannot replace the V1 Evidence Pack. Run this table only after all V1 rows pass with two real users. Never record identity, OTP, token, selfie, or exact location data.
+S35 is an opt-in experiment only (`PRODUCT_PROTOCOL_V2_ENABLED=false` by default) and cannot replace the V3.1 Evidence
+Pack. Run this table only after all V3.1 rows pass with two real users. Never record identity, OTP, token, selfie, or
+exact location data.
 
 | Participant pseudonym | Device/browser | Timestamp (UTC) | Variant (V1/V2) | Expected | Observed | Completion / safety notes | GO / NO-GO |
 |---|---|---|---|---|---|---|---|

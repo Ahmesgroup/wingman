@@ -437,11 +437,11 @@ async function tryReconnect() {
 /* ---------------------------------------------------------------- i18n ---- */
 const I18N = {
   en: {
-    brandtag: 'From presence to hello', splash_tag: 'Wingman is a real-world connection facilitator.', splash_love: 'Discover mutual interest and say hello in real life.', splash_cta: 'Begin',
+    brandtag: 'Make the first acquaintance easy', splash_tag: 'Wingman facilitates the first real-world interaction between people already near each other.', splash_love: 'Love is in the air.', splash_cta: 'Begin',
     next: 'Next', ob_eyebrow: 'The problem',
     ob1_title: 'You cross paths. Nothing happens.', ob1_body: "Every day you pass someone you'd like to meet — and say nothing. Wingman is built for that exact moment.",
     ob2_eyebrow: 'The solution', ob2_title: 'A quiet protocol, not a swipe feed.', ob2_body: 'No public profiles. No endless chat. A short, private path from "someone\'s near" to "let\'s meet."',
-    ob3_eyebrow: 'The promise', ob3_title: 'Make the first move, safely.', ob3_body: 'No explicit rejection. Approximate location only. You stay in control of who can find you.', ob3_cta: 'Create my account',
+    ob3_eyebrow: 'The promise', ob3_title: 'Make the first acquaintance easy.', ob3_body: 'No explicit rejection. Approximate location only. You stay in control of who can find you.', ob3_cta: 'Create my account',
     phone_sub: 'Verify your number', phone_title: 'Enter your phone', phone_body: 'We send a 6-digit code. Your number is never shown to anyone.', phone_label: 'Phone number', phone_cta: 'Send code', phone_note: 'Verification only — used to keep Wingman free of fake profiles.',
     phone_body_ft: 'Enter your real number. In this field-test build, no SMS is sent — you will use a coordinator code.',
     otp_sub: 'Enter the code', otp_title: '6-digit code', otp_body: 'Sent to your phone', otp_cta: 'Verify', otp_resend: 'Resend code',
