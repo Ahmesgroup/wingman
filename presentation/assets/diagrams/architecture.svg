@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 480" role="img" aria-label="Simplified Wingman architecture">
+  <rect width="1200" height="480" fill="#0B1020"/>
+  <text x="600" y="40" fill="#B9A7FF" font-family="Segoe UI, Arial" font-size="16" letter-spacing="3" text-anchor="middle">SIMPLIFIED ARCHITECTURE (CONFIRMED)</text>
+  
+    <rect x="80" y="90" width="240" height="70" rx="14" fill="#171F35" stroke="#4DA3FF" stroke-width="2"/>
+    <text x="200" y="132" fill="#F4F5F7" font-family="Segoe UI, Arial" font-size="16" font-weight="650" text-anchor="middle">Mobile / Web Client</text>
+  
+    <rect x="480" y="90" width="240" height="70" rx="14" fill="#171F35" stroke="#7C5CFC" stroke-width="2"/>
+    <text x="600" y="132" fill="#F4F5F7" font-family="Segoe UI, Arial" font-size="16" font-weight="650" text-anchor="middle">NestJS API + WS</text>
+  
+    <rect x="880" y="90" width="240" height="70" rx="14" fill="#171F35" stroke="#FF8A4C" stroke-width="2"/>
+    <text x="1000" y="132" fill="#F4F5F7" font-family="Segoe UI, Arial" font-size="16" font-weight="650" text-anchor="middle">Workers (reconcile)</text>
+  
+    <rect x="180" y="230" width="240" height="70" rx="14" fill="#171F35" stroke="#3DDC97" stroke-width="2"/>
+    <text x="300" y="272" fill="#F4F5F7" font-family="Segoe UI, Arial" font-size="16" font-weight="650" text-anchor="middle">PostgreSQL durable</text>
+  
+    <rect x="480" y="230" width="240" height="70" rx="14" fill="#171F35" stroke="#FFC857" stroke-width="2"/>
+    <text x="600" y="272" fill="#F4F5F7" font-family="Segoe UI, Arial" font-size="16" font-weight="650" text-anchor="middle">Redis ephemeral</text>
+  
+    <rect x="780" y="230" width="300" height="70" rx="14" fill="#171F35" stroke="#B9A7FF" stroke-width="2"/>
+    <text x="930" y="272" fill="#F4F5F7" font-family="Segoe UI, Arial" font-size="16" font-weight="650" text-anchor="middle">Providers: SMS / Push / Stripe</text>
+  
+    <rect x="360" y="360" width="480" height="70" rx="14" fill="#171F35" stroke="#9B6DFF" stroke-width="2"/>
+    <text x="600" y="402" fill="#F4F5F7" font-family="Segoe UI, Arial" font-size="16" font-weight="650" text-anchor="middle">Frozen domain: packages/domain (WingmanEngine)</text>
+  
+</svg>

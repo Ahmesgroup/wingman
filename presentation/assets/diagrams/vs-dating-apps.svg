@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 520" role="img" aria-label="Wingman vs dating apps">
+  <rect width="1200" height="520" fill="#0B1020"/>
+  <rect x="40" y="80" width="520" height="400" rx="20" fill="#171F35" stroke="rgba(255,77,103,0.35)"/>
+  <rect x="640" y="80" width="520" height="400" rx="20" fill="#171F35" stroke="rgba(61,220,151,0.35)"/>
+  <text x="300" y="130" fill="#FF4D67" font-family="Segoe UI, Arial" font-size="22" font-weight="700" text-anchor="middle">Dating apps</text>
+  <text x="900" y="130" fill="#3DDC97" font-family="Segoe UI, Arial" font-size="22" font-weight="700" text-anchor="middle">Wingman</text>
+  <text x="70" y="180" fill="#A8B0C2" font-family="Segoe UI, Arial" font-size="16">Public profiles &amp; photos</text>
+            <text x="670" y="180" fill="#F4F5F7" font-family="Segoe UI, Arial" font-size="16">No public profile browsing</text><text x="70" y="222" fill="#A8B0C2" font-family="Segoe UI, Arial" font-size="16">Swipe → match volume</text>
+            <text x="670" y="222" fill="#F4F5F7" font-family="Segoe UI, Arial" font-size="16">Signal → mutual consent</text><text x="70" y="264" fill="#A8B0C2" font-family="Segoe UI, Arial" font-size="16">Endless chat in-app</text>
+            <text x="670" y="264" fill="#F4F5F7" font-family="Segoe UI, Arial" font-size="16">~15 min Mission Meet</text><text x="70" y="306" fill="#A8B0C2" font-family="Segoe UI, Arial" font-size="16">Optimize time-in-app</text>
+            <text x="670" y="306" fill="#F4F5F7" font-family="Segoe UI, Arial" font-size="16">Optimize real meetings</text><text x="70" y="348" fill="#A8B0C2" font-family="Segoe UI, Arial" font-size="16">Explicit rejection UX</text>
+            <text x="670" y="348" fill="#F4F5F7" font-family="Segoe UI, Arial" font-size="16">Silent expiry only</text><text x="70" y="390" fill="#A8B0C2" font-family="Segoe UI, Arial" font-size="16">Remote discovery</text>
+            <text x="670" y="390" fill="#F4F5F7" font-family="Segoe UI, Arial" font-size="16">Already nearby</text>
+  <text x="600" y="45" fill="#B9A7FF" font-family="Segoe UI, Arial" font-size="16" letter-spacing="3" text-anchor="middle">PHILOSOPHY DIFFERENCE</text>
+</svg>

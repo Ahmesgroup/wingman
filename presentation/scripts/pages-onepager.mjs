@@ -1,0 +1,50 @@
+import { pageShell } from './helpers.mjs';
+
+export function onePager() {
+  return pageShell({
+    part: 'One-pager',
+    num: 1,
+    total: 1,
+    title: '',
+    body: `
+    <div class="onepager">
+      <div class="left">
+        <div class="tagline">From presence to hello.</div>
+        <h1>Wingman</h1>
+        <p class="lead" style="font-size:18px;max-width:none;">Wingman is a real-world connection facilitator. It helps two people who are already near each other safely discover mutual interest and say hello in real life.</p>
+        <div class="card">
+          <h3>Not a dating app</h3>
+          <p>No public profile browsing · no swipe feed · no endless chat. Free: 2 Signals/day · 1 active connection · ~15 min Mission Meet.</p>
+        </div>
+        <div class="card">
+          <h3>Loop</h3>
+          <p>Radar → Signal → Selfie A/B → Mutual validation → Mission Meet → Cooldown → Radar</p>
+        </div>
+        <div class="card">
+          <h3>Status (Aug 2026)</h3>
+          <p><span class="status a">A</span> Backend V1 GO · protocol frozen &nbsp;
+          <span class="status b">B</span> Intelligence engines flagged · payments OFF · Destiny not public &nbsp;
+          <span class="status c">C</span> Live Field Test S27–S34 in progress</p>
+        </div>
+      </div>
+      <div class="right">
+        <div class="card">
+          <h3>Why it matters</h3>
+          <p>People notice each other every day and say nothing. Existing apps solve remote discovery; Wingman solves the first real-world approach — privately and intentionally.</p>
+        </div>
+        <div class="card">
+          <h3>Safety &amp; privacy</h3>
+          <p>Mutual consent · silent expiry · approximate location · ephemeral selfies · block/report · anti-contact filter. Does not guarantee IRL safety.</p>
+        </div>
+        <div class="card">
+          <h3>Business</h3>
+          <p>Freemium Wingman+ + Night/Event Passes (spec). Never ads in meet flow or selling behavioral data. Funding scenario: TO BE DEFINED.</p>
+        </div>
+        <div class="card">
+          <h3>Owner</h3>
+          <p>Igor Chernikov · Spec V4.1 · Wingman does not help you collect matches. Wingman helps you make the first acquaintance.</p>
+        </div>
+      </div>
+    </div>`,
+  });
+}

@@ -1,0 +1,162 @@
+import { coverPage, pageShell } from './helpers.mjs';
+
+const TOTAL = 18;
+
+function p(part, num, title, body) {
+  return pageShell({ part, num, total: TOTAL, title, body });
+}
+
+export function investorPages() {
+  const pages = [];
+  pages.push(coverPage({
+    subtitle: 'From presence to hello. A real-world connection facilitator, not another swipe feed.',
+    deck: 'Investor Deck',
+    total: TOTAL,
+  }));
+
+  pages.push(p('01', 2, 'The opportunity', `
+    <h1 class="wide">The first acquaintance is still unsolved</h1>
+    <p class="lead">People cross paths daily with someone they’d like to meet — and say nothing.</p>
+    <p>Dating apps optimized remote discovery and engagement. Wingman optimizes the last meter: mutual, local, time-boxed permission to say hello.</p>
+    <p class="cite">Pew (US): 53% of adults under 30 have used online dating; experiences often mixed (2022 survey, published 2023).</p>
+  `));
+
+  pages.push(p('02', 3, 'What Wingman is', `
+    <h1>From presence to hello</h1>
+    <p class="quote">Wingman is a real-world connection facilitator. It helps two people who are already near each other safely discover mutual interest and say hello in real life.</p>
+    <div class="flow" style="margin-top:28px;">
+      <span class="step">Radar</span><span class="arrow">→</span>
+      <span class="step">Signal</span><span class="arrow">→</span>
+      <span class="step">Selfies</span><span class="arrow">→</span>
+      <span class="step">Mutual</span><span class="arrow">→</span>
+      <span class="step">Mission</span><span class="arrow">→</span>
+      <span class="step">Cooldown</span>
+    </div>
+    <p>Wingman does not help you collect matches. Wingman helps you make the first acquaintance. Constraints: Free 2 Signals/day · 1 active connection · ~15 min Mission chat.</p>
+  `));
+
+  pages.push(p('03', 4, 'Not a dating app', `
+    <img class="diagram" src="../assets/diagrams/vs-dating-apps.svg" alt="Philosophy comparison"/>
+  `));
+
+  pages.push(p('04', 5, 'Why users would use it', `
+    <div class="grid-3">
+      <div class="card"><h3>Lower social risk</h3><p>Silent expiry. No public profile browsing.</p></div>
+      <div class="card"><h3>Mutual clarity</h3><p>Connection only after mutual validation.</p></div>
+      <div class="card"><h3>Real outcome</h3><p>Short Mission designed to meet — then leave the app.</p></div>
+    </div>
+  `));
+
+  pages.push(p('05', 6, 'Product proof points', `
+    <div class="grid-2">
+      <div class="card"><h3>Built <span class="status a">A</span></h3><p>Frozen protocol engine · NestJS API · Postgres/Redis · WebSocket · Billing→Entitlements · Backend V1 GO (S20).</p></div>
+      <div class="card"><h3>Flagged <span class="status b">B</span></h3><p>Radar Intelligence, Context, Destiny V2, Anti-Abuse, Geo, Measurement (learning OFF).</p></div>
+      <div class="card"><h3>Validating <span class="status c">C</span></h3><p>Surface UI live · Live Field Test S27–S34 · S27A OPEN · SMS OTP deferred.</p></div>
+      <div class="card"><h3>Vision <span class="status d">D</span></h3><p>Public Destiny, payments go-live, city density expansion, learning after baselines.</p></div>
+    </div>
+  `));
+
+  pages.push(p('06', 7, 'Safety & privacy as moat inputs', `
+    <h1 class="wide">Trust is the product</h1>
+    <div class="grid-3">
+      <div class="card"><h3>Consent</h3><p>Per-purpose, versioned, append-only.</p></div>
+      <div class="card"><h3>Disclosure</h3><p>Approximate location · ephemeral selfies · anti-contact chat filter.</p></div>
+      <div class="card"><h3>Abuse</h3><p>Block/report · graduated anti-abuse · no auto permanent bans.</p></div>
+    </div>
+    <p class="note">Wingman does not guarantee physical-world safety. It designs for consent and control.</p>
+  `));
+
+  pages.push(p('07', 8, 'Monetization', `
+    <h1 class="wide">Freemium + intentional one-time Passes</h1>
+    <div class="grid-2">
+      <div class="card"><h3>Wingman+ €9.99/mo (spec)</h3><p>More Signals, longer tickets, slightly longer windows. Discovery priority increases probability — never guarantees exposure.</p></div>
+      <div class="card"><h3>One-time</h3><p>Night Pass · Event Pass · Verified Selfie · Rematch · Cool Down Skip.</p></div>
+    </div>
+    <p><strong>Never:</strong> boosted profiles, ads in meet flow, selling behavioral data.</p>
+    <p class="note">Payments architecture exists; checkout disabled. Unit economics: HYPOTHESIS TO VALIDATE.</p>
+  `));
+
+  pages.push(p('08', 9, 'GTM', `
+    <h1>Density-first EU city</h1>
+    <p class="lead">Seed venues and events where co-presence is already natural. Expand city-by-city when meeting quality holds.</p>
+    <p>Growth gated by real-meeting outcomes — not vanity engagement.</p>
+  `));
+
+  pages.push(p('09', 10, 'Market', `
+    <div class="grid-3">
+      <div class="card kpi"><div class="n">TAM</div><div class="l">Online dating / social discovery — multi‑billion globally; definitions vary by analyst.</div></div>
+      <div class="card kpi"><div class="n">SAM</div><div class="l">EU online dating: public estimates ~$0.6B–$1.2B range depending on source — Wingman addresses a proximity subset.</div></div>
+      <div class="card kpi"><div class="n">SOM</div><div class="l">HYPOTHESIS TO VALIDATE: first dense city cohort. No fabricated forecasts.</div></div>
+    </div>
+  `));
+
+  pages.push(p('10', 11, 'Competition', `
+    <p class="lead">Tinder/Bumble optimize matches. Wingman optimizes one real approach — then returns you to Radar.</p>
+    <img class="diagram" src="../assets/diagrams/protocol-flow.svg" alt="Protocol"/>
+  `));
+
+  pages.push(p('11', 12, 'Technology', `
+    <img class="diagram" src="../assets/diagrams/architecture.svg" alt="Architecture"/>
+  `));
+
+  pages.push(p('12', 13, 'Traction status', `
+    <h1 class="wide">Honest traction</h1>
+    <ul class="checklist">
+      <li>Backend V1 certified GO (2026-08-09)</li>
+      <li>Advanced engines implemented with flags + measurement lock</li>
+      <li>Mobile-first surface deployed for UI fielding</li>
+      <li>Live Field Test board active — not yet Field Test Ready</li>
+      <li>No public revenue; payments OFF</li>
+      <li>Destiny not marketed as public core</li>
+    </ul>
+  `));
+
+  pages.push(p('13', 14, 'Risks', `
+    <div class="grid-2">
+      <div class="card"><h3>Cold-start density</h3><p>Protocol needs co-presence. Mitigate via venue/event seeding.</p></div>
+      <div class="card"><h3>Trust &amp; safety</h3><p>Physical meets carry risk. Mitigate via design + education + moderation ops.</p></div>
+      <div class="card"><h3>Positioning confusion</h3><p>Misread as dating app. Mitigate via ruthless messaging discipline.</p></div>
+      <div class="card"><h3>Execution gate</h3><p>Must clear Live Field Test before pilot claims.</p></div>
+    </div>
+  `));
+
+  pages.push(p('14', 15, 'Why now / why this team focus', `
+    <h1 class="wide">Protocol encoded before scale theater</h1>
+    <p>Wingman invested first in correct state machines, entitlements, safety invariants, and certification — then advanced intelligence behind flags — then a disciplined field-test track.</p>
+    <p>Product Owner: Igor Chernikov. Spec V4.1. Governance: facts before tickets.</p>
+  `));
+
+  pages.push(p('15', 16, 'The ask', `
+    <h1>FUNDING SCENARIO — TO BE DEFINED</h1>
+    <p class="lead">This deck does not invent a raise size, valuation, or revenue plan.</p>
+    <div class="card"><h3>Near-term use of capital (illustrative categories only)</h3>
+      <ul>
+        <li>Complete Live Field Test (S27–S34)</li>
+        <li>Production identity/SMS and multi-device reliability</li>
+        <li>First-city density pilot operations</li>
+        <li>Safety/moderation capacity</li>
+      </ul>
+    </div>
+  `));
+
+  pages.push(p('16', 17, 'Metrics that matter', `
+    <p class="lead">North star: confirmed real-world meetings.</p>
+    <div class="grid-3">
+      <div class="card"><h3>Signal→Connection</h3><p>Acceptance &amp; mutual validation rates</p></div>
+      <div class="card"><h3>Connection→Mission</h3><p>S26 baseline: connectionToMissionRate</p></div>
+      <div class="card"><h3>Mission→Meet</h3><p>Outcome confirmation · report rate floor</p></div>
+    </div>
+  `));
+
+  pages.push(p('17', 18, 'Close', `
+    <div class="hero-center center-all" style="flex:1;">
+      <div class="tagline">Make the first acquaintance easy.</div>
+      <h1 class="center wide" style="max-width:18ch;">Wingman turns proximity into permission — then into a meeting.</h1>
+      <p>Not a feed. A protocol.</p>
+    </div>
+  `));
+
+  return pages;
+}
+
+export const INVESTOR_TOTAL = TOTAL;

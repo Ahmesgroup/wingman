@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 320" role="img" aria-label="Wingman protocol flow">
+  <rect width="1200" height="320" fill="#0B1020"/>
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#7C5CFC"/>
+      <stop offset="100%" stop-color="#B9A7FF"/>
+    </linearGradient>
+  </defs>
+  
+    <rect x="40" y="110" width="120" height="56" rx="28" fill="#171F35" stroke="#3DDC97" stroke-width="2"/>
+    <text x="100" y="144" fill="#F4F5F7" font-family="Segoe UI, Arial" font-size="14" font-weight="700" text-anchor="middle">RADAR</text>
+  
+    <rect x="185" y="110" width="120" height="56" rx="28" fill="#171F35" stroke="#4DA3FF" stroke-width="2"/>
+    <text x="245" y="144" fill="#F4F5F7" font-family="Segoe UI, Arial" font-size="14" font-weight="700" text-anchor="middle">SIGNAL</text>
+  
+    <rect x="330" y="110" width="120" height="56" rx="28" fill="#171F35" stroke="#B9A7FF" stroke-width="2"/>
+    <text x="390" y="144" fill="#F4F5F7" font-family="Segoe UI, Arial" font-size="14" font-weight="700" text-anchor="middle">SELFIE A</text>
+  
+    <rect x="475" y="110" width="120" height="56" rx="28" fill="#171F35" stroke="#B9A7FF" stroke-width="2"/>
+    <text x="535" y="144" fill="#F4F5F7" font-family="Segoe UI, Arial" font-size="14" font-weight="700" text-anchor="middle">SELFIE B</text>
+  
+    <rect x="620" y="110" width="120" height="56" rx="28" fill="#171F35" stroke="#9B6DFF" stroke-width="2"/>
+    <text x="680" y="144" fill="#F4F5F7" font-family="Segoe UI, Arial" font-size="14" font-weight="700" text-anchor="middle">MUTUAL</text>
+  
+    <rect x="765" y="110" width="120" height="56" rx="28" fill="#171F35" stroke="#FF8A4C" stroke-width="2"/>
+    <text x="825" y="144" fill="#F4F5F7" font-family="Segoe UI, Arial" font-size="14" font-weight="700" text-anchor="middle">MISSION</text>
+  
+    <rect x="910" y="110" width="120" height="56" rx="28" fill="#171F35" stroke="#FF8A4C" stroke-width="2"/>
+    <text x="970" y="144" fill="#F4F5F7" font-family="Segoe UI, Arial" font-size="14" font-weight="700" text-anchor="middle">MODE</text>
+  
+    <rect x="1055" y="110" width="120" height="56" rx="28" fill="#171F35" stroke="#8B93A7" stroke-width="2"/>
+    <text x="1115" y="144" fill="#F4F5F7" font-family="Segoe UI, Arial" font-size="14" font-weight="700" text-anchor="middle">COOLDOWN</text>
+  
+  
+    <path d="M160 138 L180 138" stroke="url(#g)" stroke-width="2"/>
+  
+    <path d="M305 138 L325 138" stroke="url(#g)" stroke-width="2"/>
+  
+    <path d="M450 138 L470 138" stroke="url(#g)" stroke-width="2"/>
+  
+    <path d="M595 138 L615 138" stroke="url(#g)" stroke-width="2"/>
+  
+    <path d="M740 138 L760 138" stroke="url(#g)" stroke-width="2"/>
+  
+    <path d="M885 138 L905 138" stroke="url(#g)" stroke-width="2"/>
+  
+    <path d="M1030 138 L1050 138" stroke="url(#g)" stroke-width="2"/>
+  
+  <text x="600" y="50" fill="#B9A7FF" font-family="Segoe UI, Arial" font-size="16" letter-spacing="3" text-anchor="middle">WINGMAN PROTOCOL</text>
+  <text x="600" y="250" fill="#A8B0C2" font-family="Segoe UI, Arial" font-size="14" text-anchor="middle">Then back to Radar. One intentional loop — not an endless feed.</text>
+</svg>

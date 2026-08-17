@@ -1,0 +1,14 @@
+{
+  "name": "wingman-presentation",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "prep": "node scripts/prep-assets.mjs",
+    "html": "node scripts/build-html.mjs",
+    "pdf": "node scripts/render-pdf.mjs",
+    "build": "node scripts/prep-assets.mjs && node scripts/build-html.mjs && node scripts/render-pdf.mjs"
+  },
+  "devDependencies": {
+    "playwright": "1.49.1"
+  }
+}
