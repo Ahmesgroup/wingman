@@ -1,28 +1,30 @@
 # S28 — Production Persistence Certification
 
-**Status:** **IN PROGRESS** (infra provisioned; durability cert pending post-redeploy)  
+**Status:** **GO (infra)** — Production uses Postgres + Redis; durability cert passed 2026-08-17  
 **Updated:** 2026-08-17  
-**PRODUCT PROTOCOL READY:** **NO**
+**PRODUCT PROTOCOL READY:** **NO** (Evidence Pack + selfie media still open)
 
 ## Locked status language
 
 | Area | Status |
 |------|--------|
 | Protocol wiring | improved |
-| Production durability | **BLOCKED / IN PROGRESS** |
+| Production durability | **GO (infra)** — steps 1–5 complete |
 | Private selfie media | **OPEN** |
-| Two-phone Evidence Pack | **NOT STARTED / BLOCKED** (do not start until durability proven) |
+| Two-phone Evidence Pack | **NOT STARTED / BLOCKED** (do not start until product owner opens step 6; durability is no longer the blocker) |
 | PRODUCT PROTOCOL READY | **NO** |
 
-## Locked sequence
+## Locked sequence progress
 
-1. PostgreSQL Production réel (durable user/profile/connection/signal/mission/locks)
-2. Redis Production réel (ephemeral presence/sessions/chat/timers)
-3. Verify Production backend uses these stores — **NO memory fallback**
-4. Redeploy
-5. Durability scenario: write state → redeploy/restart → state returns
-6. ONLY THEN human A/B Evidence Pack
-7. Private selfie media = separate blocker (OPEN until private storage wired)
+| Step | Status |
+|------|--------|
+| 1. PostgreSQL Production réel | **DONE** — Neon `wingman-pg` (fra1), migrations applied |
+| 2. Redis Production réel | **DONE** — Upstash `wingman-redis` (fra1) |
+| 3. No memory fallback | **DONE** — `WINGMAN_PUBLIC_PROD` fail-closed; `/internal/ready` = prisma/redis/postgres |
+| 4. Redeploy | **DONE** |
+| 5. Durability scenario | **DONE** — marker identity+connection survived Production redeploy (`scripts/s28-durability-cert.mjs`) |
+| 6. Human A/B Evidence Pack | **NOT STARTED** |
+| 7. Private selfie media | **OPEN** (no storage provider package in repo) |
 
 ## Provisioned (2026-08-17)
 

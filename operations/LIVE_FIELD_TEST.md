@@ -10,9 +10,9 @@
 ### 2026-08-17 engineering note (honest)
 
 - Wired: `POST /me/profile`, consent from client, Socket.IO client, `mission.message` + `GET /connections/:id/messages`, removed public dual-user peer impersonation.
-- **S28 IN PROGRESS:** Neon Postgres (`wingman-pg`) + Upstash Redis (`wingman-redis`) on `wingman-api` Production; Prisma migrations applied; public prod **fail-closed** (no memory fallback). Await redeploy + `/internal/ready` = prisma/redis/postgres + durability cert. See [`S28_PRODUCTION_PERSISTENCE.md`](./S28_PRODUCTION_PERSISTENCE.md).
+- **S28 GO (infra):** Neon Postgres (`wingman-pg`) + Upstash Redis (`wingman-redis`) on `wingman-api` Production; Prisma migrations applied; public prod **fail-closed**; `/internal/ready` = prisma/redis/postgres; durability cert passed after redeploy. See [`S28_PRODUCTION_PERSISTENCE.md`](./S28_PRODUCTION_PERSISTENCE.md).
 - Selfie media: **OPEN** — opaque `mediaId` only; no private upload/purge provider in repo yet.
-- Two-phone Evidence Pack: **NOT STARTED / BLOCKED** until S28 durability (sequence step 5) is green. [`EVIDENCE_PACK_TWO_PHONE.md`](./EVIDENCE_PACK_TWO_PHONE.md).
+- Two-phone Evidence Pack: **NOT STARTED / BLOCKED** (next human gate after S28 infra). [`EVIDENCE_PACK_TWO_PHONE.md`](./EVIDENCE_PACK_TWO_PHONE.md).
 
 ## Phase change
 

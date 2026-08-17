@@ -11,19 +11,17 @@ Destiny OFF · Payments OFF · No fake public peers · No `x-user-id` on public 
 | Area | Status |
 |------|--------|
 | Protocol wiring | **improved** |
-| Production durability | **BLOCKED / IN PROGRESS** |
+| Production durability | **GO (infra)** — steps 1–5 complete |
 | Private selfie media | **OPEN** |
-| Two-phone Evidence Pack | **NOT STARTED / BLOCKED** (do not start until durability proven) |
+| Two-phone Evidence Pack | **NOT STARTED / BLOCKED** |
 | PRODUCT PROTOCOL READY | **NO** |
 
-## Live Production probe
+## Live Production probe (2026-08-17 post-S28)
 
-| Check | Before (memory era) | After provision + migrate (pre/post redeploy — update after deploy) |
-|-------|---------------------|---------------------------------------------------------------------|
-| `GET /auth/mode` | `fieldTest:false`, `authAllowDev:false`, `otpProvider:twilio_verify`, `publicProd:true` | same expected |
-| `GET /health` | `ok`, `destinyEnabled:false` | same expected |
-| `GET /internal/ready` | ephemeral=memory, persistence=memory, database=not-configured | **target:** ephemeral=redis, persistence=prisma, database=postgres |
-| Prototype `config.js` | `apiUrl=https://wingman-api-three.vercel.app` | unchanged |
+| Check | Before | After |
+|-------|--------|-------|
+| `GET /internal/ready` | ephemeral=memory, persistence=memory, database=not-configured | **ephemeral=redis, persistence=prisma, database=postgres, ready=true** |
+| Durability cert | n/a | identity+connection marker survived Production redeploy |
 
 S28 detail: [`S28_PRODUCTION_PERSISTENCE.md`](./S28_PRODUCTION_PERSISTENCE.md).
 
@@ -32,7 +30,7 @@ S28 detail: [`S28_PRODUCTION_PERSISTENCE.md`](./S28_PRODUCTION_PERSISTENCE.md).
 | Step | Frontend SoT | Backend | Store | Realtime | Survives refresh? | Demo leak? | Verdict |
 |------|--------------|---------|-------|----------|-------------------|------------|---------|
 | REAL OTP | `api.js` Bearer + device | `POST /auth/otp/*` Twilio Verify | Auth sessions | n/a | Session tokens in LS | No SMS claim when field-test; prod claims SMS via Twilio | **PASS wire** / Evidence Pack **NOT STARTED** |
-| REAL PROFILE | `#profile-next-btn` → `POST /me/profile` | `GET/POST /me` | Engine + mirror (`ProtocolIdentity`) | none | Durability **IN PROGRESS** (Neon provisioned; cert after redeploy) | Removed `data-go` skip | **PASS wire** / durable **IN PROGRESS** |
+| REAL PROFILE | `#profile-next-btn` → `POST /me/profile` | `GET/POST /me` | Engine + mirror (`ProtocolIdentity`) | none | **Durability GO (infra)** | Removed `data-go` skip | **PASS wire** / durable **GO (infra)** |
 | REAL RADAR | `radarActivate` + `candidatesToDots` | `/radar/*` | Presence ephemeral (Redis target) | `radar.changed` | Must re-activate | Ghost dots removed | **PASS alone=0** / geo hardcode remains |
 | REAL SIGNAL | send as self; receive via WS | `/signals` | Engine + mirror | `signal.received` | Durability IN PROGRESS | Sender no longer fakes incoming | **PASS wire** / Evidence Pack NOT STARTED |
 | REAL SELFIE A/B | own opaque `mediaId` only | `POST .../selfie` | Connection state only | `validation.updated` | Connection id | Peer impersonation gated to lab | **OPEN** (private media) |
@@ -48,7 +46,7 @@ S28 detail: [`S28_PRODUCTION_PERSISTENCE.md`](./S28_PRODUCTION_PERSISTENCE.md).
 |------|--------|
 | **A** Radar ghosts / alone → nearby=0 | **PASS** (code + unit tests). |
 | **B** Profile/consent CTA vs keyboard | Desktop OK; form-footer `--vv-offset`. Evidence Pack later. |
-| **C** Real profile save | **WIRED**. Durable **IN PROGRESS** (Postgres provisioned; await ready=prisma + restart cert). |
+| **C** Real profile save | **WIRED**. Durable **GO (infra)** after S28 cert. |
 
 ## S27–S34 honesty
 
@@ -56,8 +54,8 @@ S28 detail: [`S28_PRODUCTION_PERSISTENCE.md`](./S28_PRODUCTION_PERSISTENCE.md).
 |--------|--------|
 | S27A | **OPEN** — Evidence Pack **NOT STARTED** (blocked until durability) |
 | S27B | **OPEN** — Twilio configured; SMS evidence later |
-| S28 | **IN PROGRESS** — Neon + Upstash Production; fail-closed memory; migrate applied; redeploy + durability cert next |
-| S29 | **PARTIAL wire** — Redis now provisioned; multi-phone later |
+| S28 | **GO (infra)** — Neon + Upstash; fail-closed; ready=prisma/redis/postgres; durability cert passed |
+| S29 | **PARTIAL wire** — Redis live; multi-phone Evidence Pack later |
 | S30 | **PARTIAL** — hardcoded Luxembourg coords remain |
 | S31 | **OPEN** — no private media storage provider in repo |
 | S32–S34 | **QUEUED / BLOCKED** upstream |
@@ -66,4 +64,4 @@ S28 detail: [`S28_PRODUCTION_PERSISTENCE.md`](./S28_PRODUCTION_PERSISTENCE.md).
 
 **= NO**
 
-Do **not** start two-phone Evidence Pack until S28 durability scenario (step 5) is green.
+Two-phone Evidence Pack remains **NOT STARTED**. Private selfie media remains **OPEN**.

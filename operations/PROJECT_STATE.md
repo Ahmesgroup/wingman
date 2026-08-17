@@ -5,8 +5,8 @@
 **Active track:** [`LIVE_FIELD_TEST.md`](./LIVE_FIELD_TEST.md) — S27–S34 protocol productionization  
 **Protocol matrix:** [`PROTOCOL_READINESS.md`](./PROTOCOL_READINESS.md) · Evidence: [`EVIDENCE_PACK_TWO_PHONE.md`](./EVIDENCE_PACK_TWO_PHONE.md)  
 **PRODUCT PROTOCOL READY:** **NO** (2026-08-17)  
-**Locked status:** Protocol wiring **improved** · Production durability **BLOCKED / IN PROGRESS** · Private selfie media **OPEN** · Two-phone Evidence Pack **NOT STARTED / BLOCKED**  
-**S28:** [`S28_PRODUCTION_PERSISTENCE.md`](./S28_PRODUCTION_PERSISTENCE.md) — Neon Postgres + Upstash Redis on `wingman-api` Production; fail-closed (no memory); migrate applied; redeploy + durability cert next  
+**Locked status:** Protocol wiring **improved** · Production durability **GO (infra)** · Private selfie media **OPEN** · Two-phone Evidence Pack **NOT STARTED / BLOCKED**  
+**S28:** [`S28_PRODUCTION_PERSISTENCE.md`](./S28_PRODUCTION_PERSISTENCE.md) — Neon + Upstash live; `/internal/ready` = prisma/redis/postgres; durability cert passed  
 **Related:** [`S26_MEASUREMENT.md`](./S26_MEASUREMENT.md), [`CLIENT_MOBILE_PAYMENT_READINESS.md`](./CLIENT_MOBILE_PAYMENT_READINESS.md), [`FIELD_TEST.md`](./FIELD_TEST.md)
 
 ```text
@@ -22,12 +22,12 @@ CLIENT polish loop                  STOPPED — no redesign / polish-by-habit
 PAYMENTS                            OFF (architecture dormant)
 DESTINY (public field)              OUT until own gates
 ACTIVE                              LIVE FIELD TEST — product path = public site only
-S27A                                OPEN — Evidence Pack NOT STARTED (blocked until S28 durability)
+S27A                                OPEN — Evidence Pack NOT STARTED
 S27B                                OPEN — Twilio Verify configured; SMS evidence later
 S27A verdict                        OPEN — never “almost”
-S28                                 IN PROGRESS — Neon+Upstash provisioned; memory fail-closed; cert after redeploy
-S29                                 PARTIAL wire (WS + Redis provisioned); multi-phone later
-Gate C profile                      WIRED POST /me/profile — durable IN PROGRESS (S28)
+S28                                 GO (infra) — Neon+Upstash; fail-closed; durability cert passed
+S29                                 PARTIAL wire (WS + Redis live); multi-phone later
+Gate C profile                      WIRED POST /me/profile — durable GO (infra)
 ```
 
 ## Live Field Test board (protocol — not engines)
@@ -35,7 +35,7 @@ Gate C profile                      WIRED POST /me/profile — durable IN PROGRE
 ```text
 S27A Field-Test Identity                       OPEN (Evidence Pack NOT STARTED)
 S27B Production SMS OTP                        OPEN (Twilio Verify; evidence later)
-S28  Production Persistence Certification      IN PROGRESS (PG+Redis Provisioned / cert pending)
+S28  Production Persistence Certification      GO (infra)
 S29  Real Multi-user Realtime                  PARTIAL wire
 S30  Real Radar & Geo Field Test               PARTIAL (alone=0; hardcode geo remains)
 S31  Real Selfie Exchange                      OPEN (no private media store)

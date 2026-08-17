@@ -18,8 +18,35 @@
  */
 import { createRequire } from "node:module";
 import { randomUUID } from "node:crypto";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
+import fs from "node:fs";
 
-const require = createRequire(import.meta.url);
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const require = createRequire(path.join(__dirname, "../packages/database/package.json"));
+
+/** Load vercel env pull file without printing values (optional). */
+function loadEnvFile(filePath) {
+  if (!fs.existsSync(filePath)) return false;
+  const text = fs.readFileSync(filePath, "utf8");
+  for (const line of text.split(/\r?\n/)) {
+    if (!line || line.trimStart().startsWith("#") || !line.includes("=")) continue;
+    const i = line.indexOf("=");
+    const key = line.slice(0, i).trim();
+    let val = line.slice(i + 1).trim();
+    if (
+      (val.startsWith('"') && val.endsWith('"')) ||
+      (val.startsWith("'") && val.endsWith("'"))
+    ) {
+      val = val.slice(1, -1);
+    }
+    if (key && process.env[key] === undefined) process.env[key] = val;
+  }
+  return true;
+}
+
+loadEnvFile(path.join(__dirname, "../apps/api/.env.production.local"));
+loadEnvFile(path.join(__dirname, "../.env.production.local"));
 
 function mask(u) {
   if (!u) return "(unset)";
@@ -177,13 +204,17 @@ async function main() {
     };
 
     console.log(JSON.stringify({ msg: "s28.durability.result", ...report }));
-    process.exit(report.ok ? 0 : 1);
+    process.exitCode = report.ok ? 0 : 1;
   } finally {
-    await prisma.$disconnect();
+    try {
+      await prisma.$disconnect();
+    } catch {
+      /* ignore Windows libuv disconnect flake */
+    }
   }
 }
 
 main().catch((e) => {
   console.error(JSON.stringify({ ok: false, error: e instanceof Error ? e.message : String(e) }));
-  process.exit(1);
+  process.exitCode = 1;
 });
