@@ -116,9 +116,12 @@ export class InternalService {
         databaseOk = false;
         databaseDetail = e instanceof Error ? e.message : "database failure";
       }
-    } else if (process.env.DATABASE_URL) {
+    } else if (process.env.DATABASE_URL || process.env.POSTGRES_PRISMA_URL) {
       databaseOk = false;
       databaseDetail = "DATABASE_URL set but prisma client unavailable";
+    } else if (process.env.WINGMAN_PUBLIC_PROD === "true") {
+      databaseOk = false;
+      databaseDetail = "not-configured";
     }
     return buildReadiness({
       domain: { ok: true },

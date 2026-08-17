@@ -2,9 +2,21 @@
 
 **Status:** Decided (V4.1) · Extended for payment readiness (2026-08-12).
 
-Core secrets: `DATABASE_URL`, `REDIS_URL`, `PHONE_LOOKUP_PEPPER`, `PHONE_ENC_KEY` (+ `PHONE_KEY_VERSION`), `MEDIA_BUCKET`,
+Core secrets: `DATABASE_URL` (or `POSTGRES_PRISMA_URL` on Vercel/Neon), `REDIS_URL`, `PHONE_LOOKUP_PEPPER`, `PHONE_ENC_KEY` (+ `PHONE_KEY_VERSION`), `MEDIA_BUCKET`,
 `MEDIA_KMS_KEY`, `SESSION_SIGNING_KEY`, push provider keys, `POLICY_VERSION`. Secrets are managed via a
 secret store, never committed; peppers/keys rotate via versioning.
+
+## Persistence / ephemeral (S28)
+
+| Variable | Default | Notes |
+|----------|---------|-------|
+| `DATABASE_URL` | unset | Required when `WINGMAN_PUBLIC_PROD=true` (no memory fallback) |
+| `POSTGRES_PRISMA_URL` | unset | Preferred over `DATABASE_URL` for Prisma when set (Neon/Vercel) |
+| `DATABASE_URL_UNPOOLED` / `POSTGRES_URL_NON_POOLING` | unset | Prefer for `prisma migrate deploy` |
+| `REDIS_URL` | unset | Required when `WINGMAN_PUBLIC_PROD=true` (no memory ephemeral fallback) |
+| `WINGMAN_PUBLIC_PROD` | unset | When `true`, missing/unreachable Postgres or Redis aborts boot |
+
+See [`S28_PRODUCTION_PERSISTENCE.md`](./S28_PRODUCTION_PERSISTENCE.md).
 
 ## Payments (fail-closed defaults)
 

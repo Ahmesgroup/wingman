@@ -1,6 +1,19 @@
 -- S16: Durable protocol tables for deterministic boot hydration.
 -- Presence / radar / sockets remain Redis-only (not stored here).
 
+-- Enums required by ProtocolIdentity (full User schema may not be migrated yet).
+DO $$ BEGIN
+  CREATE TYPE "Gender" AS ENUM ('MALE', 'FEMALE', 'NON_BINARY');
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$ BEGIN
+  CREATE TYPE "InterestTarget" AS ENUM ('MEN', 'WOMEN', 'NON_BINARY_PEOPLE');
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
+
 CREATE TABLE IF NOT EXISTS "ProtocolIdentity" (
     "id" TEXT NOT NULL,
     "gender" "Gender" NOT NULL,

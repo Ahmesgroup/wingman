@@ -59,6 +59,11 @@ let sharedInfra: InfraOptions = {};
 let protocolBootstrap: Promise<{ repo: ProtocolRepository; prisma: PrismaClient | null }> | null = null;
 let sharedDeviceStore: DeviceTokenStore | null = null;
 
+/** Public Production must never silently fall back to in-process memory stores. */
+export function isPublicProd(): boolean {
+  return process.env.WINGMAN_PUBLIC_PROD === "true";
+}
+
 export function setInfraOverrides(opts: InfraOptions): void {
   sharedInfra = opts;
   protocolBootstrap = null;
@@ -74,9 +79,17 @@ async function buildEphemeral(): Promise<EphemeralStore> {
       const store = RedisEphemeralStore.fromUrl(url);
       await store.connect();
       return store;
-    } catch {
-      // fall through to memory
+    } catch (e) {
+      if (isPublicProd()) {
+        throw new Error(
+          `REDIS_URL unreachable in public production (no memory fallback): ${
+            e instanceof Error ? e.message : String(e)
+          }`,
+        );
+      }
     }
+  } else if (isPublicProd()) {
+    throw new Error("REDIS_URL is required in public production (no memory ephemeral fallback)");
   }
   return new MemoryEphemeralStore();
 }
@@ -136,7 +149,8 @@ function buildProtocolRepo(): Promise<{ repo: ProtocolRepository; prisma: Prisma
       if (sharedInfra.protocolRepo) {
         return { repo: sharedInfra.protocolRepo, prisma: sharedInfra.prisma ?? null };
       }
-      const url = process.env.DATABASE_URL;
+      // Neon/Vercel: prefer Prisma-pooled URL when present; else DATABASE_URL.
+      const url = process.env.POSTGRES_PRISMA_URL ?? process.env.DATABASE_URL;
       if (url) {
         try {
           const prisma = sharedInfra.prisma ?? createPrismaClient(url);
@@ -146,11 +160,24 @@ function buildProtocolRepo(): Promise<{ repo: ProtocolRepository; prisma: Prisma
           console.error(
             JSON.stringify({
               level: "error",
-              msg: "protocol.prisma_unavailable_fallback_memory",
+              msg: isPublicProd()
+                ? "protocol.prisma_unavailable_fail_closed"
+                : "protocol.prisma_unavailable_fallback_memory",
               error: e instanceof Error ? e.message : String(e),
             }),
           );
+          if (isPublicProd()) {
+            throw new Error(
+              `DATABASE_URL/POSTGRES_PRISMA_URL unreachable in public production (no memory fallback): ${
+                e instanceof Error ? e.message : String(e)
+              }`,
+            );
+          }
         }
+      } else if (isPublicProd()) {
+        throw new Error(
+          "DATABASE_URL (or POSTGRES_PRISMA_URL) is required in public production (no memory persistence fallback)",
+        );
       }
       return { repo: new MemoryProtocolRepository(), prisma: null };
     })();
