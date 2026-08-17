@@ -51,6 +51,24 @@ export const ConsentSchema = z.object({
   policyVersion: z.string().min(1),
 });
 
+export const ProfileUpdateSchema = z.object({
+  firstName: z.string().trim().min(1).max(40).optional(),
+  birthDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+  gender: z.enum(["MALE", "FEMALE", "NON_BINARY"]),
+  interestedIn: z
+    .array(z.enum(["MEN", "WOMEN", "NON_BINARY_PEOPLE"]))
+    .min(1)
+    .max(3),
+  heightCm: z.number().int().min(120).max(230).optional(),
+  interests: z.array(z.string().min(1).max(40)).max(5).optional(),
+  dailyBio: z.string().max(150).optional(),
+  mood: z.string().max(40).optional(),
+  intention: z.string().max(40).optional(),
+});
+
 export const ERROR_CATALOG = {
   FORBIDDEN_TRANSITION: 409,
   SIGNAL_QUOTA_EXCEEDED: 429,

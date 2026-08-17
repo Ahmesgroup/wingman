@@ -177,7 +177,7 @@
           </div>
         </div>
         <div class="form-footer">
-          <button type="button" class="btn btn-primary" data-go="v-consent" data-i18n="next">Next</button>
+          <button type="button" class="btn btn-primary" id="profile-next-btn" data-i18n="next">Next</button>
         </div>
       </section>
 
@@ -194,23 +194,23 @@
           </div>
           <div class="consent-item">
             <div class="txt"><b id="c-loc" data-i18n="c_loc">Approximate location</b><p data-i18n="c_loc_d">Coarse radius only — never your exact position.</p></div>
-            <div class="switch" role="switch" aria-checked="true" tabindex="0" aria-labelledby="c-loc"></div>
+            <div class="switch" id="consent-loc" role="switch" aria-checked="true" tabindex="0" aria-labelledby="c-loc"></div>
           </div>
           <div class="consent-item">
             <div class="txt"><b id="c-destiny" data-i18n="c_destiny">Destiny Connection</b><p data-i18n="c_destiny_d">Off by default. Coarse co-presence to spot repeated paths.</p></div>
-            <div class="switch" role="switch" aria-checked="false" tabindex="0" aria-labelledby="c-destiny"></div>
+            <div class="switch" id="consent-destiny" role="switch" aria-checked="false" tabindex="0" aria-labelledby="c-destiny"></div>
           </div>
           <div class="consent-item">
             <div class="txt"><b id="c-push" data-i18n="c_push">Push notifications</b><p data-i18n="c_push_d">Signals, selfies, confirmations.</p></div>
-            <div class="switch" role="switch" aria-checked="true" tabindex="0" aria-labelledby="c-push"></div>
+            <div class="switch" id="consent-push" role="switch" aria-checked="true" tabindex="0" aria-labelledby="c-push"></div>
           </div>
           <div class="consent-item">
             <div class="txt"><b id="c-analytics" data-i18n="c_analytics">Product analytics</b><p data-i18n="c_analytics_d">Optional. Helps improve Wingman.</p></div>
-            <div class="switch" role="switch" aria-checked="false" tabindex="0" aria-labelledby="c-analytics"></div>
+            <div class="switch" id="consent-analytics" role="switch" aria-checked="false" tabindex="0" aria-labelledby="c-analytics"></div>
           </div>
         </div>
         <div class="form-footer">
-          <button type="button" class="btn btn-primary" data-go="v-radar" data-i18n="consent_cta">Agree & activate Radar</button>
+          <button type="button" class="btn btn-primary" id="consent-cta-btn" data-i18n="consent_cta">Agree & activate Radar</button>
         </div>
       </section>
 
@@ -519,8 +519,10 @@
 </div>
 
 <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js" crossorigin="anonymous"></script>
 <script src="config.js"></script>
 <script src="api.js"></script>
+<script src="realtime.js"></script>
 <script src="radar-dots.js"></script>
 <script src="payments/payment-types.js"></script>
 <script src="payments/providers/disabled.js"></script>

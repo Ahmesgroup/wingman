@@ -24,9 +24,12 @@ import {
   type PresenceRecord,
 } from "./presence/engine.js";
 import {
+  ageYearsFromBirthDate,
   buildRadarCandidates,
   protectPrecision,
+  type Gender,
   type GeoPoint,
+  type InterestTarget,
   type RadarProfile,
 } from "./radar/engine.js";
 import {
@@ -110,6 +113,63 @@ export class WingmanEngine {
 
   seedUser(user: UserSeed): void {
     this.users.set(user.id, user);
+  }
+
+  /**
+   * Persist onboarding / settings profile for a known identity.
+   * Radar eligibility uses gender + interestedIn; extras stay opaque to candidates.
+   */
+  updateProfile(
+    userId: string,
+    patch: {
+      gender: Gender;
+      interestedIn: InterestTarget[];
+      firstName?: string;
+      birthDate?: string;
+      heightCm?: number;
+      dailyBio?: string;
+      interests?: string[];
+      mood?: string;
+      intention?: string;
+    },
+  ): UserSeed {
+    const user = this.users.get(userId);
+    if (!user) throw new DomainError("NOT_FOUND", "User not found");
+    if (!patch.interestedIn.length) {
+      throw new DomainError("VALIDATION_REQUIRED", "interestedIn required");
+    }
+    if (patch.birthDate) {
+      const age = ageYearsFromBirthDate(patch.birthDate, this.clock.now());
+      if (!Number.isFinite(age) || age < 18) {
+        throw new DomainError("VALIDATION_REQUIRED", "Must be 18+", { age });
+      }
+    }
+    if (patch.interests && patch.interests.length > 5) {
+      throw new DomainError("VALIDATION_REQUIRED", "Max 5 interests");
+    }
+    if (patch.heightCm != null && (patch.heightCm < 120 || patch.heightCm > 230)) {
+      throw new DomainError("VALIDATION_REQUIRED", "heightCm out of range");
+    }
+    if (patch.dailyBio != null && patch.dailyBio.length > 150) {
+      throw new DomainError("VALIDATION_REQUIRED", "dailyBio too long");
+    }
+    const profile = {
+      ...user.profile,
+      userId,
+      gender: patch.gender,
+      interestedIn: [...patch.interestedIn],
+      firstName: patch.firstName?.trim() || undefined,
+      birthDate: patch.birthDate,
+      heightCm: patch.heightCm,
+      dailyBio: patch.dailyBio?.trim() || undefined,
+      interests: patch.interests ? [...patch.interests] : undefined,
+      mood: patch.mood ?? user.profile.mood,
+      intention: patch.intention ?? user.profile.intention,
+    };
+    const next = { ...user, profile };
+    this.users.set(userId, next);
+    this.audit("profile.update", userId);
+    return next;
   }
 
   /** Sync seed flag after billing changes (never accept client isPremium). */

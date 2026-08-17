@@ -7,6 +7,7 @@ export type RealtimeEventType =
   | "validation.updated"
   | "match.created"
   | "mission.updated"
+  | "mission.message"
   | "mission.expired"
   | "connection.closed";
 

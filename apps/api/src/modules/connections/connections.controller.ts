@@ -124,8 +124,46 @@ export class ConnectionsService {
     return connection;
   }
 
-  message(id: string, userId: string, text: string) {
-    return this.engine.postMissionMessage(id, userId, text);
+  async message(id: string, userId: string, text: string) {
+    const message = this.engine.postMissionMessage(id, userId, text);
+    const c = this.engine.connections.get(id);
+    if (c) {
+      await this.realtime.publish({
+        type: "mission.message",
+        aggregateId: id,
+        rooms: [
+          this.realtime.userRoom(c.initiatorId),
+          this.realtime.userRoom(c.recipientId),
+          this.realtime.connectionRoom(id),
+          this.realtime.missionRoom(id),
+        ],
+        payload: {
+          connectionId: id,
+          senderId: message.senderId,
+          text: message.text,
+          filtered: message.filtered,
+          at: message.at instanceof Date ? message.at.toISOString() : message.at,
+        },
+      });
+    }
+    return message;
+  }
+
+  messages(id: string, userId: string) {
+    const c = this.engine.connections.get(id);
+    if (!c) throw new DomainError("CONNECTION_NOT_FOUND", "Not found");
+    if (userId !== c.initiatorId && userId !== c.recipientId) {
+      throw new DomainError("NOT_FOUND", "Not a participant");
+    }
+    const messages = this.engine.missionMessages
+      .filter((m) => m.connectionId === id)
+      .map((m) => ({
+        connectionId: m.connectionId,
+        senderId: m.senderId,
+        text: m.text,
+        at: m.at.toISOString(),
+      }));
+    return { messages, serverTime: this.engine.clock.now().toISOString() };
   }
 
   async outcome(id: string, userId: string, outcome: "YES" | "NO") {
@@ -215,12 +253,17 @@ export class ConnectionsController {
   }
 
   @Post(":id/messages")
-  messages(
+  async postMessages(
     @CurrentUser() userId: string,
     @Param("id") id: string,
     @Body(new ZodValidationPipe(MissionMessageSchema)) body: { text: string },
   ) {
-    return { message: this.connections.message(id, userId, body.text) };
+    return { message: await this.connections.message(id, userId, body.text) };
+  }
+
+  @Get(":id/messages")
+  listMessages(@CurrentUser() userId: string, @Param("id") id: string) {
+    return this.connections.messages(id, userId);
   }
 
   @Post(":id/outcome")

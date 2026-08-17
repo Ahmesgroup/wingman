@@ -34,9 +34,25 @@ const state = {
 
 /** @type {ReturnType<typeof WingmanApi.createApiClient> | null} */
 let api = null;
+/** @type {ReturnType<typeof WingmanRealtime.createRealtime> | null} */
+let realtime = null;
 const payments = (typeof WingmanPayments !== 'undefined' && WingmanPayments.paymentClient)
   ? WingmanPayments.paymentClient
   : { provider: { id: 'disabled', enabled: false }, showPaywallCtas: false };
+
+/** Lab-only dual-user sim (localhost / ?devauth=1). Never on public product path. */
+function allowPeerSim() {
+  return Boolean(api && api.preferDevHeader && !api.productPath);
+}
+
+function opaqueMediaId() {
+  try {
+    if (globalThis.crypto && typeof globalThis.crypto.randomUUID === 'function') {
+      return 'm_' + globalThis.crypto.randomUUID().replace(/-/g, '');
+    }
+  } catch (_) { /* ignore */ }
+  return 'm_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+}
 
 const SESSION_KEY = 'wingman_proto_session_v1';
 const LOADING_MAX_MS = 12000;
@@ -701,13 +717,13 @@ $('#send-signal-btn').addEventListener('click', async () => {
           { idempotencyKey: 'proto-' + Date.now() },
         );
         state.signalId = res && res.signal && res.signal.id;
+        state.peerId = targetId;
         state.signalsLeft = Math.max(0, state.signalsLeft - 1);
         $('#stat-signals').textContent = state.signalsLeft;
       });
-      state.hasIncomingSignal = true;
-      setPhase('signal', t('t_phase_signal'));
+      // Sender stays on Radar — recipient gets signal.received over realtime.
+      setPhase('available', t('t_phase_available'));
       feedback('signal', t('t_signal_sent'));
-      setTimeout(() => show('v-signal'), motionMs(320, 0));
       return;
     } catch (_) {
       feedback('error', t('t_api_unreachable'));
@@ -843,7 +859,10 @@ function onEnter(id) {
       show('v-ticket');
     }, motionMs(900, 200));
   }
-  if (id === 'v-ticket') setPhase('match', t('t_phase_match'));
+  if (id === 'v-ticket') {
+    setPhase('match', t('t_phase_match'));
+    if (realtime && state.connectionId) realtime.subscribeConnection(state.connectionId);
+  }
   if (id === 'v-mission-meet') {
     setPhase('mission', t('t_phase_mission'));
     const modeView = $('#v-mission-mode');
@@ -854,6 +873,8 @@ function onEnter(id) {
     stopMM = makeTimer({ durationSec: 900, textEl: $('#mm-timer'), barEl: $('#mm-bar'),
       onExpire: () => { feedback('busy', state.lang === 'fr' ? 'Chat expiré' : 'Chat expired'); show('v-outcome'); } });
     feedback('mission', t('t_mission_active'));
+    if (realtime && state.connectionId) realtime.subscribeConnection(state.connectionId);
+    void restoreChatLog();
   }
   if (id === 'v-mission-mode') {
     setPhase('mission', t('t_phase_mission'));
@@ -869,23 +890,48 @@ function onEnter(id) {
   }
 }
 
-/* selfie send -> dual selfie on API (demo both sides) then reveal approve */
+async function refreshConnectionUi() {
+  if (!liveApi() || !state.connectionId) return null;
+  const c = await api.connection(state.connectionId);
+  const conn = c && c.connection;
+  if (!conn) return null;
+  state.connectionState = conn.state;
+  if (realtime) realtime.subscribeConnection(state.connectionId);
+  const st = conn.state;
+  if (st === 'WAITING_FOR_INITIATOR_APPROVAL' || st === 'MUTUALLY_VALIDATED') {
+    $('#selfie-send').classList.add('hidden');
+    $('#selfie-validate').classList.remove('hidden');
+  }
+  if (st === 'MUTUALLY_VALIDATED' && state.viewId === 'v-selfie') {
+    show('v-confirmed');
+  }
+  return conn;
+}
+
+/* selfie send — own side only; opaque mediaId (no peer impersonation) */
 $('#selfie-send').addEventListener('click', async () => {
   if (state.busy) return;
   if (liveApi() && state.connectionId) {
     try {
       await withLoading(t('t_selfie'), async () => {
-        await api.selfie(state.connectionId, { mediaId: 'media-' + state.meId });
-        await api.selfie(state.connectionId, { mediaId: 'media-' + state.peerId }, { userId: state.peerId });
-        const c = await api.connection(state.connectionId);
-        state.connectionState = c.connection && c.connection.state;
+        const mediaId = opaqueMediaId();
+        await api.selfie(state.connectionId, { mediaId: mediaId });
+        if (allowPeerSim() && state.peerId) {
+          await api.selfie(state.connectionId, { mediaId: opaqueMediaId() }, { userId: state.peerId });
+        }
+        await refreshConnectionUi();
       });
     } catch (_) { return; }
+  } else if (api && api.productPath) {
+    feedback('busy', t('t_api_unreachable'));
+    return;
   }
-  $('#selfie-send').classList.add('hidden');
-  $('#selfie-validate').classList.remove('hidden');
   setPhase('validation', t('t_phase_validation'));
   feedback('busy', t('t_validation'));
+  if (!liveApi()) {
+    $('#selfie-send').classList.add('hidden');
+    $('#selfie-validate').classList.remove('hidden');
+  }
 });
 
 $('#selfie-expire').addEventListener('click', () => show('v-radar'));
@@ -898,6 +944,9 @@ $('#selfie-approve').addEventListener('click', async () => {
         state.connectionState = res.connection && res.connection.state;
       });
     } catch (_) { return; }
+  } else if (api && api.productPath) {
+    feedback('busy', t('t_api_unreachable'));
+    return;
   }
   show('v-confirmed');
 });
@@ -907,12 +956,17 @@ $('#open-signal-btn').addEventListener('click', async () => {
   if (liveApi() && state.signalId) {
     try {
       await withLoading(t('t_accepting'), async () => {
-        await api.openSignal(state.signalId, { userId: state.peerId });
-        const accept = await api.acceptSignal(state.signalId, { userId: state.peerId });
+        // Recipient acts as self — never impersonate peer on product path.
+        await api.openSignal(state.signalId);
+        const accept = await api.acceptSignal(state.signalId);
         state.connectionId = accept.connection && accept.connection.id;
         state.connectionState = accept.connection && accept.connection.state;
+        if (realtime && state.connectionId) realtime.subscribeConnection(state.connectionId);
       });
     } catch (_) { return; }
+  } else if (api && api.productPath) {
+    feedback('busy', t('t_api_unreachable'));
+    return;
   } else {
     state.connectionId = state.connectionId || 'demo-conn';
   }
@@ -1000,6 +1054,33 @@ $('#mode-continue-btn').addEventListener('click', async () => {
 
 /* mission meet chat + anti-contact filter */
 const CONTACT_RE = /(\+?\d[\d\s().-]{6,}\d)|(@[A-Za-z0-9_.]{2,})|(\b\w+\.(com|net|io|fr|be|lu)\b)|(snap|insta|whatsapp|tiktok|telegram)/i;
+const chatSeen = new Set();
+
+function appendChatMessage(msg, mine) {
+  const log = $('#chat-log');
+  if (!log || !msg) return;
+  const key = (msg.at || '') + '|' + (msg.senderId || '') + '|' + (msg.text || '');
+  if (chatSeen.has(key)) return;
+  chatSeen.add(key);
+  const el = document.createElement('div');
+  el.className = 'msg ' + (mine ? 'me' : 'them');
+  el.textContent = msg.text || '';
+  log.appendChild(el);
+  log.scrollTop = log.scrollHeight;
+}
+
+async function restoreChatLog() {
+  if (!liveApi() || !state.connectionId) return;
+  try {
+    const res = await api.listMessages(state.connectionId);
+    const list = (res && res.messages) || [];
+    chatSeen.clear();
+    const log = $('#chat-log');
+    if (log) log.innerHTML = '';
+    list.forEach((m) => appendChatMessage(m, m.senderId === state.meId));
+  } catch (_) { /* ignore */ }
+}
+
 async function sendChat() {
   if (state.busy) return;
   const f = $('#chat-field'), v = f.value.trim(); if (!v) return;
@@ -1017,12 +1098,19 @@ async function sendChat() {
           log.appendChild(b); haptic('error');
           return;
         }
-        const m = document.createElement('div'); m.className = 'msg me'; m.textContent = v;
-        log.appendChild(m);
+        appendChatMessage({
+          text: (res && res.message && res.message.text) || v,
+          senderId: state.meId,
+          at: (res && res.message && res.message.at) || new Date().toISOString(),
+        }, true);
       });
       f.value = ''; log.scrollTop = log.scrollHeight;
       return;
     } catch (_) { return; }
+  }
+  if (api && api.productPath) {
+    feedback('busy', t('t_api_unreachable'));
+    return;
   }
   const m = document.createElement('div'); m.className = 'msg me'; m.textContent = v;
   log.appendChild(m); f.value = ''; log.scrollTop = log.scrollHeight;
@@ -1030,7 +1118,7 @@ async function sendChat() {
 $('#chat-send').addEventListener('click', sendChat);
 $('#chat-field').addEventListener('keydown', e => { if (e.key === 'Enter') sendChat(); });
 
-/* outcome → both sides on API → cooldown */
+/* outcome — own side only (peer answers on their device) */
 async function submitOutcome(kind) {
   if (state.busy) return;
   $('#cd-num').textContent = kind === 'yes' ? '30' : '15';
@@ -1039,11 +1127,16 @@ async function submitOutcome(kind) {
       await withLoading(t('t_outcome'), async () => {
         const o = kind === 'yes' ? 'YES' : 'NO';
         await api.outcome(state.connectionId, { outcome: o });
-        await api.outcome(state.connectionId, { outcome: o }, { userId: state.peerId });
+        if (allowPeerSim() && state.peerId) {
+          await api.outcome(state.connectionId, { outcome: o }, { userId: state.peerId });
+        }
         const c = await api.connection(state.connectionId);
         state.connectionState = c.connection && c.connection.state;
       });
     } catch (_) { return; }
+  } else if (api && api.productPath) {
+    feedback('busy', t('t_api_unreachable'));
+    return;
   }
   feedback('success', t('t_mission_done'));
   show('v-cooldown');
@@ -1195,6 +1288,7 @@ async function bootApi() {
         feedback('success', t('t_auth_ok'));
         if (state.phase === 'offline' || !state.phase) setPhase('idle');
         await refreshAuthMode();
+        ensureRealtime();
         return;
       } catch (_) {
         // Stale tokens: stay online, clear session, return to phone auth.
@@ -1539,6 +1633,199 @@ function initBirthPicker() {
 
 initBirthPicker();
 
+/* -------------------------------------------------------------- profile pills */
+document.addEventListener('click', (e) => {
+  const pill = e.target.closest('#v-profile .pill');
+  if (!pill) return;
+  const set = pill.closest('.pillset');
+  if (!set) return;
+  const multi = set.classList.contains('pillset-wrap') || set.getAttribute('aria-labelledby') === 'pf-interest-label' || set.getAttribute('aria-labelledby') === 'pf-interests-label';
+  if (multi && set.getAttribute('aria-labelledby') === 'pf-interest-label') {
+    const on = pill.getAttribute('aria-pressed') === 'true';
+    pill.setAttribute('aria-pressed', String(!on));
+    return;
+  }
+  if (multi && set.getAttribute('aria-labelledby') === 'pf-interests-label') {
+    const on = pill.getAttribute('aria-pressed') === 'true';
+    if (!on) {
+      const selected = $$('#v-profile [aria-labelledby="pf-interests-label"] .pill[aria-pressed="true"]');
+      if (selected.length >= 5) return;
+    }
+    pill.setAttribute('aria-pressed', String(!on));
+    return;
+  }
+  // gender: single-select
+  $$('.pill', set).forEach((p) => p.setAttribute('aria-pressed', 'false'));
+  pill.setAttribute('aria-pressed', 'true');
+});
+
+function readProfileForm() {
+  const name = ($('#pf-name') && $('#pf-name').value || '').trim();
+  const birth = ($('#pf-birth') && $('#pf-birth').value || '').trim();
+  const heightRaw = $('#pf-height') && $('#pf-height').value;
+  const bio = ($('#pf-bio') && $('#pf-bio').value || '').trim();
+  const genderPill = $('#v-profile [aria-labelledby="pf-gender-label"] .pill[aria-pressed="true"]');
+  const genderMap = { g_male: 'MALE', g_female: 'FEMALE', g_nb: 'NON_BINARY' };
+  let gender = 'MALE';
+  if (genderPill) {
+    const key = genderPill.getAttribute('data-i18n');
+    if (key && genderMap[key]) gender = genderMap[key];
+  }
+  const interestMap = { t_men: 'MEN', t_women: 'WOMEN', t_nb: 'NON_BINARY_PEOPLE' };
+  const interestedIn = [];
+  $$('#v-profile [aria-labelledby="pf-interest-label"] .pill[aria-pressed="true"]').forEach((p) => {
+    const key = p.getAttribute('data-i18n');
+    if (key && interestMap[key]) interestedIn.push(interestMap[key]);
+  });
+  const interests = $$('#v-profile [aria-labelledby="pf-interests-label"] .pill[aria-pressed="true"]')
+    .map((p) => (p.getAttribute('aria-label') || p.textContent || '').trim())
+    .filter(Boolean)
+    .slice(0, 5);
+  const heightCm = heightRaw ? Number(heightRaw) : undefined;
+  return {
+    firstName: name || undefined,
+    birthDate: birth || undefined,
+    gender,
+    interestedIn,
+    heightCm: Number.isFinite(heightCm) ? heightCm : undefined,
+    dailyBio: bio || undefined,
+    interests: interests.length ? interests : undefined,
+  };
+}
+
+$('#profile-next-btn') && $('#profile-next-btn').addEventListener('click', async () => {
+  if (state.busy) return;
+  const body = readProfileForm();
+  if (!body.interestedIn.length) {
+    feedback('error', state.lang === 'fr' ? 'Choisissez qui vous intéresse' : 'Select who you are interested in');
+    return;
+  }
+  if (!body.birthDate) {
+    feedback('error', state.lang === 'fr' ? 'Date de naissance requise' : 'Date of birth required');
+    return;
+  }
+  if (liveApi()) {
+    try {
+      await withLoading(t('t_loading'), async () => {
+        await api.saveProfile(body);
+      });
+    } catch (e) {
+      const msg = (e && e.code === 'VALIDATION_REQUIRED')
+        ? (state.lang === 'fr' ? 'Profil invalide (18+ requis)' : 'Invalid profile (18+ required)')
+        : ((e && e.message) || t('t_api_unreachable'));
+      feedback('error', msg);
+      return;
+    }
+  } else if (api && api.productPath) {
+    feedback('busy', t('t_api_unreachable'));
+    return;
+  }
+  show('v-consent');
+});
+
+async function postConsents() {
+  const policyVersion = 'v1';
+  const grants = [{ purpose: 'CORE_MATCHING', policyVersion }];
+  const loc = $('#consent-loc');
+  const push = $('#consent-push');
+  const analytics = $('#consent-analytics');
+  // Destiny stays product-off — record only if user toggled; server Destiny flag stays false.
+  const destiny = $('#consent-destiny');
+  if (!loc || loc.getAttribute('aria-checked') === 'true') {
+    grants.push({ purpose: 'COARSE_LOCATION', policyVersion });
+  }
+  if (!push || push.getAttribute('aria-checked') === 'true') {
+    grants.push({ purpose: 'PUSH_NOTIFICATIONS', policyVersion });
+  }
+  if (analytics && analytics.getAttribute('aria-checked') === 'true') {
+    grants.push({ purpose: 'PRODUCT_ANALYTICS', policyVersion });
+  }
+  if (destiny && destiny.getAttribute('aria-checked') === 'true') {
+    grants.push({ purpose: 'DESTINY_CONNECTION', policyVersion });
+  }
+  for (const g of grants) {
+    await api.consent(g);
+  }
+}
+
+$('#consent-cta-btn') && $('#consent-cta-btn').addEventListener('click', async () => {
+  if (state.busy) return;
+  if (liveApi()) {
+    try {
+      await withLoading(t('t_loading'), async () => {
+        await postConsents();
+      });
+    } catch (_) {
+      feedback('error', t('t_api_unreachable'));
+      return;
+    }
+  } else if (api && api.productPath) {
+    feedback('busy', t('t_api_unreachable'));
+    return;
+  }
+  show('v-radar');
+});
+
+function handleRealtimeEvent(env) {
+  if (!env || !env.type) return;
+  const p = env.payload || {};
+  if (env.type === 'signal.received') {
+    state.signalId = p.signalId || env.aggregateId;
+    state.hasIncomingSignal = true;
+    syncSignalEmpty();
+    markSignalArrive();
+    setPhase('signal', t('t_phase_signal'));
+    feedback('signal', t('t_signal_received'));
+    if (state.viewId === 'v-radar' || state.viewId === 'v-pulse') show('v-signal');
+    return;
+  }
+  if (env.type === 'radar.changed' || env.type === 'presence.changed') {
+    if (liveApi() && state.radarActive) {
+      api.radarCandidates().then(applyRadarCandidates).catch(() => {});
+    }
+    return;
+  }
+  if (env.type === 'validation.updated' || env.type === 'mission.updated' || env.type === 'match.created') {
+    if (p.connectionId) state.connectionId = p.connectionId;
+    if (p.state) state.connectionState = p.state;
+    if (realtime && state.connectionId) realtime.subscribeConnection(state.connectionId);
+    void refreshConnectionUi();
+    if (p.state === 'MISSION_MEET_ACTIVE' && state.viewId !== 'v-mission-meet') {
+      feedback('mission', t('t_mission_active'));
+    }
+    if (p.state === 'COOLDOWN_ACTIVE' && state.viewId !== 'v-cooldown') {
+      show('v-cooldown');
+    }
+    return;
+  }
+  if (env.type === 'mission.message') {
+    if (p.connectionId && state.connectionId && p.connectionId !== state.connectionId) return;
+    appendChatMessage({
+      text: p.text,
+      senderId: p.senderId,
+      at: p.at,
+    }, p.senderId === state.meId);
+    return;
+  }
+  if (env.type === 'connection.closed' || env.type === 'mission.expired') {
+    feedback('busy', env.type === 'mission.expired' ? (state.lang === 'fr' ? 'Chat expiré' : 'Chat expired') : t('t_mission_done'));
+  }
+}
+
+function ensureRealtime() {
+  if (!globalThis.WingmanRealtime || !api) return;
+  if (realtime) {
+    try { realtime.disconnect(); } catch (_) { /* ignore */ }
+  }
+  realtime = WingmanRealtime.createRealtime(api, {
+    onEvent: handleRealtimeEvent,
+    onReady: () => {
+      if (state.connectionId) realtime.subscribeConnection(state.connectionId);
+    },
+  });
+  realtime.connect();
+}
+
 /* ------------------------------------------------------------ S27 phone auth */
 let pendingPhoneE164 = '';
 let authFieldTest = false;
@@ -1673,6 +1960,7 @@ $('#otp-verify-btn') && $('#otp-verify-btn').addEventListener('click', async () 
     });
     setApiBanner('live', t('t_api_live'));
     feedback('success', t('t_auth_ok'));
+    ensureRealtime();
     show('v-profile');
   } catch (e) {
     const codeErr = e && e.code;

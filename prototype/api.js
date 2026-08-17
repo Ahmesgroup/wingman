@@ -259,6 +259,10 @@
       paymentsStatus: function () { return request('GET', '/billing/payments/status'); },
       checkout: function (urls) { return request('POST', '/billing/checkout', urls); },
 
+      me: function (opts) { return request('GET', '/me', undefined, opts); },
+      saveProfile: function (body, opts) { return request('POST', '/me/profile', body, opts); },
+      consent: function (body, opts) { return request('POST', '/privacy/consent', body, opts); },
+
       radarActivate: function (body, opts) { return request('POST', '/radar/activate', body, opts); },
       radarDeactivate: function (opts) { return request('POST', '/radar/deactivate', {}, opts); },
       radarCandidates: function (near, around, opts) {
@@ -280,6 +284,7 @@
       finishMeet: function (id, opts) { return request('POST', '/connections/' + id + '/finish', {}, opts); },
       notThisTime: function (id, opts) { return request('POST', '/connections/' + id + '/not-this-time', {}, opts); },
       message: function (id, body, opts) { return request('POST', '/connections/' + id + '/messages', body, opts); },
+      listMessages: function (id, opts) { return request('GET', '/connections/' + id + '/messages', undefined, opts); },
       outcome: function (id, body, opts) { return request('POST', '/connections/' + id + '/outcome', body, opts); },
       cooldownSkip: function (id, opts) { return request('POST', '/connections/' + id + '/cooldown/skip', {}, opts); },
       block: function (body, opts) { return request('POST', '/safety/block', body, opts); },

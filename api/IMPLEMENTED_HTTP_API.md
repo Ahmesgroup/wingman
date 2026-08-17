@@ -34,6 +34,8 @@ This document lists **routes that exist in code today**. Product API docs under 
 
 | Method | Path | Body / notes |
 |--------|------|----------------|
+| GET | `/me` | Current user profile (null until set) |
+| POST | `/me/profile` | `{ gender, interestedIn, firstName?, birthDate?, heightCm?, interests?, dailyBio? }` — age ≥18 |
 | POST | `/radar/activate` | `{ lat, lng, visibility? }` |
 | POST | `/radar/deactivate` | — |
 | POST | `/radar/heartbeat` | `{ lat?, lng? }` |
@@ -52,7 +54,8 @@ This document lists **routes that exist in code today**. Product API docs under 
 | POST | `/connections/:id/ticket/confirm` | → mission |
 | POST | `/connections/:id/lets-meet` | Mission confirm |
 | POST | `/connections/:id/not-this-time` | → outcome pending |
-| POST | `/connections/:id/messages` | `{ text }` anti-contact filtered |
+| POST | `/connections/:id/messages` | `{ text }` anti-contact filtered + `mission.message` realtime |
+| GET | `/connections/:id/messages` | Participant-only message list (reconnect restore) |
 | POST | `/connections/:id/outcome` | `{ outcome: YES\|NO }` |
 | POST | `/connections/:id/cooldown/skip` | Early complete |
 | POST | `/safety/block` | `{ userId }` |

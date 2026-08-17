@@ -22,6 +22,7 @@ import { HealthModule } from "./modules/health/health.module.js";
 import { InfraModule, setInfraOverrides, type InfraOptions } from "./modules/infra/infra.module.js";
 import { AUTH_SERVICE_TOKEN } from "./modules/infra/infra.tokens.js";
 import { InternalModule } from "./modules/internal/internal.module.js";
+import { MeModule } from "./modules/me/me.module.js";
 import { PrivacyModule } from "./modules/privacy/privacy.module.js";
 import { RadarModule } from "./modules/radar/radar.module.js";
 import { RealtimeModule } from "./modules/realtime/realtime.module.js";
@@ -78,6 +79,7 @@ export class AppModule {
         HealthModule,
         DevModule,
         AuthModule,
+        MeModule,
         DevicesModule,
         RadarModule,
         SignalsModule,

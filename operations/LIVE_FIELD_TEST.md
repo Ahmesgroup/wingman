@@ -1,9 +1,18 @@
 # Wingman Live Field Test — S27–S34
 
-**Status:** LOCKED 2026-08-14  
-**Surface ready (UI):** `078d308` · https://wingman-prototype.vercel.app/  
+**Status:** LOCKED 2026-08-14 · Protocol matrix refresh 2026-08-17  
+**Surface:** https://wingman-prototype.vercel.app/  
+**API:** https://wingman-api-three.vercel.app/  
+**PRODUCT PROTOCOL READY:** **NO** — see [`PROTOCOL_READINESS.md`](./PROTOCOL_READINESS.md)  
 **This track ≠** advanced-engine / learning sprints (still blocked until S26 Review).  
 **This track =** productionize the **real multi-user protocol**.
+
+### 2026-08-17 engineering note (honest)
+
+- Wired: `POST /me/profile`, consent from client, Socket.IO client, `mission.message` + `GET /connections/:id/messages`, removed public dual-user peer impersonation.
+- Production `/internal/ready` still reports **memory** persistence and **database not-configured** → S28 not startable for durable certification.
+- Selfie: opaque `mediaId` protocol transitions only — **no** private media upload/purge yet (S31 BLOCKED).
+- Two-phone Evidence Pack: [`EVIDENCE_PACK_TWO_PHONE.md`](./EVIDENCE_PACK_TWO_PHONE.md).
 
 ## Phase change
 

@@ -18,6 +18,12 @@ This document describes the **executable backend** that was built from the V4.1 
 
 The original product specs under `docs/`, `architecture/`, `api/` remain authoritative for product rules. This file is authoritative for **what code exists today** and how to operate it.
 
+### Field-protocol additions (2026-08-17)
+
+- `GET /me`, `POST /me/profile` — onboarding profile into domain + mirror
+- `GET /connections/:id/messages` + realtime `mission.message`
+- See [`operations/PROTOCOL_READINESS.md`](../operations/PROTOCOL_READINESS.md). Production deploy may still run **memory** persistence until `DATABASE_URL` / Redis are configured.
+
 ---
 
 ## 1. Non-negotiable rules

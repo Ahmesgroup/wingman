@@ -10,6 +10,27 @@ export interface RadarProfile {
   interestedIn: InterestTarget[];
   intention?: string;
   mood?: string;
+  /** Optional durable profile fields (never exposed on Radar candidates). */
+  firstName?: string;
+  birthDate?: string;
+  heightCm?: number;
+  dailyBio?: string;
+  interests?: string[];
+}
+
+/** Calendar age in full years (UTC date parts). */
+export function ageYearsFromBirthDate(birthDateIso: string, now: Date): number {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(birthDateIso.trim());
+  if (!m) return NaN;
+  const y = Number(m[1]);
+  const mo = Number(m[2]);
+  const d = Number(m[3]);
+  if (mo < 1 || mo > 12 || d < 1 || d > 31) return NaN;
+  let age = now.getUTCFullYear() - y;
+  const month = now.getUTCMonth() + 1;
+  const day = now.getUTCDate();
+  if (month < mo || (month === mo && day < d)) age -= 1;
+  return age;
 }
 
 export interface GeoPoint {

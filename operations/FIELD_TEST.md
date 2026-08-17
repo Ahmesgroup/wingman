@@ -1,21 +1,22 @@
 # Wingman — surface field test (UI)
 
-**Status:** Surface ready · **not** Live Field Test Ready  
+**Status:** Surface ready · **PRODUCT PROTOCOL READY: NO**  
 **Live UI:** https://wingman-prototype.vercel.app/  
-**Build:** `078d308`  
-**Next track:** [`LIVE_FIELD_TEST.md`](./LIVE_FIELD_TEST.md) (S27–S34)  
-**Product path:** open the public URL only — API is configured via `WINGMAN_API_URL` on Vercel (see [`S27_IDENTITY_OTP.md`](./S27_IDENTITY_OTP.md)).
+**API:** https://wingman-api-three.vercel.app/  
+**Next track:** [`LIVE_FIELD_TEST.md`](./LIVE_FIELD_TEST.md) (S27–S34) · Matrix: [`PROTOCOL_READINESS.md`](./PROTOCOL_READINESS.md)  
+**Product path:** open the public URL only — API via `WINGMAN_API_URL` (see [`S27_IDENTITY_OTP.md`](./S27_IDENTITY_OTP.md)).
 
 ## What this build proves
 
 - Mobile-first **client UI** of the protocol loop is walkable on real phones  
-- Payments **disabled**  
-- Lab tools (Smoke P4, Offline): **`?qa=1` only** — hidden from ordinary testers  
-- With `WINGMAN_API_URL` set + live API: phone → OTP → session (product path). Without API: **unreachable**, not silent “fake auth”
+- Profile **Next** calls `POST /me/profile` (no silent `data-go` skip) when API live  
+- Payments **disabled** · Destiny **off**  
+- Lab tools (Smoke P4, Offline): **`?qa=1` only**  
+- Alone on Radar → nearby=0 (no fake dots)
 
 ## What this build does **not** prove
 
-Multi-user real OTP, durable DB across redeploy, realtime without refresh, real Radar presence, real selfie media, closed-app push, or server-enforced safety under live users.
+Durable Postgres on current Production (`database=not-configured`), private selfie media, two-phone Signal without refresh in the field, or closed-app push.
 
 That proof is the **Live Field Test** DoD in [`LIVE_FIELD_TEST.md`](./LIVE_FIELD_TEST.md).
 
