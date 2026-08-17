@@ -77,6 +77,7 @@ See [`PROJECT_STATE.md`](./PROJECT_STATE.md).
 | Variable | Default | Notes |
 |----------|---------|-------|
 | `WINGMAN_API_URL` | empty | **Production/Preview on Vercel.** HTTPS origin of Nest API (e.g. `https://wingman-api-three.vercel.app`). Baked into `config.js` at build via `prototype/scripts/write-config.mjs`. Testers never set this; no `?api=` on the public product URL. |
+| `WINGMAN_LIVING_MAP_V1` | `false` | Living Map UI as default Radar. Must stay false on public Production until field verification. Testers can opt in with `?livingMap=1` without enabling this for everyone. |
 
 Local prototype without the var → `http://localhost:3000`. Overrides `?api=` / `localStorage.wingman_api_base` only on localhost or `?qa=1`.
 

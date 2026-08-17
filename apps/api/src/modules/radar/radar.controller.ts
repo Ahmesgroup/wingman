@@ -1,15 +1,27 @@
 import { Body, Controller, Get, Inject, Injectable, Optional, Post, Query } from "@nestjs/common";
 import { ActivateRadarSchema, HeartbeatSchema } from "@wingman/contracts";
-import type { PresenceVisibility, WingmanEngine } from "@wingman/domain";
+import { DomainError, distanceMeters, type PresenceVisibility, type WingmanEngine } from "@wingman/domain";
 import type { EphemeralStore } from "@wingman/ephemeral";
 import { isContextEngineEnabled } from "@wingman/context-engine";
 import type { ProtocolPersistenceMirror } from "@wingman/persistence";
 import {
   ExposureStore,
+  aggregatePulse,
+  boundOpportunities,
+  filterOpportunities,
+  isLivingMapEnabled,
   isRadarIntelligenceEnabled,
+  LIVING_MAP_VERSION,
+  parseFilters,
+  payloadLeaksCoordinates,
+  projectOpportunity,
+  quietPulse,
+  bearingDegrees,
   rankRadarCandidates,
   toPublicCandidateView,
   type EligibleCandidate,
+  type LivingMapFilters,
+  type OpportunityPublic,
   type RadarContextPort,
   type RankingAuditRecord,
 } from "@wingman/radar-intelligence";
@@ -17,6 +29,11 @@ import {
   GeoIntelligenceEngine,
   isGeoIntelligenceEnabled,
 } from "@wingman/geo-intelligence";
+import {
+  DestinyV2Engine,
+  isDestinyV2Enabled,
+  isDestinyV2ProposalsEnabled,
+} from "@wingman/destiny-v2";
 import { CurrentUser } from "../../common/auth.js";
 import { ZodValidationPipe } from "../../common/zod-validation.pipe.js";
 import { WINGMAN_ENGINE } from "../../engine/engine.tokens.js";
@@ -26,6 +43,7 @@ import { RADAR_CONTEXT_PORT } from "../context/context.tokens.js";
 import { AntiAbuseGate } from "../anti-abuse/anti-abuse.module.js";
 import { GEO_ENGINE } from "../geo/geo.tokens.js";
 import { MeasurementGate } from "../measurement/measurement.module.js";
+import { DESTINY_V2_ENGINE } from "../destiny/destiny.tokens.js";
 import { RADAR_EXPOSURE_STORE, RADAR_LANGUAGE_HINTS } from "./radar.tokens.js";
 
 /** Legacy S21 language hints when Context Engine flag is off. */
@@ -46,6 +64,7 @@ export class RadarService {
     @Optional() private readonly antiAbuse?: AntiAbuseGate,
     @Optional() @Inject(GEO_ENGINE) private readonly geo?: GeoIntelligenceEngine,
     @Optional() private readonly measurement?: MeasurementGate,
+    @Optional() @Inject(DESTINY_V2_ENGINE) private readonly destinyV2?: DestinyV2Engine,
   ) {}
 
   getLastRankingAudit(): RankingAuditRecord | undefined {
@@ -251,6 +270,111 @@ export class RadarService {
       serverTime: now.toISOString(),
     };
   }
+
+  livingMapStatus() {
+    return { enabled: isLivingMapEnabled(), version: LIVING_MAP_VERSION };
+  }
+
+  private async destinyPeerIds(userId: string): Promise<Set<string>> {
+    if (!isDestinyV2Enabled() || !isDestinyV2ProposalsEnabled() || !this.destinyV2) {
+      return new Set();
+    }
+    try {
+      const ids = await this.destinyV2.listOpenPeerIds(userId, this.engine.clock.now());
+      return new Set(ids);
+    } catch {
+      return new Set();
+    }
+  }
+
+  private projectAuthorized(
+    userId: string,
+    ranked: { userId: string; mood?: string; intention?: string }[],
+    near: number,
+    around: number,
+    destinyPeers: Set<string>,
+  ): OpportunityPublic[] {
+    const viewerLoc = this.engine.locations.get(userId);
+    if (!viewerLoc) return [];
+    const out: OpportunityPublic[] = [];
+    for (const c of ranked) {
+      if (c.userId === userId) continue;
+      const otherLoc = this.engine.locations.get(c.userId);
+      if (!otherLoc) continue;
+      const other = this.engine.users.get(c.userId);
+      const presence = this.engine.presence.get(c.userId);
+      const meters = distanceMeters(viewerLoc, otherLoc);
+      const opp = projectOpportunity({
+        viewerId: userId,
+        otherId: c.userId,
+        meters,
+        bearingDeg: bearingDegrees(viewerLoc, otherLoc),
+        nearM: near,
+        aroundM: around,
+        mood: c.mood ?? other?.profile.mood,
+        intention: c.intention ?? other?.profile.intention,
+        interests: other?.profile.interests,
+        expiresAt: presence?.expiresAt,
+        destiny: destinyPeers.has(c.userId),
+        visibility: presence?.visibility,
+      });
+      out.push(opp);
+    }
+    return out;
+  }
+
+  async opportunities(
+    userId: string,
+    near: number,
+    around: number,
+    filters: LivingMapFilters = {},
+  ) {
+    const ranked = this.candidates(userId, near, around);
+    const destinyPeers = await this.destinyPeerIds(userId);
+    const projected = this.projectAuthorized(userId, ranked.candidates, near, around, destinyPeers);
+    const filtered = filterOpportunities(projected, filters);
+    const bounded = boundOpportunities(filtered);
+    const body = {
+      enabled: isLivingMapEnabled(),
+      opportunities: bounded.opportunities,
+      clusters: bounded.clusters,
+      truncated: bounded.truncated,
+      count: filtered.length,
+      serverTime: ranked.serverTime,
+    };
+    if (payloadLeaksCoordinates(body)) {
+      throw new DomainError("CONFLICT", "Living Map privacy invariant failed");
+    }
+    return body;
+  }
+
+  async discover(userId: string, near: number, around: number, filters: LivingMapFilters = {}) {
+    const body = await this.opportunities(userId, near, around, filters);
+    return {
+      enabled: body.enabled,
+      opportunities: body.opportunities,
+      count: body.count,
+      serverTime: body.serverTime,
+    };
+  }
+
+  async pulse(userId: string, near: number, around: number) {
+    try {
+      const ranked = this.candidates(userId, near, around);
+      const projected = this.projectAuthorized(userId, ranked.candidates, near, around, new Set());
+      const agg = aggregatePulse(projected);
+      const body = { enabled: isLivingMapEnabled(), ...agg, serverTime: ranked.serverTime };
+      if (payloadLeaksCoordinates(body)) {
+        throw new DomainError("CONFLICT", "Pulse privacy invariant failed");
+      }
+      return body;
+    } catch (e) {
+      if (e instanceof DomainError && e.code === "NOT_FOUND") {
+        return { enabled: isLivingMapEnabled(), ...quietPulse(), serverTime: this.engine.clock.now().toISOString() };
+      }
+      throw e;
+    }
+  }
 }
 
 @Controller("radar")
@@ -286,5 +410,55 @@ export class RadarController {
     @Query("aroundRadiusM") around?: string,
   ) {
     return this.radar.candidates(userId, Number(near ?? 50), Number(around ?? 200));
+  }
+
+  @Get("living-map")
+  livingMap() {
+    return this.radar.livingMapStatus();
+  }
+
+  @Get("opportunities")
+  opportunities(
+    @CurrentUser() userId: string,
+    @Query("nearRadiusM") near?: string,
+    @Query("aroundRadiusM") around?: string,
+    @Query("proximity") proximity?: string,
+    @Query("presence") presence?: string,
+    @Query("intention") intention?: string,
+    @Query("interests") interests?: string,
+  ) {
+    return this.radar.opportunities(
+      userId,
+      Number(near ?? 50),
+      Number(around ?? 200),
+      parseFilters({ proximity, presence, intention, interests }),
+    );
+  }
+
+  @Get("discover")
+  discover(
+    @CurrentUser() userId: string,
+    @Query("nearRadiusM") near?: string,
+    @Query("aroundRadiusM") around?: string,
+    @Query("proximity") proximity?: string,
+    @Query("presence") presence?: string,
+    @Query("intention") intention?: string,
+    @Query("interests") interests?: string,
+  ) {
+    return this.radar.discover(
+      userId,
+      Number(near ?? 50),
+      Number(around ?? 200),
+      parseFilters({ proximity, presence, intention, interests }),
+    );
+  }
+
+  @Get("pulse")
+  pulse(
+    @CurrentUser() userId: string,
+    @Query("nearRadiusM") near?: string,
+    @Query("aroundRadiusM") around?: string,
+  ) {
+    return this.radar.pulse(userId, Number(near ?? 50), Number(around ?? 200));
   }
 }

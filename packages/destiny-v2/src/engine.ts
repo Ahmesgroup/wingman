@@ -148,6 +148,19 @@ export class DestinyV2Engine {
       .map(toPublicProposal);
   }
 
+  /** Server-only peer ids for Living Map Destiny halo — never a public trail. */
+  async listOpenPeerIds(userId: string, now: Date): Promise<string[]> {
+    const listed = await this.store.listByUser(userId);
+    const ids: string[] = [];
+    for (const p of listed) {
+      const next = expireIfNeeded(p, now);
+      if (next.status !== p.status) await this.store.upsert(next);
+      if (!isOpenStatus(next.status) && next.status !== "MUTUAL") continue;
+      ids.push(next.userA === userId ? next.userB : next.userA);
+    }
+    return ids;
+  }
+
   /**
    * Atomic consent against the shared store. Concurrent accepts converge to a single MUTUAL.
    */

@@ -183,7 +183,11 @@ export class InternalController {
   /** Liveness — process is up (orchestration probes). Does not check deps. */
   @Get("live")
   live() {
-    return { live: true, utc: new Date().toISOString() };
+    return {
+      live: true,
+      utc: new Date().toISOString(),
+      livingMap: process.env.WINGMAN_LIVING_MAP_V1 === "true",
+    };
   }
 
   @Get("ready")

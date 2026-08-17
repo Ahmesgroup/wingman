@@ -29,6 +29,10 @@ const state = {
   viewId: 'v-splash',
   busy: false,
   hasIncomingSignal: false,
+  livingMap: false,
+  viewerLoc: null,
+  locState: 'unknown',
+  lmOpportunities: [],
   serverNow: () => Date.now(),
 };
 
@@ -329,6 +333,13 @@ function syncRadarEmpty() {
   syncRadarA11yList();
 }
 
+function viewerCoords() {
+  if (state.viewerLoc && Number.isFinite(state.viewerLoc.lat) && Number.isFinite(state.viewerLoc.lng)) {
+    return state.viewerLoc;
+  }
+  return { lat: 49.6116, lng: 6.1319 };
+}
+
 function setNearbyCount(n) {
   const el = $('#stat-nearby');
   if (el) el.textContent = String(Math.max(0, n | 0));
@@ -343,6 +354,7 @@ function applyRadarCandidates(cands) {
   setNearbyCount(WingmanRadarDots.nearbyCountFromDots(dots));
   syncRadarEmpty();
   startRadar();
+  if (state.livingMap) void refreshLivingMap();
 }
 
 function clearRadarDots() {
@@ -491,6 +503,17 @@ const I18N = {
     t_timeout: 'Taking too long — try again', t_offline_blocked: 'Offline — try again', t_offline_banner: 'Offline — timers keep running on the server',
     t_reconnecting: 'Reconnecting…', t_reconnected: 'Back online', t_reconnect_fail: 'Still offline', t_reconnect: 'Reconnect',
     empty_radar: 'Go active to see who’s nearby.', empty_radar_alone: 'Nobody nearby right now.', empty_signals: 'No Signals right now. When someone reaches out, it appears here.',
+    lm_available: 'Available now', lm_exploring: 'Exploring', lm_filters: 'Filters', lm_filters_d: 'Narrow opportunities already allowed for you. Filters never bypass privacy.',
+    lm_recenter: 'Recenter', lm_quiet: 'Quiet around here', lm_quiet_d: "Keep Wingman active and we'll show opportunities when they appear.",
+    lm_prox: 'Proximity', lm_prox_close: 'Very close', lm_prox_near: 'Nearby', lm_prox_around: 'Around me',
+    lm_presence: 'Presence', lm_intention: 'Intention', lm_interests: 'Interests', lm_apply: 'Apply filters', lm_clear: 'Clear',
+    lm_someone: 'Someone nearby', lm_new: 'New connection opportunity', lm_destiny: '✦ Destiny — Your paths have crossed several times. A connection opportunity is available.',
+    lm_count: 'opportunities nearby', lm_count_one: 'opportunity nearby',
+    lm_loc_denied: 'Location permission is off. Wingman can only show a quiet map until you allow approximate location.',
+    lm_loc_off: 'Location unavailable. Keep the map open — opportunities appear when we can place you.',
+    lm_offline: 'You’re offline. The map stays up; opportunities will refresh when you’re back.',
+    discover_sub: 'Nearby opportunities', discover_lead: 'The same people Radar already allows — not an infinite catalogue.',
+    nav_discover: 'Discover', nav_me: 'Me',
     mood_shape_ring: ' · ring', mood_shape_solid: ' · solid', mood_shape_quiet: ' · quiet',
     a11y_skip: 'Skip to app', t_smoke_ok: 'P4 smoke OK', t_smoke_fail: 'P4 smoke failed',
     t_phase_idle: 'Ready', t_phase_available: 'Available on Radar', t_phase_busy: 'Busy', t_phase_unavailable: 'Unavailable',
@@ -555,6 +578,17 @@ const I18N = {
     t_timeout: 'Trop long — réessayez', t_offline_blocked: 'Hors ligne — réessayez', t_offline_banner: 'Hors ligne — les timers continuent côté serveur',
     t_reconnecting: 'Reconnexion…', t_reconnected: 'De retour en ligne', t_reconnect_fail: 'Toujours hors ligne', t_reconnect: 'Reconnecter',
     empty_radar: 'Activez le Radar pour voir qui est à proximité.', empty_radar_alone: 'Personne à proximité pour l’instant.', empty_signals: 'Aucun Signal pour l’instant. Ils apparaîtront ici.',
+    lm_available: 'Disponible maintenant', lm_exploring: 'En exploration', lm_filters: 'Filtres', lm_filters_d: 'Réduit les opportunités déjà autorisées. Les filtres ne contournent jamais la vie privée.',
+    lm_recenter: 'Recentrer', lm_quiet: 'Calme par ici', lm_quiet_d: 'Gardez Wingman actif — les opportunités apparaîtront ici.',
+    lm_prox: 'Proximité', lm_prox_close: 'Très proche', lm_prox_near: 'À proximité', lm_prox_around: 'Autour de moi',
+    lm_presence: 'Présence', lm_intention: 'Intention', lm_interests: 'Intérêts', lm_apply: 'Appliquer', lm_clear: 'Effacer',
+    lm_someone: 'Quelqu’un à proximité', lm_new: 'Nouvelle opportunité de connexion', lm_destiny: '✦ Destiny — Vos chemins se sont croisés plusieurs fois. Une opportunité de connexion est disponible.',
+    lm_count: 'opportunités à proximité', lm_count_one: 'opportunité à proximité',
+    lm_loc_denied: 'La localisation est refusée. La carte reste calme tant que l’emplacement approximatif n’est pas autorisé.',
+    lm_loc_off: 'Localisation indisponible. Les opportunités apparaîtront quand nous pourrons vous placer.',
+    lm_offline: 'Hors ligne. La carte reste affichée ; les opportunités se mettront à jour au retour du réseau.',
+    discover_sub: 'Opportunités à proximité', discover_lead: 'Les mêmes personnes déjà autorisées par le Radar — pas un catalogue infini.',
+    nav_discover: 'Discover', nav_me: 'Moi',
     mood_shape_ring: ' · anneau', mood_shape_solid: ' · plein', mood_shape_quiet: ' · calme',
     a11y_skip: 'Aller à l’app', t_smoke_ok: 'Smoke P4 OK', t_smoke_fail: 'Smoke P4 échoué',
     t_phase_idle: 'Prêt', t_phase_available: 'Disponible sur le Radar', t_phase_busy: 'Occupé', t_phase_unavailable: 'Indisponible',
@@ -632,7 +666,7 @@ function show(id) {
     confirmedAdvanceTimer = null;
   }
   const protocolViews = new Set([
-    'v-radar', 'v-signal', 'v-selfie', 'v-ticket', 'v-mission-meet', 'v-mission-mode',
+    'v-radar', 'v-discover', 'v-signal', 'v-selfie', 'v-ticket', 'v-mission-meet', 'v-mission-mode',
     'v-outcome', 'v-cooldown', 'v-confirmed', 'v-destiny', 'v-pulse', 'v-settings',
   ]);
   // Public product: block protocol UI without OTP — stop ghost Radar / dead Go active.
@@ -652,17 +686,27 @@ function show(id) {
   if (title) announce(title.textContent.trim());
   requestAnimationFrame(() => focusActiveView(id));
 }
-const NAV = [
-  ['v-radar', 'radar', 'M12 12m-2 0a2 2 0 104 0 2 2 0 10-4 0 M12 12m-6 0a6 6 0 1012 0 6 6 0 10-12 0'],
-  ['v-signal', 'signal', 'M13 2L4 14h7l-1 8 9-12h-7z'],
-  ['v-pulse', 'pulse', 'M3 12h4l2-7 4 14 2-7h6'],
-  ['v-settings', 'settings', 'M12 15a3 3 0 100-6 3 3 0 000 6z M19 12a7 7 0 00-.1-1l2-1.6-2-3.4-2.4 1a7 7 0 00-1.7-1L14.5 3h-4l-.3 2.6a7 7 0 00-1.7 1l-2.4-1-2 3.4L4.1 11a7 7 0 000 2l-2 1.6 2 3.4 2.4-1a7 7 0 001.7 1L9.5 21h4l.3-2.6a7 7 0 001.7-1l2.4 1 2-3.4-2-1.6a7 7 0 00.1-1z'],
-];
+function navItems() {
+  if (state.livingMap) {
+    return [
+      ['v-radar', 'radar', 'M12 12m-2 0a2 2 0 104 0 2 2 0 10-4 0 M12 12m-6 0a6 6 0 1012 0 6 6 0 10-12 0'],
+      ['v-discover', 'discover', 'M4 6h16M4 12h10M4 18h7'],
+      ['v-pulse', 'pulse', 'M3 12h4l2-7 4 14 2-7h6'],
+      ['v-settings', 'me', 'M12 12a4 4 0 100-8 4 4 0 000 8z M4 21c1.5-4 6-6 8-6s6.5 2 8 6'],
+    ];
+  }
+  return [
+    ['v-radar', 'radar', 'M12 12m-2 0a2 2 0 104 0 2 2 0 10-4 0 M12 12m-6 0a6 6 0 1012 0 6 6 0 10-12 0'],
+    ['v-signal', 'signal', 'M13 2L4 14h7l-1 8 9-12h-7z'],
+    ['v-pulse', 'pulse', 'M3 12h4l2-7 4 14 2-7h6'],
+    ['v-settings', 'settings', 'M12 15a3 3 0 100-6 3 3 0 000 6z M19 12a7 7 0 00-.1-1l2-1.6-2-3.4-2.4 1a7 7 0 00-1.7-1L14.5 3h-4l-.3 2.6a7 7 0 00-1.7 1l-2.4-1-2 3.4L4.1 11a7 7 0 000 2l-2 1.6 2 3.4 2.4-1a7 7 0 001.7 1L9.5 21h4l.3-2.6a7 7 0 001.7-1l2.4 1 2-3.4-2-1.6a7 7 0 00.1-1z'],
+  ];
+}
 function buildNav() {
   $$('[data-navbar]').forEach(bar => {
     const current = bar.closest('.view').dataset.nav;
-    bar.innerHTML = NAV.map(([vid, key, d]) =>
-      `<button data-go="${vid}" ${key === current ? 'aria-current="page"' : ''}>
+    bar.innerHTML = navItems().map(([vid, key, d]) =>
+      `<button data-go="${vid}" ${key === current || (key === 'me' && current === 'settings') ? 'aria-current="page"' : ''}>
         <svg class="ico" viewBox="0 0 24 24"><path d="${d}"/></svg>
         <span>${t('nav_' + key)}</span></button>`).join('');
     $$('button', bar).forEach(b => b.addEventListener('click', () => show(b.dataset.go)));
@@ -822,7 +866,8 @@ $('#send-signal-btn').addEventListener('click', async () => {
   if (liveApi()) {
     try {
       await withLoading(t('t_loading'), async () => {
-        await api.radarActivate({ lat: 49.6116, lng: 6.1319, visibility: 'ACTIVE' });
+        const loc = viewerCoords();
+        await api.radarActivate({ lat: loc.lat, lng: loc.lng, visibility: 'ACTIVE' });
         const res = await api.sendSignal(
           { receiverId: targetId, source: 'RADAR' },
           { idempotencyKey: 'proto-' + Date.now() },
@@ -854,7 +899,8 @@ $('#radar-toggle').addEventListener('click', async () => {
     try {
       if (next) {
         await withLoading(t('t_loading'), async () => {
-          await api.radarActivate({ lat: 49.6116, lng: 6.1319, visibility: 'ACTIVE' });
+          const loc = viewerCoords();
+          await api.radarActivate({ lat: loc.lat, lng: loc.lng, visibility: 'ACTIVE' });
           const cands = await api.radarCandidates();
           applyRadarCandidates(cands);
         });
@@ -887,6 +933,8 @@ $('#radar-toggle').addEventListener('click', async () => {
   if (state.radarActive && !state.reduceMotion) activateBurst = { t: performance.now() };
   haptic('selection'); startRadar();
   syncRadarEmpty();
+  syncLivingMapPresence();
+  if (state.livingMap) void refreshLivingMap();
   setPhase(state.radarActive ? 'available' : 'idle');
   feedback(state.radarActive ? 'success' : 'offline', state.radarActive ? t('t_active') : t('t_invisible'));
 });
@@ -895,6 +943,288 @@ $('#mood-select').addEventListener('click', e => {
   $$('#mood-select .mood-btn').forEach(x => x.setAttribute('aria-pressed', 'false'));
   b.setAttribute('aria-pressed', 'true'); state.mood = b.dataset.mood;
   haptic('selection'); toast(t('t_mood'));
+});
+
+/* ------------------------------------------------------------- Living Map */
+const LM_FALLBACK = { lat: 49.6116, lng: 6.1319 };
+let livingMapCtl = null;
+let livingMapRefreshTimer = null;
+const lmFilterState = { proximity: [], presence: [], intention: [], interests: [] };
+
+function livingMapOn() {
+  return Boolean(state.livingMap);
+}
+
+function enableLivingMapUi() {
+  state.livingMap = true;
+  document.body.classList.add('living-map');
+  const root = $('#living-map-root');
+  if (root) {
+    root.classList.remove('hidden');
+    root.hidden = false;
+  }
+  if (!livingMapCtl && typeof WingmanLivingMapUi !== 'undefined') {
+    livingMapCtl = WingmanLivingMapUi.createMapController({
+      el: $('#living-map-el'),
+      onSelect: function (m) { openLivingMapSheet(m); },
+    });
+    livingMapCtl.init();
+  }
+  buildNav();
+  syncLivingMapPresence();
+  if (livingMapCtl) livingMapCtl.invalidate();
+}
+
+function filterQuery() {
+  const q = {};
+  if (lmFilterState.proximity.length) q.proximity = lmFilterState.proximity.join(',');
+  if (lmFilterState.presence.length) q.presence = lmFilterState.presence.join(',');
+  if (lmFilterState.intention.length) q.intention = lmFilterState.intention.join(',');
+  if (lmFilterState.interests.length) q.interests = lmFilterState.interests.join(',');
+  return q;
+}
+
+function syncLivingMapPresence() {
+  const el = $('#lm-presence');
+  const lab = $('#lm-presence-label');
+  if (!el) return;
+  el.classList.toggle('is-off', !state.radarActive);
+  el.classList.toggle('is-exploring', state.mood === 'UNSURE' || state.mood === 'EXPLORING');
+  if (lab) {
+    lab.textContent = !state.radarActive
+      ? t('radar_invisible')
+      : (state.mood === 'UNSURE' || state.mood === 'EXPLORING' ? t('lm_exploring') : t('lm_available'));
+  }
+  const tog = $('#lm-radar-toggle');
+  if (tog) {
+    tog.classList.toggle('off', !state.radarActive);
+    tog.setAttribute('aria-pressed', String(state.radarActive));
+    tog.textContent = state.radarActive ? t('radar_deactivate') : t('radar_activate');
+  }
+}
+
+function syncLivingMapEmpty(count) {
+  const empty = $('#lm-empty');
+  const n = Math.max(0, count | 0);
+  if (empty) empty.classList.toggle('hidden', !state.radarActive || n > 0);
+  const countEl = $('#lm-count');
+  if (countEl) {
+    if (!state.radarActive) {
+      countEl.textContent = t('empty_radar');
+    } else if (n === 0) {
+      countEl.textContent = '0 ' + t('lm_count');
+    } else {
+      countEl.textContent = n + ' ' + (n === 1 ? t('lm_count_one') : t('lm_count'));
+    }
+  }
+  setNearbyCount(n);
+}
+
+function setLocBanner(msg) {
+  const el = $('#lm-loc');
+  if (!el) return;
+  if (!msg) { el.classList.add('hidden'); el.textContent = ''; return; }
+  el.classList.remove('hidden');
+  el.textContent = msg;
+}
+
+function requestViewerLocation() {
+  return new Promise(function (resolve) {
+    const local = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+    if (state.offline) {
+      state.locState = 'offline';
+      setLocBanner(t('lm_offline'));
+      resolve(state.viewerLoc || (local ? LM_FALLBACK : null));
+      return;
+    }
+    if (!navigator.geolocation) {
+      state.locState = 'unavailable';
+      setLocBanner(t('lm_loc_off'));
+      resolve(local ? LM_FALLBACK : state.viewerLoc);
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      function (pos) {
+        state.locState = 'granted';
+        state.viewerLoc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        setLocBanner('');
+        resolve(state.viewerLoc);
+      },
+      function (err) {
+        state.locState = err && err.code === 1 ? 'denied' : 'unavailable';
+        setLocBanner(state.locState === 'denied' ? t('lm_loc_denied') : t('lm_loc_off'));
+        resolve(local ? LM_FALLBACK : state.viewerLoc);
+      },
+      { enableHighAccuracy: false, timeout: 8000, maximumAge: 30000 },
+    );
+  });
+}
+
+function openLivingMapSheet(m) {
+  if (!m) return;
+  currentDot = {
+    userId: m.userId,
+    mood: m.moodState,
+    band: m.distanceBand === 'VERY_CLOSE' ? 'NEAR' : 'AROUND',
+    bio: m.destiny ? t('lm_destiny') : t('lm_new'),
+    bioFr: m.destiny ? t('lm_destiny') : t('lm_new'),
+    tags: m.contextTags || [],
+  };
+  const Ui = typeof WingmanLivingMapUi !== 'undefined' ? WingmanLivingMapUi : null;
+  $('#sheet-mood').textContent = '● ' + (Ui ? Ui.moodLabel(m.moodState, state.lang) : t('mood_open'));
+  $('#sheet-mood').style.color = MOOD_COLORS[m.moodState] || MOOD_COLORS.OPEN;
+  $('#sheet-age').textContent = t('lm_someone') + ' · ' + (Ui ? Ui.bandLabel(m.distanceBand, state.lang) : '');
+  $('#sheet-bio').textContent = m.destiny ? t('lm_destiny') : t('lm_new');
+  const tags = (m.contextTags || []).slice();
+  if (m.intention === 'AVAILABLE_NOW') tags.unshift(t('intention_available'));
+  $('#sheet-tags').innerHTML = tags.map(function (x) { return '<span>' + x + '</span>'; }).join('');
+  const sheet = $('#dot-sheet');
+  sheet.classList.add('open');
+  sheet.setAttribute('aria-hidden', 'false');
+  announce($('#sheet-age').textContent);
+}
+
+async function refreshLivingMap() {
+  if (!state.livingMap) return;
+  if (livingMapCtl && state.viewerLoc) livingMapCtl.setViewer(state.viewerLoc);
+  else if (livingMapCtl) livingMapCtl.setViewer(viewerCoords());
+  if (!liveApi() || !state.radarActive) {
+    state.lmOpportunities = [];
+    if (livingMapCtl) livingMapCtl.setOpportunities([], state.meId);
+    syncLivingMapEmpty(0);
+    renderDiscoverList([]);
+    return;
+  }
+  try {
+    const res = await api.radarOpportunities(filterQuery());
+    const list = (res && res.opportunities) || [];
+    if (typeof WingmanLivingMap !== 'undefined' && WingmanLivingMap.payloadLeaksCoordinates(res)) {
+      state.lmOpportunities = [];
+      if (livingMapCtl) livingMapCtl.setOpportunities([], state.meId);
+      syncLivingMapEmpty(0);
+      return;
+    }
+    state.lmOpportunities = list;
+    const markers = livingMapCtl ? livingMapCtl.setOpportunities(list, state.meId) : [];
+    syncLivingMapEmpty((markers && markers.length) || list.length);
+    renderDiscoverList(list);
+  } catch (_) {
+    syncLivingMapEmpty(0);
+  }
+}
+
+function scheduleLivingMapRefresh() {
+  clearTimeout(livingMapRefreshTimer);
+  livingMapRefreshTimer = setTimeout(function () { void refreshLivingMap(); }, 280);
+}
+
+function renderDiscoverList(list) {
+  const wrap = $('#discover-list');
+  const empty = $('#discover-empty');
+  if (!wrap) return;
+  const rows = Array.isArray(list) ? list : [];
+  if (empty) empty.classList.toggle('hidden', rows.length > 0 && state.radarActive);
+  wrap.innerHTML = rows.map(function (o) {
+    const mood = o.moodState || 'OPEN';
+    const color = MOOD_COLORS[mood] || MOOD_COLORS.OPEN;
+    const band = typeof WingmanLivingMapUi !== 'undefined' ? WingmanLivingMapUi.bandLabel(o.distanceBand, state.lang) : o.distanceBand;
+    const moodL = typeof WingmanLivingMapUi !== 'undefined' ? WingmanLivingMapUi.moodLabel(mood, state.lang) : mood;
+    const tags = (o.contextTags || []).join(' · ');
+    return '<button type="button" class="discover-row" data-uid="' + o.userId + '">' +
+      '<span class="sw" style="background:' + color + '" aria-hidden="true"></span>' +
+      '<div><b>' + t('lm_someone') + ' · ' + moodL + '</b><p>' + band + (tags ? ' · ' + tags : '') + '</p></div></button>';
+  }).join('');
+  $$('.discover-row', wrap).forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      const o = rows.find(function (x) { return x.userId === btn.dataset.uid; });
+      if (o) openLivingMapSheet(o);
+    });
+  });
+}
+
+async function refreshPulseLive() {
+  const title = $('#pulse-title');
+  const detail = $('#pulse-detail');
+  const stats = $('#pulse-stats');
+  if (!title) return;
+  if (!liveApi()) {
+    title.textContent = t('lm_offline');
+    if (stats) stats.innerHTML = '';
+    return;
+  }
+  try {
+    const p = await api.radarPulse();
+    if (p.quiet) {
+      title.textContent = p.message || t('lm_quiet');
+      if (detail) detail.textContent = t('pulse_anon');
+      if (stats) stats.innerHTML = '';
+      return;
+    }
+    title.textContent = p.message || t('pulse_anon');
+    const bits = [];
+    if (p.peopleActive) bits.push('<div class="card"><b>' + p.peopleActive + '</b><p class="small muted">' + (state.lang === 'fr' ? 'Activité' : 'Activity') + '</p></div>');
+    if (p.opportunityCount != null) bits.push('<div class="card"><b>' + p.opportunityCount + '</b><p class="small muted">' + t('lm_count') + '</p></div>');
+    if (p.context && p.context.length) bits.push('<div class="card"><b>' + p.context.join(' · ') + '</b><p class="small muted">' + t('lm_interests') + '</p></div>');
+    if (p.destinyCount != null) bits.push('<div class="card"><b>' + p.destinyCount + '</b><p class="small muted">Destiny</p></div>');
+    if (stats) stats.innerHTML = bits.join('');
+  } catch (_) {
+    title.textContent = t('lm_quiet');
+  }
+}
+
+function toggleFilterPill(btn, arr, value) {
+  const on = btn.getAttribute('aria-pressed') === 'true';
+  btn.setAttribute('aria-pressed', String(!on));
+  const i = arr.indexOf(value);
+  if (!on && i < 0) arr.push(value);
+  if (on && i >= 0) arr.splice(i, 1);
+}
+
+$('#lm-filters-btn') && $('#lm-filters-btn').addEventListener('click', function () {
+  const sh = $('#lm-filter-sheet');
+  if (!sh) return;
+  sh.classList.add('open');
+  sh.setAttribute('aria-hidden', 'false');
+});
+$('#lm-filter-apply') && $('#lm-filter-apply').addEventListener('click', function () {
+  const sh = $('#lm-filter-sheet');
+  if (sh) { sh.classList.remove('open'); sh.setAttribute('aria-hidden', 'true'); }
+  void refreshLivingMap();
+});
+$('#lm-filter-clear') && $('#lm-filter-clear').addEventListener('click', function () {
+  lmFilterState.proximity = [];
+  lmFilterState.presence = [];
+  lmFilterState.intention = [];
+  lmFilterState.interests = [];
+  $$('#lm-filter-sheet .pill').forEach(function (p) { p.setAttribute('aria-pressed', 'false'); });
+});
+$('#lm-f-prox') && $('#lm-f-prox').addEventListener('click', function (e) {
+  const b = e.target.closest('[data-prox]'); if (!b) return;
+  toggleFilterPill(b, lmFilterState.proximity, b.dataset.prox);
+});
+$('#lm-f-mood') && $('#lm-f-mood').addEventListener('click', function (e) {
+  const b = e.target.closest('[data-mood]'); if (!b) return;
+  toggleFilterPill(b, lmFilterState.presence, b.dataset.mood);
+});
+$('#lm-f-intent') && $('#lm-f-intent').addEventListener('click', function (e) {
+  const b = e.target.closest('[data-intent]'); if (!b) return;
+  toggleFilterPill(b, lmFilterState.intention, b.dataset.intent);
+});
+$('#lm-f-interests') && $('#lm-f-interests').addEventListener('click', function (e) {
+  const b = e.target.closest('[data-interest]'); if (!b) return;
+  toggleFilterPill(b, lmFilterState.interests, b.dataset.interest);
+});
+$('#lm-recenter-btn') && $('#lm-recenter-btn').addEventListener('click', async function () {
+  const loc = await requestViewerLocation();
+  if (loc && livingMapCtl) {
+    livingMapCtl.setViewer(loc);
+    livingMapCtl.recenter();
+  }
+});
+$('#lm-pulse-btn') && $('#lm-pulse-btn').addEventListener('click', function () { show('v-pulse'); });
+$('#lm-radar-toggle') && $('#lm-radar-toggle').addEventListener('click', function () {
+  const main = $('#radar-toggle');
+  if (main) main.click();
 });
 
 /* ------------------------------------------------- server-authoritative timers
@@ -926,7 +1256,21 @@ let stopSelfie, stopMM, sigStop;
 function onEnter(id) {
   if (id === 'v-radar') {
     sizeCanvas(); startRadar(); syncRadarEmpty();
+    if (state.livingMap) {
+      if (livingMapCtl) livingMapCtl.invalidate();
+      void (async function () {
+        const loc = await requestViewerLocation();
+        if (loc && livingMapCtl) livingMapCtl.setViewer(loc);
+        await refreshLivingMap();
+      })();
+    }
     if (!state.offline) setPhase(state.radarActive ? 'available' : 'idle');
+  }
+  if (id === 'v-discover' && state.livingMap) {
+    void refreshLivingMap();
+  }
+  if (id === 'v-pulse' && state.livingMap) {
+    void refreshPulseLive();
   }
   if (id === 'v-signal') {
     state.hasIncomingSignal = Boolean(state.signalId) || state.hasIncomingSignal;
@@ -1930,12 +2274,20 @@ function handleRealtimeEvent(env) {
     markSignalArrive();
     setPhase('signal', t('t_phase_signal'));
     feedback('signal', t('t_signal_received'));
-    if (state.viewId === 'v-radar' || state.viewId === 'v-pulse') show('v-signal');
+    if (state.viewId === 'v-radar' || state.viewId === 'v-pulse' || state.viewId === 'v-discover') {
+      if (state.livingMap) {
+        /* inbox stays on Radar/Discover — Signal is not a primary destination */
+        feedback('signal', t('t_signal_received'));
+      } else {
+        show('v-signal');
+      }
+    }
     return;
   }
   if (env.type === 'radar.changed' || env.type === 'presence.changed') {
     if (liveApi() && state.radarActive) {
-      api.radarCandidates().then(applyRadarCandidates).catch(() => {});
+      if (state.livingMap) scheduleLivingMapRefresh();
+      else api.radarCandidates().then(applyRadarCandidates).catch(() => {});
     }
     return;
   }
@@ -2147,8 +2499,24 @@ applyEntitlements({ plan: 'FREE', capabilities: { dailySignals: 2, activeConnect
 bootApi().then(() => {
   restoreSessionIfAny();
   return refreshAuthMode();
-}).then(() => {
+}).then(async () => {
   resumeAuthedFunnelIfNeeded();
+  try {
+    const cfg = window.__WINGMAN_CONFIG__ || {};
+    let serverOn = false;
+    if (api && !api.useMock) {
+      try {
+        const live = await fetch((api.baseUrl || '') + '/internal/live', { headers: { Accept: 'application/json' } }).then(function (r) { return r.json(); });
+        serverOn = Boolean(live && live.livingMap);
+      } catch (_) { /* keep config / query */ }
+    }
+    const on = typeof WingmanLivingMap !== 'undefined' && WingmanLivingMap.resolveEnabled({
+      search: location.search,
+      configEnabled: cfg.livingMap === true,
+      serverEnabled: serverOn,
+    });
+    if (on) enableLivingMapUi();
+  } catch (_) { /* rollback canvas Radar */ }
   if (/[?&]smoke=1\b/.test(location.search)) runP4Smoke();
 });
 window.__wingmanRunP4Smoke = runP4Smoke;

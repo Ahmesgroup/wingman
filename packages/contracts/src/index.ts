@@ -19,6 +19,15 @@ export const HeartbeatSchema = z.object({
   lng: z.number().min(-180).max(180).optional(),
 });
 
+export const LivingMapFilterQuerySchema = z.object({
+  proximity: z.string().max(80).optional(),
+  presence: z.string().max(80).optional(),
+  intention: z.string().max(80).optional(),
+  interests: z.string().max(200).optional(),
+  nearRadiusM: z.string().optional(),
+  aroundRadiusM: z.string().optional(),
+});
+
 export const CreateSignalSchema = z.object({
   receiverId: z.string().min(1),
   source: z.enum(["RADAR", "DESTINY", "REMATCH"]).default("RADAR"),

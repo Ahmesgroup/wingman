@@ -768,3 +768,91 @@ body.field-test .brand-tag{letter-spacing:1.2px}
 .mt{margin-top:14px}.mt-s{margin-top:8px}.mb{margin-bottom:14px}
 .grow{flex:1}
 .hidden{display:none!important}
+
+/* ---- Living Map (feature-flagged) ---- */
+.living-map-root{
+  position:absolute;inset:0;z-index:2;display:none;flex-direction:column;
+  pointer-events:none
+}
+.living-map-el{position:absolute;inset:0;z-index:0;pointer-events:auto;background:var(--bg-radar)}
+.lm-overlay,.lm-count,.lm-fabs,.lm-empty,.lm-loc,.lm-toggle{pointer-events:auto;z-index:3}
+.lm-top{
+  position:absolute;top:calc(10px + var(--safe-top));left:12px;right:12px;
+  display:flex;justify-content:space-between;align-items:center;gap:8px
+}
+.lm-brand{font-family:var(--font-display);font-weight:800;letter-spacing:2px;font-size:16px;text-shadow:0 1px 8px rgba(0,0,0,.55)}
+.lm-brand b{color:var(--wingman)}
+.lm-presence{
+  display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;
+  background:rgba(11,16,32,.78);border:1px solid var(--border);font-size:11px;font-weight:700;
+  min-height:var(--touch-min)
+}
+.lm-presence-dot{width:8px;height:8px;border-radius:50%;background:var(--success);box-shadow:0 0 8px var(--success)}
+.lm-presence.is-exploring .lm-presence-dot{background:var(--mood-explore);box-shadow:none}
+.lm-presence.is-off .lm-presence-dot{background:var(--t-muted);box-shadow:none}
+.lm-count{
+  position:absolute;top:calc(58px + var(--safe-top));left:12px;right:12px;
+  font-size:13px;font-weight:600;color:var(--t-secondary);text-shadow:0 1px 6px rgba(0,0,0,.6)
+}
+.lm-fabs{
+  position:absolute;right:12px;bottom:calc(88px + var(--safe-bottom));
+  display:flex;flex-direction:column;gap:8px
+}
+.lm-fab{
+  min-height:var(--touch-min);min-width:var(--touch-min);padding:8px 12px;border-radius:14px;
+  background:rgba(23,31,53,.88);border:1px solid var(--border);font-size:12px;font-weight:700;color:var(--t-primary)
+}
+.lm-empty{
+  position:absolute;left:20px;right:20px;top:42%;transform:translateY(-50%);
+  text-align:center;padding:18px 16px;border-radius:var(--r-card);
+  background:rgba(8,13,26,.72);border:1px solid var(--border)
+}
+.lm-empty b{display:block;font-size:18px;font-family:var(--font-display);margin-bottom:6px}
+.lm-empty p{font-size:13px;color:var(--t-secondary);line-height:1.45}
+.lm-loc{
+  position:absolute;left:16px;right:16px;bottom:calc(150px + var(--safe-bottom));
+  text-align:center;font-size:12px;padding:10px 12px;border-radius:var(--r-sm);
+  background:rgba(255,191,105,.16);color:var(--warning);border:1px solid rgba(255,191,105,.3)
+}
+.lm-toggle{position:absolute;left:12px;bottom:calc(88px + var(--safe-bottom));z-index:4}
+.lm-user{
+  width:18px;height:18px;border-radius:50%;background:var(--wingman);
+  border:2px solid #fff;box-shadow:0 0 0 6px rgba(124,92,252,.28)
+}
+.lm-opp{
+  width:22px;height:22px;border-radius:50%;border:0;padding:0;display:block;
+  background:var(--mood-open);box-shadow:0 0 0 4px rgba(255,200,87,.28)
+}
+.lm-opp.lm-mood-ready{
+  background:var(--mood-ready);
+  box-shadow:0 0 0 3px #0B1020, 0 0 0 6px var(--mood-ready), 0 0 16px rgba(255,77,103,.45)
+}
+.lm-opp.lm-mood-explore{
+  background:var(--mood-explore);opacity:.85;box-shadow:0 0 0 2px rgba(255,255,255,.35)
+}
+.lm-opp.lm-destiny{box-shadow:0 0 0 5px rgba(185,167,255,.45), 0 0 18px rgba(124,92,252,.4)}
+.lm-cluster{
+  width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  background:rgba(124,92,252,.9);color:#fff;font-size:12px;font-weight:800
+}
+.lm-opp-wrap,.lm-user-wrap,.lm-cluster-wrap{background:transparent!important;border:none}
+body.living-map #v-radar > .statusbar,
+body.living-map #v-radar > .topbar,
+body.living-map #v-radar > .radar-body{display:none!important}
+body.living-map #living-map-root{display:block!important}
+body.living-map #v-radar{position:relative}
+body.living-map #pulse-legacy{display:none!important}
+body.living-map #pulse-live{display:block!important}
+.discover-row{
+  display:flex;gap:12px;align-items:center;background:var(--card);border:1px solid var(--border);
+  border-radius:var(--r-card);padding:14px;margin-bottom:10px;text-align:left;width:100%
+}
+.discover-row .sw{width:16px;height:16px;border-radius:50%;flex-shrink:0}
+.discover-row b{display:block;font-size:14px}
+.discover-row p{font-size:12px;color:var(--t-muted)}
+@media (max-width:430px){
+  .lm-fabs{bottom:calc(96px + var(--safe-bottom))}
+  .lm-toggle{bottom:calc(96px + var(--safe-bottom))}
+  body.living-map #v-radar .nav{z-index:5}
+  body.living-map #v-radar .sheet{z-index:6}
+}

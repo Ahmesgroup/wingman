@@ -1,5 +1,6 @@
 import { Global, Module } from "@nestjs/common";
 import { ExposureStore } from "@wingman/radar-intelligence";
+import { DestinyModule } from "../destiny/destiny.module.js";
 import { RadarController, RadarService, type LanguageHints } from "./radar.controller.js";
 import { RADAR_EXPOSURE_STORE, RADAR_LANGUAGE_HINTS } from "./radar.tokens.js";
 
@@ -17,6 +18,7 @@ export function setRadarIntelligenceOverrides(opts: {
 
 @Global()
 @Module({
+  imports: [DestinyModule],
   controllers: [RadarController],
   providers: [
     RadarService,

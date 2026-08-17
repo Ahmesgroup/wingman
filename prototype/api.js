@@ -268,6 +268,34 @@
       radarCandidates: function (near, around, opts) {
         return request('GET', '/radar/candidates?nearRadiusM=' + (near || 50) + '&aroundRadiusM=' + (around || 200), undefined, opts);
       },
+      radarLivingMap: function (opts) {
+        return request('GET', '/radar/living-map', undefined, opts);
+      },
+      radarOpportunities: function (query, opts) {
+        query = query || {};
+        const q = new URLSearchParams();
+        q.set('nearRadiusM', String(query.near || 50));
+        q.set('aroundRadiusM', String(query.around || 200));
+        if (query.proximity) q.set('proximity', query.proximity);
+        if (query.presence) q.set('presence', query.presence);
+        if (query.intention) q.set('intention', query.intention);
+        if (query.interests) q.set('interests', query.interests);
+        return request('GET', '/radar/opportunities?' + q.toString(), undefined, opts);
+      },
+      radarDiscover: function (query, opts) {
+        query = query || {};
+        const q = new URLSearchParams();
+        q.set('nearRadiusM', String(query.near || 50));
+        q.set('aroundRadiusM', String(query.around || 200));
+        if (query.proximity) q.set('proximity', query.proximity);
+        if (query.presence) q.set('presence', query.presence);
+        if (query.intention) q.set('intention', query.intention);
+        if (query.interests) q.set('interests', query.interests);
+        return request('GET', '/radar/discover?' + q.toString(), undefined, opts);
+      },
+      radarPulse: function (opts) {
+        return request('GET', '/radar/pulse', undefined, opts);
+      },
 
       sendSignal: function (body, opts) { return request('POST', '/signals', body, opts); },
       openSignal: function (id, opts) { return request('POST', '/signals/' + id + '/open', {}, opts); },

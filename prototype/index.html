@@ -17,6 +17,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
 </head>
 <body>
 <a class="skip-link" href="#main-screen" data-i18n="a11y_skip">Skip to app</a>
@@ -217,11 +218,33 @@
         </div>
       </section>
 
-      <!-- 6/7. RADAR (invisible + active share one canvas) -->
+      <!-- 6/7. RADAR (invisible + active share one canvas). Living Map overlays when flagged. -->
       <section class="view" id="v-radar" data-nav="radar">
         <div class="statusbar"><span class="time">21:49</span><span>Wingman</span></div>
         <div class="topbar"><div class="logo">WING<b>MAN</b></div><div class="subtitle" data-i18n="radar_sub">Real-time discovery</div></div>
-        <div class="body" style="padding-bottom:96px">
+        <div id="living-map-root" class="living-map-root hidden" hidden>
+          <div id="living-map-el" class="living-map-el" role="application" aria-label="Living Map"></div>
+          <div class="lm-overlay lm-top">
+            <div class="lm-brand">WING<b>MAN</b></div>
+            <div class="lm-presence" id="lm-presence">
+              <span class="lm-presence-dot" aria-hidden="true"></span>
+              <span id="lm-presence-label" data-i18n="lm_available">Available now</span>
+            </div>
+          </div>
+          <p class="lm-count" id="lm-count" aria-live="polite">0 opportunities nearby</p>
+          <div class="lm-fabs">
+            <button type="button" class="lm-fab" id="lm-filters-btn" aria-haspopup="dialog" data-i18n="lm_filters">Filters</button>
+            <button type="button" class="lm-fab" id="lm-recenter-btn" data-i18n="lm_recenter">Recenter</button>
+            <button type="button" class="lm-fab" id="lm-pulse-btn" data-go="v-pulse" data-i18n="nav_pulse">Pulse</button>
+          </div>
+          <div class="lm-empty hidden" id="lm-empty" role="status">
+            <b data-i18n="lm_quiet">Quiet around here</b>
+            <p data-i18n="lm_quiet_d">Keep Wingman active and we'll show opportunities when they appear.</p>
+          </div>
+          <div class="lm-loc hidden" id="lm-loc" role="status"></div>
+          <button type="button" class="radar-toggle off lm-toggle" id="lm-radar-toggle" aria-pressed="false" data-i18n="radar_activate">Go active</button>
+        </div>
+        <div class="body radar-body" style="padding-bottom:96px">
           <div class="radar-shell">
             <canvas id="radar-canvas" width="400" height="340" role="img" tabindex="0" aria-label="Radar showing anonymous nearby mood dots. Press Enter when active to open the nearest person."></canvas>
             <ul id="radar-a11y-list" class="sr-only" aria-live="polite"></ul>
@@ -267,6 +290,58 @@
             <div class="tags" id="sheet-tags"><span>🎵</span><span>🍷</span><span>🌍</span></div>
             <button type="button" class="btn btn-primary" id="send-signal-btn" data-i18n="send_signal">Send a Signal</button>
             <button type="button" class="btn btn-ghost mt-s" id="close-sheet" data-i18n="close">Close</button>
+          </div>
+        </div>
+        <div class="sheet" id="lm-filter-sheet" role="dialog" aria-modal="true" aria-labelledby="lm-filter-title" aria-hidden="true">
+          <div class="sheet-inner">
+            <div class="sheet-grab" aria-hidden="true"></div>
+            <h2 class="head" id="lm-filter-title" data-i18n="lm_filters">Filters</h2>
+            <p class="small muted mb" data-i18n="lm_filters_d">Narrow opportunities already allowed for you. Filters never bypass privacy.</p>
+            <div class="field"><label data-i18n="lm_prox">Proximity</label>
+              <div class="pillset pillset-wrap" id="lm-f-prox" role="group">
+                <button type="button" class="pill" data-prox="VERY_CLOSE" data-i18n="lm_prox_close">Very close</button>
+                <button type="button" class="pill" data-prox="NEARBY" data-i18n="lm_prox_near">Nearby</button>
+                <button type="button" class="pill" data-prox="AROUND_ME" data-i18n="lm_prox_around">Around me</button>
+              </div>
+            </div>
+            <div class="field"><label data-i18n="lm_presence">Presence</label>
+              <div class="pillset pillset-wrap" id="lm-f-mood" role="group">
+                <button type="button" class="pill" data-mood="SUPER_READY" data-i18n="mood_ready">Super ready</button>
+                <button type="button" class="pill" data-mood="OPEN" data-i18n="mood_open">Open</button>
+                <button type="button" class="pill" data-mood="EXPLORING" data-i18n="mood_explore">Exploring</button>
+              </div>
+            </div>
+            <div class="field"><label data-i18n="lm_intention">Intention</label>
+              <div class="pillset" id="lm-f-intent" role="group">
+                <button type="button" class="pill" data-intent="AVAILABLE_NOW" data-i18n="intention_available">Available now</button>
+              </div>
+            </div>
+            <div class="field"><label data-i18n="lm_interests">Interests</label>
+              <div class="pillset pillset-wrap" id="lm-f-interests" role="group">
+                <button type="button" class="pill" data-interest="Music">Music</button>
+                <button type="button" class="pill" data-interest="Travel">Travel</button>
+                <button type="button" class="pill" data-interest="Food">Food</button>
+                <button type="button" class="pill" data-interest="Fitness">Fitness</button>
+                <button type="button" class="pill" data-interest="Art">Art</button>
+              </div>
+            </div>
+            <button type="button" class="btn btn-primary" id="lm-filter-apply" data-i18n="lm_apply">Apply filters</button>
+            <button type="button" class="btn btn-ghost mt-s" id="lm-filter-clear" data-i18n="lm_clear">Clear</button>
+          </div>
+        </div>
+        <nav class="nav" data-navbar></nav>
+      </section>
+
+      <!-- DISCOVER — same eligibility engine as Radar, list not swipe -->
+      <section class="view" id="v-discover" data-nav="discover">
+        <div class="statusbar"><span class="time">21:49</span><span>Wingman</span></div>
+        <div class="topbar"><div class="logo">WING<b>MAN</b></div><div class="subtitle" data-i18n="discover_sub">Nearby opportunities</div></div>
+        <div class="body pad">
+          <p class="lead mb" id="discover-lead" data-i18n="discover_lead">People already near you, when you’re both eligible.</p>
+          <div id="discover-list"></div>
+          <div class="empty-state hidden" id="discover-empty">
+            <b data-i18n="lm_quiet">Quiet around here</b>
+            <p data-i18n="lm_quiet_d">Keep Wingman active and we'll show opportunities when they appear.</p>
           </div>
         </div>
         <nav class="nav" data-navbar></nav>
@@ -422,12 +497,21 @@
         <div class="statusbar"><span class="time">21:47</span><span>Wingman</span></div>
         <div class="topbar"><div class="logo">WING<b>MAN</b></div><div class="subtitle" data-i18n="pulse_sub">Compatible activity zones</div></div>
         <div class="body pad">
+          <div id="pulse-live" class="hidden">
+            <div class="card" id="pulse-card">
+              <b id="pulse-title">Activity is quiet nearby</b>
+              <p class="small muted mt-s" id="pulse-detail" data-i18n="pulse_anon">Aggregated · Anonymized</p>
+            </div>
+            <div id="pulse-stats"></div>
+          </div>
+          <div id="pulse-legacy">
           <div class="pulse-map"><div><b style="font-family:var(--font-display)">Luxembourg · Tonight</b><p class="small muted" data-i18n="pulse_anon">Aggregated · Anonymized</p></div></div>
           <div class="mt"></div>
           <div class="pzone"><div class="lvl" style="background:rgba(255,77,103,.15)">🔥</div><div class="z"><b>Rocher du Grund</b><p data-i18n="pz1">Strong compatible activity · 200 m</p></div><span class="tag" style="background:rgba(255,77,103,.15);color:var(--mood-ready)">HOT</span></div>
           <div class="pzone"><div class="lvl" style="background:rgba(255,200,87,.15)">⚡</div><div class="z"><b>City Festival</b><p data-i18n="pz2">Exceptional event · 1.2 km</p></div><span class="tag" style="background:rgba(255,200,87,.15);color:var(--mood-open)">ELECTRIC</span></div>
           <div class="pzone"><div class="lvl" style="background:rgba(124,92,252,.15)">🌿</div><div class="z"><b>Merl Park</b><p data-i18n="pz3">Moderate activity · 800 m</p></div><span class="tag" style="background:rgba(124,92,252,.15);color:var(--air)">ACTIVE</span></div>
           <div class="card center small muted" data-i18n="pulse_note">Zones are aggregated and anonymized.</div>
+          </div>
         </div>
         <nav class="nav" data-navbar></nav>
       </section>
@@ -527,10 +611,13 @@
 
 <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 <script src="config.js"></script>
 <script src="api.js"></script>
 <script src="realtime.js"></script>
 <script src="radar-dots.js"></script>
+<script src="living-map.js"></script>
+<script src="living-map-ui.js"></script>
 <script src="payments/payment-types.js"></script>
 <script src="payments/providers/disabled.js"></script>
 <script src="payments/providers/stripe.js"></script>
