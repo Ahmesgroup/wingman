@@ -20,7 +20,7 @@ verdict.
 | Protocol wiring | **improved** |
 | Production durability | **GO (infra)** — steps 1–5 complete |
 | Private selfie media | **WIRED (infra)** — Evidence Pack still open |
-| Two-phone Evidence Pack | **NOT STARTED / BLOCKED** |
+| Two-phone Evidence Pack | **NOT STARTED / human-phone blocked** |
 | PRODUCT PROTOCOL READY | **NO** |
 
 ## Live Production probe (2026-08-17 post-S28)
@@ -32,6 +32,22 @@ verdict.
 
 S28 detail: [`S28_PRODUCTION_PERSISTENCE.md`](./S28_PRODUCTION_PERSISTENCE.md).  
 S31 detail: [`S31_PRIVATE_SELFIE_MEDIA.md`](./S31_PRIVATE_SELFIE_MEDIA.md) — Vercel Blob private + camera upload path.
+
+## Production smoke (2026-08-17 17:41 UTC)
+
+Public, read-only probes returned the following. No credentials, OTP values, tokens, phone numbers, or user data were
+used or recorded.
+
+| Check | Result |
+|-------|--------|
+| Auth mode | **PASS** — public production; Twilio Verify; field-test and developer-header auth disabled |
+| Readiness | **PASS** — ready; Redis ephemeral; Prisma/Postgres persistence; Vercel Blob media; Destiny false |
+| In-memory fallback | **PASS** — public-production boot tests refuse missing Redis, database, or private media configuration |
+| Public demo leakage | **PASS (wire)** — public client fails visibly rather than silently entering mock mode; public production rejects developer headers |
+| Two-session automated flow | **PASS (test harness only)** — two session-authenticated clients completed Radar-alone=0 → Signal → private selfie → realtime Mission chat/reconnect history → outcomes → cooldown |
+
+This is production wiring and a local CI-style simulation, not an Evidence Pack row. Real SMS and two human phones are
+still required.
 
 ## Protocol readiness matrix
 
@@ -60,7 +76,7 @@ S31 detail: [`S31_PRIVATE_SELFIE_MEDIA.md`](./S31_PRIVATE_SELFIE_MEDIA.md) — V
 
 | Sprint | Status |
 |--------|--------|
-| S27A | **OPEN** — Evidence Pack **NOT STARTED** (blocked until durability) |
+| S27A | **OPEN** — Evidence Pack **NOT STARTED** (waiting for two human phones) |
 | S27B | **OPEN** — Twilio configured; SMS evidence later |
 | S28 | **GO (infra)** — Neon + Upstash; fail-closed; ready=prisma/redis/postgres; durability cert passed |
 | S29 | **PARTIAL wire** — Redis live; multi-phone Evidence Pack later |

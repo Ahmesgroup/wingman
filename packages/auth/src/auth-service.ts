@@ -126,7 +126,12 @@ export class AuthService {
     return {
       challengeId: challenge.id,
       deliveryCode: code,
-      debugCode: !external && process.env.AUTH_DEBUG_OTP === "true" ? code : undefined,
+      // Test-only harness aid. A deployed runtime must never disclose an OTP,
+      // even if AUTH_DEBUG_OTP was mistakenly configured.
+      debugCode:
+        !external && process.env.NODE_ENV === "test" && process.env.AUTH_DEBUG_OTP === "true"
+          ? code
+          : undefined,
     };
   }
 
