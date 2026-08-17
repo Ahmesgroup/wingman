@@ -33,12 +33,16 @@ describe("POST /me/profile", () => {
           heightCm: 178,
           interests: ["Music", "Travel"],
           dailyBio: "Out tonight",
+          mood: "UNSURE",
+          intention: "AVAILABLE_NOW",
         })
         .expect(201);
 
       expect(saved.body.profile.gender).toBe("MALE");
       expect(saved.body.profile.interestedIn).toEqual(["WOMEN"]);
       expect(saved.body.profile.firstName).toBe("Alex");
+      expect(saved.body.profile.mood).toBe("UNSURE");
+      expect(saved.body.profile.intention).toBe("AVAILABLE_NOW");
       expect(engine.users.get("a")?.profile.gender).toBe("MALE");
 
       const me = await request(server).get("/me").set("x-user-id", "a").expect(200);
@@ -53,6 +57,16 @@ describe("POST /me/profile", () => {
           birthDate: "2012-01-01",
         })
         .expect(422);
+
+      await request(server)
+        .post("/me/profile")
+        .set("x-user-id", "a")
+        .send({
+          gender: "MALE",
+          interestedIn: ["WOMEN"],
+          intention: "AVAILABLE_LATER",
+        })
+        .expect(400);
 
       await app.close();
     },

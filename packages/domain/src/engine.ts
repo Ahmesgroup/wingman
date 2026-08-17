@@ -129,8 +129,8 @@ export class WingmanEngine {
       heightCm?: number;
       dailyBio?: string;
       interests?: string[];
-      mood?: string;
-      intention?: string;
+      mood?: "SUPER_READY" | "OPEN" | "UNSURE";
+      intention?: "AVAILABLE_NOW" | "JUST_EXPLORING";
     },
   ): UserSeed {
     const user = this.users.get(userId);

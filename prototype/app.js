@@ -449,13 +449,13 @@ const I18N = {
     t_auth_required: 'Sign in with your phone to continue', t_auth_ok: 'Signed in', t_otp_sent: 'Code sent', t_otp_ready_ft: 'Enter the field-test code', t_otp_bad: 'Invalid code', t_otp_expired: 'Code expired', t_otp_rate: 'Too many attempts — wait and retry', t_otp_not_allowed: 'This number is not on the field-test allow-list',
     profile_sub: 'Your profile', pf_name: 'First name', pf_birth: 'Date of birth', pf_birth_day: 'Day', pf_birth_month: 'Month', pf_birth_year: 'Year', pf_birth_hint: 'Tap each column — native picker on iPhone.',
     pf_gender: 'Gender', g_male: 'Male', g_female: 'Female', g_nb: 'Non-binary',
-    pf_interest: 'Interested in', t_men: 'Men', t_women: 'Women', t_nb: 'Non-binary', pf_height: 'Height (cm)', pf_interests: 'Interests (max 5)', pf_bio: 'Daily bio (150 max)',
+    pf_interest: 'Interested in', t_men: 'Men', t_women: 'Women', t_nb: 'Non-binary', pf_intention: 'Your intention', intention_available: 'Available now', intention_exploring: 'Just exploring', pf_height: 'Height (cm)', pf_interests: 'Interests (max 5)', pf_bio: 'Daily bio (150 max)',
     consent_sub: 'Your choices', consent_title: 'What you agree to', consent_body: 'Each purpose is separate. You can change these anytime in Settings.',
     c_core: 'Run the service', c_core_d: 'Required to match you and operate the protocol.', c_loc: 'Approximate location', c_loc_d: 'Coarse radius only — never your exact position.',
     c_destiny: 'Destiny Connection', c_destiny_d: 'Off by default. Coarse co-presence to spot repeated paths.', c_push: 'Push notifications', c_push_d: 'Signals, selfies, confirmations.',
     c_analytics: 'Product analytics', c_analytics_d: 'Optional. Helps improve Wingman.', consent_cta: 'Agree & activate Radar',
     radar_sub: 'Real-time discovery', radar_invisible: '—  Invisible', radar_active: '●  Active', radar_dist: 'Someone very close · Nearby', radar_activate: 'Go active', radar_deactivate: 'Go invisible',
-    mood_ready: 'Super ready', mood_open: 'Open', mood_explore: 'Exploring', mood_ready_d: 'Meet now', mood_open_d: "If it's right", mood_explore_d: 'Just looking', mood_title: 'Your mood',
+    mood_ready: 'Super ready', mood_open: 'Open', mood_explore: 'Unsure', mood_ready_d: 'Meet now', mood_open_d: "If it's right", mood_explore_d: 'Just exploring', mood_title: 'Your mood',
     stat_signals: 'Signals left', stat_nearby: 'Nearby', stat_tickets: 'Active ticket',
     destiny_eyebrow: '✦ Destiny Connection', destiny_card_t: 'You keep crossing paths', destiny_card_d: 'Someone compatible keeps crossing your path — even off your radar.',
     send_signal: 'Send a Signal', close: 'Close',
@@ -513,13 +513,13 @@ const I18N = {
     t_auth_required: 'Connectez-vous avec votre téléphone', t_auth_ok: 'Connecté', t_otp_sent: 'Code envoyé', t_otp_ready_ft: 'Entrez le code field-test', t_otp_bad: 'Code invalide', t_otp_expired: 'Code expiré', t_otp_rate: 'Trop de tentatives — réessayez plus tard', t_otp_not_allowed: 'Ce numéro n\'est pas sur la allow-list field-test',
     profile_sub: 'Votre profil', pf_name: 'Prénom', pf_birth: 'Date de naissance', pf_birth_day: 'Jour', pf_birth_month: 'Mois', pf_birth_year: 'Année', pf_birth_hint: 'Touchez chaque colonne — molette native sur iPhone.',
     pf_gender: 'Genre', g_male: 'Homme', g_female: 'Femme', g_nb: 'Non-binaire',
-    pf_interest: 'Intéressé·e par', t_men: 'Hommes', t_women: 'Femmes', t_nb: 'Non-binaire', pf_height: 'Taille (cm)', pf_interests: "Centres d'intérêt (max 5)", pf_bio: 'Bio du jour (150 max)',
+    pf_interest: 'Intéressé·e par', t_men: 'Hommes', t_women: 'Femmes', t_nb: 'Non-binaire', pf_intention: 'Votre intention', intention_available: 'Disponible maintenant', intention_exploring: 'Juste explorer', pf_height: 'Taille (cm)', pf_interests: "Centres d'intérêt (max 5)", pf_bio: 'Bio du jour (150 max)',
     consent_sub: 'Vos choix', consent_title: 'Ce que vous acceptez', consent_body: 'Chaque finalité est distincte. Modifiable à tout moment dans Réglages.',
     c_core: 'Faire fonctionner le service', c_core_d: 'Nécessaire pour vous mettre en relation et opérer le protocole.', c_loc: 'Localisation approximative', c_loc_d: 'Rayon grossier uniquement — jamais votre position exacte.',
     c_destiny: 'Destiny Connection', c_destiny_d: 'Désactivé par défaut. Co-présence grossière pour repérer les croisements.', c_push: 'Notifications push', c_push_d: 'Signaux, selfies, confirmations.',
     c_analytics: 'Analytique produit', c_analytics_d: 'Optionnel. Aide à améliorer Wingman.', consent_cta: 'Accepter & activer le Radar',
     radar_sub: 'Découverte en temps réel', radar_invisible: '—  Invisible', radar_active: '●  Actif', radar_dist: 'Quelqu\'un très proche · À proximité', radar_activate: 'Devenir actif', radar_deactivate: 'Devenir invisible',
-    mood_ready: 'Prêt·e', mood_open: 'Ouvert·e', mood_explore: 'Explore', mood_ready_d: 'Se voir maintenant', mood_open_d: 'Si c\'est le bon', mood_explore_d: 'Juste explorer', mood_title: 'Mon humeur',
+    mood_ready: 'Prêt·e', mood_open: 'Ouvert·e', mood_explore: 'Incertain·e', mood_ready_d: 'Se voir maintenant', mood_open_d: 'Si c\'est le bon', mood_explore_d: 'Juste explorer', mood_title: 'Mon humeur',
     stat_signals: 'Signaux restants', stat_nearby: 'À proximité', stat_tickets: 'Ticket actif',
     destiny_eyebrow: '✦ Destiny Connection', destiny_card_t: 'Vous vous croisez souvent', destiny_card_d: 'Quelqu\'un de compatible croise votre route — même hors de votre radar.',
     send_signal: 'Envoyer un Signal', close: 'Fermer',
@@ -678,8 +678,8 @@ function sizeCanvas() {
   canvas.width = w * DPR; canvas.height = h * DPR;
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
 }
-const MOOD_COLORS = { SUPER_READY: '#FF4D67', OPEN: '#FFC857', EXPLORING: '#F4F5F7' };
-const MOOD_GLOW = { SUPER_READY: 'rgba(255,77,103,.34)', OPEN: 'rgba(255,200,87,.30)', EXPLORING: 'rgba(244,245,247,.20)' };
+const MOOD_COLORS = { SUPER_READY: '#FF4D67', OPEN: '#FFC857', UNSURE: '#F4F5F7', EXPLORING: '#F4F5F7' };
+const MOOD_GLOW = { SUPER_READY: 'rgba(255,77,103,.34)', OPEN: 'rgba(255,200,87,.30)', UNSURE: 'rgba(244,245,247,.20)', EXPLORING: 'rgba(244,245,247,.20)' };
 // Live eligible candidates only — starts empty (alone = 0 Nearby).
 const dots = [];
 let signalWave = null; // {x,y,t} — one-shot Signal (blue)
@@ -1823,6 +1823,7 @@ function readProfileForm() {
     .map((p) => (p.getAttribute('aria-label') || p.textContent || '').trim())
     .filter(Boolean)
     .slice(0, 5);
+  const intention = $('#v-profile [aria-labelledby="pf-intention-label"] .pill[aria-pressed="true"]')?.dataset.intention;
   const heightCm = heightRaw ? Number(heightRaw) : undefined;
   return {
     firstName: name || undefined,
@@ -1832,6 +1833,8 @@ function readProfileForm() {
     heightCm: Number.isFinite(heightCm) ? heightCm : undefined,
     dailyBio: bio || undefined,
     interests: interests.length ? interests : undefined,
+    mood: state.mood === 'EXPLORING' ? 'UNSURE' : state.mood,
+    intention,
   };
 }
 
@@ -1867,13 +1870,17 @@ $('#profile-next-btn') && $('#profile-next-btn').addEventListener('click', async
 
 async function postConsents() {
   const policyVersion = 'v1';
-  const grants = [{ purpose: 'CORE_MATCHING', policyVersion }];
+  const grants = [];
+  const core = $('#consent-core');
   const loc = $('#consent-loc');
   const push = $('#consent-push');
   const analytics = $('#consent-analytics');
   // Destiny stays product-off — record only if user toggled; server Destiny flag stays false.
   const destiny = $('#consent-destiny');
-  if (!loc || loc.getAttribute('aria-checked') === 'true') {
+  if (core && core.getAttribute('aria-checked') === 'true') {
+    grants.push({ purpose: 'CORE_MATCHING', policyVersion });
+  }
+  if (loc && loc.getAttribute('aria-checked') === 'true') {
     grants.push({ purpose: 'COARSE_LOCATION', policyVersion });
   }
   if (!push || push.getAttribute('aria-checked') === 'true') {
@@ -1892,6 +1899,11 @@ async function postConsents() {
 
 $('#consent-cta-btn') && $('#consent-cta-btn').addEventListener('click', async () => {
   if (state.busy) return;
+  const core = $('#consent-core');
+  if (!core || core.getAttribute('aria-checked') !== 'true') {
+    feedback('error', state.lang === 'fr' ? 'Votre accord est requis pour activer le service' : 'Your agreement is required to activate the service');
+    return;
+  }
   if (liveApi()) {
     try {
       await withLoading(t('t_loading'), async () => {

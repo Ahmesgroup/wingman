@@ -65,8 +65,8 @@ export const ProfileUpdateSchema = z.object({
   heightCm: z.number().int().min(120).max(230).optional(),
   interests: z.array(z.string().min(1).max(40)).max(5).optional(),
   dailyBio: z.string().max(150).optional(),
-  mood: z.string().max(40).optional(),
-  intention: z.string().max(40).optional(),
+  mood: z.enum(["SUPER_READY", "OPEN", "UNSURE"]).optional(),
+  intention: z.enum(["AVAILABLE_NOW", "JUST_EXPLORING"]).optional(),
 });
 
 export const ERROR_CATALOG = {

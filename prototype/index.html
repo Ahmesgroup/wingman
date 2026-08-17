@@ -164,6 +164,9 @@
           <div class="field"><label id="pf-interest-label" data-i18n="pf_interest">Interested in</label>
             <div class="pillset" role="group" aria-labelledby="pf-interest-label"><button type="button" class="pill" aria-pressed="false" data-i18n="t_men">Men</button><button type="button" class="pill" aria-pressed="true" data-i18n="t_women">Women</button><button type="button" class="pill" aria-pressed="false" data-i18n="t_nb">Non-binary</button></div>
           </div>
+          <div class="field"><label id="pf-intention-label" data-i18n="pf_intention">Your intention</label>
+            <div class="pillset" role="group" aria-labelledby="pf-intention-label"><button type="button" class="pill" aria-pressed="true" data-intention="AVAILABLE_NOW" data-i18n="intention_available">Available now</button><button type="button" class="pill" aria-pressed="false" data-intention="JUST_EXPLORING" data-i18n="intention_exploring">Just exploring</button></div>
+          </div>
           <div class="field">
             <label for="pf-height" data-i18n="pf_height">Height (cm)</label>
             <input id="pf-height" type="number" value="" placeholder="178" inputmode="numeric" min="120" max="230" enterkeyhint="next">
@@ -188,13 +191,13 @@
         <div class="body pad form-scroll">
           <h2 class="head" data-i18n="consent_title">What you agree to</h2>
           <p class="lead mb" data-i18n="consent_body">Each purpose is separate. You can change these anytime in Settings.</p>
-          <div class="consent-item consent-required">
+          <div class="consent-item">
             <div class="txt"><b id="c-core" data-i18n="c_core">Run the service</b><p data-i18n="c_core_d">Required to match you and operate the protocol.</p></div>
-            <div class="switch" role="switch" aria-checked="true" aria-disabled="true" aria-labelledby="c-core"></div>
+            <div class="switch" id="consent-core" role="switch" aria-checked="false" tabindex="0" aria-labelledby="c-core"></div>
           </div>
           <div class="consent-item">
             <div class="txt"><b id="c-loc" data-i18n="c_loc">Approximate location</b><p data-i18n="c_loc_d">Coarse radius only — never your exact position.</p></div>
-            <div class="switch" id="consent-loc" role="switch" aria-checked="true" tabindex="0" aria-labelledby="c-loc"></div>
+            <div class="switch" id="consent-loc" role="switch" aria-checked="false" tabindex="0" aria-labelledby="c-loc"></div>
           </div>
           <div class="consent-item">
             <div class="txt"><b id="c-destiny" data-i18n="c_destiny">Destiny Connection</b><p data-i18n="c_destiny_d">Off by default. Coarse co-presence to spot repeated paths.</p></div>
@@ -202,7 +205,7 @@
           </div>
           <div class="consent-item">
             <div class="txt"><b id="c-push" data-i18n="c_push">Push notifications</b><p data-i18n="c_push_d">Signals, selfies, confirmations.</p></div>
-            <div class="switch" id="consent-push" role="switch" aria-checked="true" tabindex="0" aria-labelledby="c-push"></div>
+            <div class="switch" id="consent-push" role="switch" aria-checked="false" tabindex="0" aria-labelledby="c-push"></div>
           </div>
           <div class="consent-item">
             <div class="txt"><b id="c-analytics" data-i18n="c_analytics">Product analytics</b><p data-i18n="c_analytics_d">Optional. Helps improve Wingman.</p></div>
@@ -244,7 +247,7 @@
               <div class="mood-select" id="mood-select">
                 <button class="mood-btn" data-mood="SUPER_READY" aria-pressed="false"><span class="swatch" style="background:var(--mood-ready)"></span><b data-i18n="mood_ready">Super ready</b><small data-i18n="mood_ready_d">Meet now</small></button>
                 <button class="mood-btn" data-mood="OPEN" aria-pressed="true"><span class="swatch" style="background:var(--mood-open)"></span><b data-i18n="mood_open">Open</b><small data-i18n="mood_open_d">If it's right</small></button>
-                <button class="mood-btn" data-mood="EXPLORING" aria-pressed="false"><span class="swatch" style="background:var(--mood-explore)"></span><b data-i18n="mood_explore">Exploring</b><small data-i18n="mood_explore_d">Just looking</small></button>
+                <button class="mood-btn" data-mood="UNSURE" aria-pressed="false"><span class="swatch" style="background:var(--mood-explore)"></span><b data-i18n="mood_explore">Unsure</b><small data-i18n="mood_explore_d">Just exploring</small></button>
               </div>
             </div>
             <div class="card destiny" data-go="v-destiny" role="button" tabindex="0">
