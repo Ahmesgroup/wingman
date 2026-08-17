@@ -9,9 +9,9 @@ export function onePager() {
     body: `
     <div class="onepager">
       <div class="left">
-        <div class="tagline">From presence to hello.</div>
+        <div class="tagline">Make the first acquaintance easy.</div>
         <h1>Wingman</h1>
-        <p class="lead" style="font-size:18px;max-width:none;">Wingman is a real-world connection facilitator. It helps two people who are already near each other safely discover mutual interest and say hello in real life.</p>
+        <p class="lead" style="font-size:18px;max-width:none;"><strong>Social Interaction Facilitation Technology.</strong> Wingman facilitates the first real-world interaction between people who are already near each other — or who repeatedly cross paths through Destiny Connection.</p>
         <div class="card">
           <h3>Not a dating app</h3>
           <p>No public profile browsing · no swipe feed · no endless chat. Free: 2 Signals/day · 1 active connection · ~15 min Mission Meet.</p>
@@ -42,7 +42,7 @@ export function onePager() {
         </div>
         <div class="card">
           <h3>Owner</h3>
-          <p>Igor Chernikov · Spec V4.1 · Wingman does not help you collect matches. Wingman helps you make the first acquaintance.</p>
+          <p>Igor Chernikov · Spec V3.1 · Love is in the air. · One Connection at a Time is an operating principle.</p>
         </div>
       </div>
     </div>`,

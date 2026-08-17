@@ -23,11 +23,11 @@ npm run build
 
 Sources live in `src/` (HTML + `shared.css`). Diagrams in `assets/diagrams/`. Screenshots in `assets/screenshots/`. QA page renders in `qa/`.
 
-## 2026-08-17 positioning update
+## 2026-08-17 V3.1 hierarchy update
 
-The HTML sources and regenerated PDFs lock the approved wording on Investor Deck cover and "What Wingman is" (slides 1-3),
-Master Presentation opening (page 3), User Overview closing (page 8), and the One Pager: "Wingman is a real-world
-connection facilitator. It helps two people who are already near each other safely discover mutual interest and say
-hello in real life." / "From presence to hello."
+The HTML sources and regenerated PDFs lock the approved hierarchy: **Social Interaction Facilitation Technology**
+(category), **Make the first acquaintance easy.** (primary tagline), the supporting description covering nearby people
+and repeated Destiny Connection crossings, and **Love is in the air.** (secondary emotional slogan). “Real-world
+connection facilitator” is explanatory wording only; **One Connection at a Time.** remains an operating principle.
 
 PDF + QA artifacts were regenerated with Playwright Chromium on 2026-08-17 after the binary was installed in this workspace.

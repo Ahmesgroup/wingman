@@ -43,8 +43,8 @@ export function masterPages() {
       </div>
       <div class="card">
         <h3>Mission</h3>
-        <p class="quote" style="font-size:28px;">From presence to hello.</p>
-        <p style="margin-top:18px;"><strong>Wingman is a real-world connection facilitator.</strong> It helps two people who are already near each other safely discover mutual interest and say hello in real life.</p>
+        <p class="quote" style="font-size:28px;">Make the first acquaintance easy.</p>
+        <p style="margin-top:18px;"><strong>Category: Social Interaction Facilitation Technology.</strong> Wingman facilitates the first real-world interaction between people who are already near each other — or who repeatedly cross paths through Destiny Connection.</p>
       </div>
     </div>
   `));

@@ -16,7 +16,7 @@
 
 | Claim in decks | Basis | Label |
 |----------------|-------|-------|
-| Mission: “Make the first acquaintance easy.” | README, PRD, PRODUCT_VISION | A (positioning) |
+| Category: “Social Interaction Facilitation Technology”; primary tagline: “Make the first acquaintance easy.” | README, PRD, PRODUCT_VISION | A (owner-locked V3.1 positioning) |
 | Not a dating app / social network | README, COMPETITIVE_POSITIONING, PRD | A (positioning) |
 | Protocol Radar→Signal→Selfie→Mutual→Mission→Cooldown | STATE_MACHINES, PRD, domain engine | A |
 | Free 2 Signals/day; 1 active connection; Mission ~15 min | BUSINESS_MODEL, STATE_MACHINES, PROJECT_STATE | A (rules) |
@@ -30,6 +30,7 @@
 | Surface UI on Vercel | FIELD_TEST.md (`078d308`) | C (UI surface) |
 | Live Field Test S27–S34; S27A OPEN; S27B deferred | LIVE_FIELD_TEST, S27_IDENTITY_OTP, PROJECT_STATE | C |
 | Wingman+ €9.99 and Pass prices | BUSINESS_MODEL | Spec / not live revenue |
+| PRODUCT PROTOCOL READY = NO | PROTOCOL_READINESS, EVIDENCE_PACK_TWO_PHONE | C (two-phone proof not started) |
 | Funding amount / valuation / live revenue | — | **Not claimed** (“TO BE DEFINED”) |
 
 ## Conflicts & resolutions
@@ -40,9 +41,9 @@
 - **Deck resolution:** Present Destiny as implemented/flagged capability, **not** a currently public core feature. Note Free-tier marketing inclusion as spec intent, not live public availability.
 
 ### 2) Wingman+ daily Signal count
-- **BUSINESS_MODEL / PRD / MVP:** “20–25 / day” with open question to finalize.
-- **Domain entitlements snippet in BACKEND_IMPLEMENTATION_STATUS §3.2:** “Plus 25”.
-- **Deck resolution:** “20–25 (final number TBD)” per ASSUMPTIONS_AND_OPEN_QUESTIONS.
+- **V3.1 PRD:** 25 Signals/day is owner locked.
+- **Older documents:** may still show “20–25 / day”.
+- **Deck resolution:** use **25 Signals/day** where a specific Plus limit is presented.
 
 ### 3) Early “No Stripe” wording vs S19
 - **BACKEND_IMPLEMENTATION_STATUS §3.2** still says “No Stripe integration yet — Plus is a seed flag” in an early entitlements stub section.

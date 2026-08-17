@@ -71,8 +71,8 @@ export function userPages() {
 
   pages.push(p('For you', 8, 'Start', `
     <div class="hero-center center-all" style="flex:1;">
-      <h1 class="center">From presence to hello.</h1>
-      <p class="lead" style="text-align:center;">Wingman helps you make the first acquaintance.</p>
+      <h1 class="center">Make the first acquaintance easy.</h1>
+      <p class="lead" style="text-align:center;">Love is in the air.</p>
       <p class="tiny">Field-test surface: product UI evolving · some builds may be demo-mode without full backend.</p>
     </div>
   `));

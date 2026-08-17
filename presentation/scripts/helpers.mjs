@@ -32,11 +32,11 @@ export function coverPage({ subtitle, deck, total, confidential = true }) {
     <h1 class="wide" style="margin-top:18px;font-size:72px;">Wingman</h1>
     <p class="lead">${subtitle}</p>
     <div class="pill-row">
-      <span class="status a">Social interaction facilitation</span>
+      <span class="status a">Social Interaction Facilitation Technology</span>
       <span class="status b">Not a dating app</span>
       <span class="status c">${deck}</span>
     </div>
-    <p class="tiny" style="margin-top:28px;">Product Owner: Igor Chernikov · Spec V4.1 · Prepared for investors, partners &amp; users<br/>
+    <p class="tiny" style="margin-top:28px;">Product Owner: Igor Chernikov · Spec V3.1 · Prepared for investors, partners &amp; users<br/>
     ${confidential ? 'Confidential — factual status as of August 2026 repository documentation.' : ''}
     </p>
   </div>

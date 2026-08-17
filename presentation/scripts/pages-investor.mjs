@@ -9,7 +9,7 @@ function p(part, num, title, body) {
 export function investorPages() {
   const pages = [];
   pages.push(coverPage({
-    subtitle: 'From presence to hello. A real-world connection facilitator, not another swipe feed.',
+    subtitle: 'Social Interaction Facilitation Technology. Make the first acquaintance easy.',
     deck: 'Investor Deck',
     total: TOTAL,
   }));
@@ -22,8 +22,9 @@ export function investorPages() {
   `));
 
   pages.push(p('02', 3, 'What Wingman is', `
-    <h1>From presence to hello</h1>
-    <p class="quote">Wingman is a real-world connection facilitator. It helps two people who are already near each other safely discover mutual interest and say hello in real life.</p>
+    <h1>Make the first acquaintance easy.</h1>
+    <p class="quote">Wingman facilitates the first real-world interaction between people who are already near each other — or who repeatedly cross paths through Destiny Connection.</p>
+    <p class="note">Category: Social Interaction Facilitation Technology. “Real-world connection facilitator” is explanatory wording only.</p>
     <div class="flow" style="margin-top:28px;">
       <span class="step">Radar</span><span class="arrow">→</span>
       <span class="step">Signal</span><span class="arrow">→</span>
@@ -123,7 +124,7 @@ export function investorPages() {
   pages.push(p('14', 15, 'Why now / why this team focus', `
     <h1 class="wide">Protocol encoded before scale theater</h1>
     <p>Wingman invested first in correct state machines, entitlements, safety invariants, and certification — then advanced intelligence behind flags — then a disciplined field-test track.</p>
-    <p>Product Owner: Igor Chernikov. Spec V4.1. Governance: facts before tickets.</p>
+    <p>Product Owner: Igor Chernikov. Spec V3.1. Governance: facts before tickets.</p>
   `));
 
   pages.push(p('15', 16, 'The ask', `
