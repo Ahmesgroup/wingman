@@ -78,6 +78,34 @@ function setSelfieCamError(msg) {
   el.classList.remove('hidden');
 }
 
+function setSelfieSendEnabled(on) {
+  const btn = $('#selfie-send');
+  if (!btn) return;
+  btn.disabled = !on;
+  btn.setAttribute('aria-disabled', on ? 'false' : 'true');
+}
+
+function noteServerTime(iso) {
+  if (!iso) return;
+  const serverMs = Date.parse(iso);
+  if (!Number.isFinite(serverMs)) return;
+  const offset = serverMs - Date.now();
+  state.serverNow = () => Date.now() + offset;
+}
+
+function formatCaptureStamp(ms) {
+  const d = new Date(ms);
+  if (Number.isNaN(d.getTime())) return '';
+  const iso = d.toISOString();
+  return iso.slice(0, 10) + ' · ' + iso.slice(11, 19) + ' UTC';
+}
+
+function setSelfieStamp(ms) {
+  const stamp = $('#selfie-stamp');
+  if (!stamp) return;
+  stamp.textContent = formatCaptureStamp(ms);
+}
+
 async function startSelfieCamera() {
   setSelfieCamError('');
   const video = $('#selfie-video');
@@ -88,6 +116,7 @@ async function startSelfieCamera() {
   }
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
     setSelfieCamError(t('t_cam_off'));
+    setSelfieSendEnabled(false);
     return false;
   }
   try {
@@ -101,10 +130,12 @@ async function startSelfieCamera() {
       video.classList.add('is-live');
       await video.play().catch(() => {});
     }
+    setSelfieSendEnabled(true);
     return true;
   } catch (e) {
     const denied = e && (e.name === 'NotAllowedError' || e.name === 'PermissionDeniedError');
     setSelfieCamError(denied ? t('t_cam_denied') : t('t_cam_fail'));
+    setSelfieSendEnabled(false);
     return false;
   }
 }
@@ -122,14 +153,6 @@ function captureSelfieBlob() {
   const ctx = canvas.getContext('2d');
   if (!ctx) throw Object.assign(new Error('Canvas unavailable'), { code: 'CAMERA_NOT_READY' });
   ctx.drawImage(video, 0, 0, w, h);
-  const stamp = $('#selfie-stamp');
-  if (stamp) {
-    ctx.fillStyle = 'rgba(0,0,0,0.45)';
-    ctx.fillRect(8, h - 28, Math.min(w - 16, 220), 20);
-    ctx.fillStyle = '#e8eefc';
-    ctx.font = '12px monospace';
-    ctx.fillText(stamp.textContent || new Date().toISOString(), 12, h - 14);
-  }
   return new Promise((resolve, reject) => {
     canvas.toBlob((blob) => {
       if (!blob) reject(Object.assign(new Error('Capture failed'), { code: 'CAPTURE_FAILED' }));
@@ -501,8 +524,10 @@ const I18N = {
     signal_sub: 'Someone reached out', signal_title: 'Someone nearby wants to meet you.', signal_body: 'It quietly expires if you don’t open it. No one is ever told you passed.', open: 'Open', sig_expired: 'Expired',
     signal_silent: 'No new Signals yet. When someone nearby reaches out, you’ll see it here.',
     inbox_title: 'Someone nearby wants to meet you.', inbox_hint: 'Open it before it quietly expires.',
-    s_live: 'Live capture', s_stamp: 'Timestamped', s_gallery: 'Gallery blocked', s_send: 'Take & send photo', s_letexpire: 'Let it expire', s_approve: 'Approve',
-    s_note: 'Photos stay in this connection. Wingman blocks saving here — it can’t stop every screenshot.',
+    s_live: 'Live capture', s_stamp: 'Timestamped', s_gallery: 'Gallery blocked',
+    s_title: 'Send a live selfie', s_body: 'Let them know it’s really you.',
+    s_send: 'Send a live selfie', s_letexpire: 'Let it expire', s_approve: 'Approve',
+    s_note: 'Visible only for this Wingman.',
     confirmed: 'You’re connected',
     ticket_sub: 'Hold this moment', ticket_badge: 'Held for you', ticket_title: "Can't meet right now?", ticket_body: 'Hold this moment — up to 2 hours on Free. You can chat only when you both decide to meet.', ticket_open: "I'm available now", ticket_later: 'Later',
     mm_sub: 'Decide where to meet', mm_obj: 'Decide where to meet', mm_ph: 'Terrace side sounds good…', mm_note: 'Phone numbers and social handles stay blocked.', mm_meet: "Let's meet", mm_not: 'Not this time',
@@ -559,10 +584,10 @@ const I18N = {
     t_mission_active: 'Decide where to meet', t_mission_done: 'This meeting ended', t_cooldown_on: 'A quiet pause',
     t_session_restored: 'Welcome back', t_no_signals: 'No Signals left today', t_export_ok: 'Your data file is ready', t_delete_ok: 'Account deletion requested',
     t_report_rate: 'Too many reports just now. They are still blocked — try again later.',
-    t_cam_off: 'Camera unavailable on this device.', t_cam_denied: 'Camera permission denied. Allow the camera to send a photo — gallery is blocked.', t_cam_fail: 'Could not open the camera.',
+    t_cam_off: 'Camera unavailable on this device.', t_cam_denied: 'Camera access is off. Allow the camera to send a live selfie — gallery photos aren’t accepted.', t_cam_fail: 'Could not open the camera.',
     t_need_interest: 'Select who you are interested in', t_need_birth: 'Date of birth required', t_profile_invalid: 'Invalid profile (18+ required)', t_need_core: 'Your agreement is required to use Wingman',
     t_go_active: 'Go active to see who’s nearby', t_anon_profile: 'Anonymous profile', t_expires_in: 'Expires in', t_silently_expired: 'It quietly expired', t_chat_expired: 'Time to decide ran out',
-    t_cam_required: 'Camera required', t_capture_fail: 'Couldn’t take the photo', t_slow_net: 'Slow network — try again', t_selfie_fail: 'Photo didn’t send', t_media_missing: 'Photo didn’t go through', t_api_selfie: 'Can’t send a photo right now',
+    t_cam_required: 'Allow the camera to send a live selfie.', t_capture_fail: 'Couldn’t take the photo', t_slow_net: 'Slow network — try again', t_selfie_fail: 'Photo didn’t send', t_media_missing: 'Photo didn’t go through', t_api_selfie: 'Can’t send a photo right now',
     t_otp_sent_to: 'Sent to', t_bad_phone: 'Invalid number', t_nearby_people: 'Nearby people',
   },
   fr: {
@@ -592,8 +617,10 @@ const I18N = {
     signal_sub: 'Quelqu’un s’est manifesté', signal_title: 'Quelqu’un près de vous aimerait faire connaissance.', signal_body: 'Cela expire en silence si vous n’ouvrez pas. Personne n’est prévenu si vous passez votre chemin.', open: 'Ouvrir', sig_expired: 'Expiré',
     signal_silent: 'Pas encore de Signaux. Dès que quelqu’un près de vous se manifeste, ce sera ici.',
     inbox_title: 'Quelqu’un près de vous aimerait faire connaissance.', inbox_hint: 'Ouvrez-le avant qu’il n’expire en silence.',
-    s_live: 'Photo en direct', s_stamp: 'Horodatée', s_gallery: 'Galerie bloquée', s_send: 'Prendre et envoyer', s_letexpire: 'Laisser expirer', s_approve: 'Approuver',
-    s_note: 'Les photos restent dans cette rencontre. Wingman bloque l’enregistrement ici — pas chaque capture d’écran.',
+    s_live: 'Photo en direct', s_stamp: 'Horodatée', s_gallery: 'Galerie bloquée',
+    s_title: 'Envoyez une photo en direct', s_body: 'Montrez-leur que c’est bien vous.',
+    s_send: 'Envoyer une photo en direct', s_letexpire: 'Laisser expirer', s_approve: 'Approuver',
+    s_note: 'Visible uniquement pour cette rencontre.',
     confirmed: 'Vous êtes connectés',
     ticket_sub: 'Garder ce moment', ticket_badge: 'Gardé pour vous', ticket_title: 'Pas dispo maintenant ?', ticket_body: 'Gardez ce moment — jusqu’à 2 h en Gratuit. Le chat s’ouvre seulement quand vous décidez tous les deux de vous voir.', ticket_open: 'Je suis dispo', ticket_later: 'Plus tard',
     mm_sub: 'Décidez d’un lieu', mm_obj: 'Décidez d’un lieu', mm_ph: 'Côté terrasse, ça marche…', mm_note: 'Numéros et réseaux sociaux restent bloqués.', mm_meet: 'On se retrouve', mm_not: 'Pas cette fois',
@@ -650,10 +677,10 @@ const I18N = {
     t_mission_active: 'Décidez d’un lieu', t_mission_done: 'Cette rencontre est terminée', t_cooldown_on: 'Une pause discrète',
     t_session_restored: 'Bon retour', t_no_signals: 'Plus de Signaux aujourd’hui', t_export_ok: 'Votre fichier est prêt', t_delete_ok: 'Suppression du compte demandée',
     t_report_rate: 'Trop de signalements pour le moment. La personne reste bloquée — réessayez plus tard.',
-    t_cam_off: 'Caméra indisponible sur cet appareil.', t_cam_denied: 'Permission caméra refusée. Autorisez la caméra pour envoyer une photo — pas de galerie.', t_cam_fail: 'Impossible d’ouvrir la caméra.',
+    t_cam_off: 'Caméra indisponible sur cet appareil.', t_cam_denied: 'L’accès à la caméra est refusé. Autorisez-la pour envoyer une photo en direct — les photos de la galerie ne sont pas acceptées.', t_cam_fail: 'Impossible d’ouvrir la caméra.',
     t_need_interest: 'Choisissez qui vous intéresse', t_need_birth: 'Date de naissance requise', t_profile_invalid: 'Profil invalide (18 ans et plus requis)', t_need_core: 'Votre accord est requis pour utiliser Wingman',
     t_go_active: 'Rendez-vous visible pour voir qui est près de vous', t_anon_profile: 'Profil anonyme', t_expires_in: 'Expire dans', t_silently_expired: 'Cela a expiré en silence', t_chat_expired: 'Le temps pour décider est écoulé',
-    t_cam_required: 'Caméra requise', t_capture_fail: 'Impossible de prendre la photo', t_slow_net: 'Réseau lent — réessayez', t_selfie_fail: 'La photo n’est pas partie', t_media_missing: 'La photo n’est pas passée', t_api_selfie: 'Impossible d’envoyer une photo pour le moment',
+    t_cam_required: 'Autorisez la caméra pour envoyer une photo en direct.', t_capture_fail: 'Impossible de prendre la photo', t_slow_net: 'Réseau lent — réessayez', t_selfie_fail: 'La photo n’est pas partie', t_media_missing: 'La photo n’est pas passée', t_api_selfie: 'Impossible d’envoyer une photo pour le moment',
     t_otp_sent_to: 'Envoyé au', t_bad_phone: 'Numéro invalide', t_nearby_people: 'Personnes à proximité',
   },
 };
@@ -1642,9 +1669,7 @@ function onEnter(id) {
   if (id === 'v-selfie') {
     setPhase('validation', t('t_phase_validation'));
     $('#selfie-validate').classList.add('hidden'); $('#selfie-send').classList.remove('hidden');
-    const stamp = $('#selfie-stamp');
-    const now = new Date();
-    stamp.textContent = `${now.toISOString().slice(0, 10)} · ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+    setSelfieStamp(state.serverNow());
     if (stopSelfie) stopSelfie();
     stopSelfie = makeTimer({ durationSec: 300, textEl: $('#selfie-timer'), barEl: $('#selfie-bar'),
       onExpire: () => { stopSelfieCamera(); feedback('busy', t('t_silently_expired')); show('v-radar'); } });
@@ -1698,6 +1723,7 @@ async function refreshConnectionUi() {
   const c = await api.connection(state.connectionId);
   const conn = c && c.connection;
   if (!conn) return null;
+  noteServerTime(c.serverTime);
   state.connectionState = conn.state;
   if (conn.initiatorId && conn.recipientId) {
     state.peerId = state.meId === conn.initiatorId ? conn.recipientId : conn.initiatorId;
@@ -1713,6 +1739,16 @@ async function refreshConnectionUi() {
     show('v-confirmed');
   }
   return conn;
+}
+
+function isSlowSelfieNet(e) {
+  return Boolean(e && (
+    e.name === 'AbortError' ||
+    e.code === 'TIMEOUT' ||
+    e.status === 408 ||
+    e.status === 504 ||
+    (typeof e.status === 'number' && e.status >= 500)
+  ));
 }
 
 /* selfie send — camera capture → private upload → opaque mediaId (no peer impersonation on product path) */
@@ -1733,17 +1769,31 @@ $('#selfie-send').addEventListener('click', async () => {
           feedback('busy', t('t_capture_fail'));
           throw e;
         }
+        const ac = new AbortController();
+        const slowTimer = setTimeout(() => ac.abort(), LOADING_MAX_MS);
         let uploaded;
         try {
-          uploaded = await api.uploadSelfieMedia(state.connectionId, blob);
+          uploaded = await api.uploadSelfieMedia(state.connectionId, blob, {
+            signal: ac.signal,
+            timeoutMs: LOADING_MAX_MS,
+          });
         } catch (e) {
-          const slow = e && (e.code === 'API_UNCONFIGURED' || e.status === 408 || e.status >= 500);
-          feedback('busy', slow ? t('t_slow_net') : t('t_selfie_fail'));
+          feedback('busy', isSlowSelfieNet(e) || ac.signal.aborted ? t('t_slow_net') : t('t_selfie_fail'));
           throw e;
+        } finally {
+          clearTimeout(slowTimer);
+        }
+        if (ac.signal.aborted) {
+          feedback('busy', t('t_slow_net'));
+          throw Object.assign(new Error('Slow network'), { code: 'TIMEOUT' });
         }
         if (!uploaded || !uploaded.mediaId) {
           feedback('busy', t('t_media_missing'));
           throw Object.assign(new Error('No mediaId'), { code: 'MEDIA_MISSING' });
+        }
+        if (uploaded.capturedAt) {
+          noteServerTime(uploaded.capturedAt);
+          setSelfieStamp(Date.parse(uploaded.capturedAt));
         }
         await api.selfie(state.connectionId, { mediaId: uploaded.mediaId });
         if (allowPeerSim() && state.peerId) {

@@ -24,6 +24,7 @@ already near each other — or who repeatedly cross paths through Destiny Connec
 - **S30 client wire:** public Radar **Go active** requests coarse browser geolocation (`enableHighAccuracy: false`) and **fails closed** if denied/unavailable — no Luxembourg fallback, no fake nearby. Presence **heartbeat** posts `POST /radar/heartbeat` about every 40s while the tab is foreground (Redis/domain TTL remains 120s).
 - Living Map remains **off** by default (`WINGMAN_LIVING_MAP_V1` false). **PRODUCT PROTOCOL READY = NO** until the two-phone Evidence Pack.
 - **S32 web wire:** tab hide/show restores session, WebSocket, Radar, Mission chat from the server. Web push is **fail-closed** without VAPID/FCM credentials (no fake SENT). See [`S32_WEB_BACKGROUND.md`](./S32_WEB_BACKGROUND.md).
+- **S31 camera/media hardening (2026-08-18):** live `getUserMedia` only; server `capturedAt`; expired/wrong-connection/third-party GET/bind 404; camera denied blocks send; slow upload aborts honestly. Evidence Pack still **NOT STARTED**. **PRODUCT PROTOCOL READY = NO.**
 
 ## Phase change
 

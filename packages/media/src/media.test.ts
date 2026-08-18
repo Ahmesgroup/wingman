@@ -6,15 +6,18 @@ describe("MemoryMediaStore", () => {
   it("puts opaque id, authorizes get, and purges by expiry + connection", async () => {
     const store = new MemoryMediaStore();
     const expiresAt = new Date(Date.now() + 60_000);
+    const capturedAt = new Date("2026-08-18T16:00:00.000Z");
     const meta = await store.put({
       connectionId: "c1",
       uploaderId: "u1",
       contentType: "image/jpeg",
       body: new Uint8Array([0xff, 0xd8, 0xff, 0x00]),
       expiresAt,
+      createdAt: capturedAt,
     });
     expect(meta.mediaId.startsWith("m_")).toBe(true);
     expect(meta.mediaId.includes("http")).toBe(false);
+    expect(meta.createdAt.toISOString()).toBe(capturedAt.toISOString());
 
     const bytes = await store.getBytes(meta.mediaId);
     expect(bytes?.meta.uploaderId).toBe("u1");

@@ -31,7 +31,7 @@ verdict.
 | Durability cert | n/a | identity+connection marker survived Production redeploy |
 
 S28 detail: [`S28_PRODUCTION_PERSISTENCE.md`](./S28_PRODUCTION_PERSISTENCE.md).  
-S31 detail: [`S31_PRIVATE_SELFIE_MEDIA.md`](./S31_PRIVATE_SELFIE_MEDIA.md) — Vercel Blob private + camera upload path.  
+S31 detail: [`S31_PRIVATE_SELFIE_MEDIA.md`](./S31_PRIVATE_SELFIE_MEDIA.md) — Vercel Blob private + camera upload path + server `capturedAt`.  
 S32 detail: [`S32_WEB_BACKGROUND.md`](./S32_WEB_BACKGROUND.md) — web hide/show restore wired; push **BLOCKED** on VAPID/FCM credentials.
 
 ## Production smoke (2026-08-17 19:12 UTC)
@@ -59,7 +59,7 @@ still required. **PRODUCT PROTOCOL READY = NO.**
 | REAL PROFILE | `#profile-next-btn` → `POST /me/profile` | `GET/POST /me` | Engine + mirror (`ProtocolIdentity`) | none | **Durability GO (infra)** | Removed `data-go` skip | **PASS wire** / durable **GO (infra)** |
 | REAL RADAR | `radarActivate` + geolocation + heartbeat + `candidatesToDots` | `/radar/*` | Presence ephemeral (Redis target) | `radar.changed` | Heartbeat while tab foreground | Ghost dots removed | **PASS wire** / Evidence Pack NOT STARTED |
 | REAL SIGNAL | send as self; receive via WS | `/signals` | Engine + mirror | `signal.received` | Durability IN PROGRESS | Sender no longer fakes incoming | **PASS wire** / Evidence Pack NOT STARTED |
-| REAL SELFIE A/B | camera → private upload → opaque `mediaId` | `POST .../media` + `POST .../selfie` + authorized `GET .../media/:id` | private Blob + Connection | `validation.updated` | Connection id | Peer impersonation gated to lab | **WIRED (infra)** / Evidence Pack **NOT STARTED** |
+| REAL SELFIE A/B | camera → private upload → opaque `mediaId` + server `capturedAt` | `POST .../media` + `POST .../selfie` + authorized `GET .../media/:id` (authz, wrong connection, expired, third party) | private Blob + Connection | `validation.updated` | Connection id | Peer impersonation gated to lab; camera denied blocking; slow net honest fail | **WIRED (infra)** / Evidence Pack **NOT STARTED** |
 | REAL MUTUAL | approve as initiator | `POST .../approve` | Connection | `validation.updated` | if durable | — | **PASS wire** |
 | REAL MISSION CHAT | `message` + WS + `GET .../messages` | messages + `mission.message` | Redis ephemeral target | `mission.message` | Durability IN PROGRESS | No fake chat states on product | **PASS wire** / durable IN PROGRESS |
 | REAL MISSION MODE | meet-now / lets-meet / finish | connection transitions | Connection | `mission.updated` | if durable | — | **PASS wire** |
@@ -84,7 +84,7 @@ still required. **PRODUCT PROTOCOL READY = NO.**
 | S28 | **GO (infra)** — Neon + Upstash; fail-closed; ready=prisma/redis/postgres; durability cert passed |
 | S29 | **PARTIAL wire** — Redis live; multi-phone Evidence Pack later |
 | S30 | **WIRED (client)** — browser geolocation (fail closed) + `/radar/heartbeat` while tab foreground; Evidence Pack later |
-| S31 | **WIRED (infra)** — `@wingman/media` + Vercel Blob private; Evidence Pack NOT STARTED |
+| S31 | **WIRED (infra)** — `@wingman/media` + Vercel Blob private; server `capturedAt`; authz tests; Evidence Pack NOT STARTED |
 | S32 | **PARTIAL wire (web)** — reconnect/restore; push **BLOCKED** on VAPID/FCM credentials. See [`S32_WEB_BACKGROUND.md`](./S32_WEB_BACKGROUND.md) |
 | S33 | **WIRED (product path)** — two-tap report/block from Radar, Discover, Signal, Selfie/ticket, Mission Meet, Me → Safety; server-enforced; Evidence Pack row 19 later. See [`S33_SAFETY.md`](./S33_SAFETY.md) |
 | S34 | **QUEUED / BLOCKED** upstream |

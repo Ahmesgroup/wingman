@@ -1,7 +1,7 @@
 # S31 — Private Selfie Media (minimum real path)
 
-**Status:** **WIRED (infra)** — private store + camera upload path in code; Evidence Pack still **NOT STARTED**  
-**Updated:** 2026-08-17  
+**Status:** **WIRED (infra)** — private store + camera upload path + authz hardening; Evidence Pack still **NOT STARTED**  
+**Updated:** 2026-08-18  
 **PRODUCT PROTOCOL READY:** **NO**
 
 ## Locked status language
@@ -30,11 +30,16 @@ Future S3/R2 with `MEDIA_BUCKET` / KMS remains compatible with the same `MediaSt
 
 | Step | Behavior |
 |------|----------|
-| Capture | Prototype: `getUserMedia` only (no gallery `<input type=file>`). Permission denied stays blocking. |
-| Upload | `POST /connections/:id/media` multipart `file` → private store → `{ mediaId }` (opaque) |
-| Bind | `POST /connections/:id/selfie` `{ mediaId }` — rejects forged/unregistered ids |
-| Peer view | `GET /connections/:id/media/:mediaId` — participant only; peer only after mediaId bound on Connection; `Cache-Control: no-store, private` |
-| Purge | `deleteByConnection` on closed/expired reconcile + `purgeExpired` TTL sweep |
+| Capture | Prototype: `getUserMedia` only (no gallery `<input type=file>`). Permission denied stays blocking — send disabled, no fake selfie. |
+| Copy | EN: “Send a live selfie” / “Let them know it’s really you.” / “Visible only for this Wingman.” FR natural equivalents. |
+| Upload | `POST /connections/:id/media` multipart `file` → private store → `{ mediaId, capturedAt }` (opaque; server clock) |
+| Bind | `POST /connections/:id/selfie` `{ mediaId }` — rejects forged/unregistered/expired/wrong-connection ids |
+| Peer view | `GET /connections/:id/media/:mediaId` — participant only; peer only after mediaId bound on Connection; expired → 404; `Cache-Control: no-store, private` |
+| Timestamp | Exact capture time is `MediaObjectMeta.createdAt` from the engine clock at PUT — not the client clock. Returned as `capturedAt`. Not stored on the Signal/Connection domain merge. |
+| Slow net | Upload aborts ~12s; UI shows honest failure (`t_slow_net`); no bind after timeout. |
+| Purge | `deleteByConnection` on closed/expired reconcile + `purgeExpired` TTL sweep; GET also fail-closes expired objects |
+
+Canonical engines stay **Signal ≠ Selfie media ≠ Connection**. S35 Selfie=Signal remains **false**.
 
 ## Production env names (no values)
 

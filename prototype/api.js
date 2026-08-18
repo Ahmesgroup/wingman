@@ -334,11 +334,31 @@
         }
         const form = new FormData();
         form.append('file', blob, 'selfie.jpg');
-        const res = await fetch(baseUrl + '/connections/' + id + '/media', {
-          method: 'POST',
-          headers: headers,
-          body: form,
-        });
+        const timeoutMs = typeof opts.timeoutMs === 'number' ? opts.timeoutMs : 12000;
+        const ac = new AbortController();
+        const onParentAbort = function () { ac.abort(); };
+        if (opts.signal) {
+          if (opts.signal.aborted) ac.abort();
+          else opts.signal.addEventListener('abort', onParentAbort);
+        }
+        const timer = setTimeout(function () { ac.abort(); }, timeoutMs);
+        let res;
+        try {
+          res = await fetch(baseUrl + '/connections/' + id + '/media', {
+            method: 'POST',
+            headers: headers,
+            body: form,
+            signal: ac.signal,
+          });
+        } catch (e) {
+          if (e && (e.name === 'AbortError' || ac.signal.aborted)) {
+            throw Object.assign(new Error('Slow network'), { code: 'TIMEOUT', name: 'AbortError' });
+          }
+          throw e;
+        } finally {
+          clearTimeout(timer);
+          if (opts.signal) opts.signal.removeEventListener('abort', onParentAbort);
+        }
         const text = await res.text();
         let data = null;
         try { data = text ? JSON.parse(text) : null; } catch (_) { data = { raw: text }; }
@@ -369,6 +389,7 @@
         const res = await fetch(baseUrl + '/connections/' + id + '/media/' + encodeURIComponent(mediaId), {
           method: 'GET',
           headers: headers,
+          cache: 'no-store',
         });
         if (!res.ok) {
           throw Object.assign(new Error('Media fetch failed'), { status: res.status, code: 'MEDIA_FETCH_FAILED' });

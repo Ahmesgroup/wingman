@@ -92,7 +92,7 @@ export class VercelBlobMediaStore implements MediaStore {
       uploaderId: input.uploaderId,
       contentType,
       byteLength: input.body.byteLength,
-      createdAt: new Date().toISOString(),
+      createdAt: (input.createdAt ?? new Date()).toISOString(),
       expiresAt: input.expiresAt.toISOString(),
       blobUrl: blob.url,
     };

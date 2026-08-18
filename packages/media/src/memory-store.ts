@@ -26,7 +26,7 @@ export class MemoryMediaStore implements MediaStore {
       uploaderId: input.uploaderId,
       contentType: input.contentType.split(";")[0]!.trim().toLowerCase(),
       byteLength: input.body.byteLength,
-      createdAt: new Date(),
+      createdAt: input.createdAt ? new Date(input.createdAt.getTime()) : new Date(),
       expiresAt: input.expiresAt,
     };
     this.byId.set(mediaId, { meta, body: Uint8Array.from(input.body) });

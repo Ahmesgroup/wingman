@@ -393,12 +393,14 @@
         <div class="statusbar"><span class="time">21:50</span><span>Wingman</span></div>
         <div class="selfie-stage">
           <div class="timer-text" id="selfie-timer">5:00</div>
+          <p class="lead" data-i18n="s_title">Send a live selfie</p>
+          <p class="small muted" data-i18n="s_body">Let them know it’s really you.</p>
           <div class="selfie-frame">
             <video id="selfie-video" class="selfie-video" playsinline muted autoplay></video>
             <canvas id="selfie-canvas" class="hidden" width="480" height="640"></canvas>
             <img id="selfie-preview" class="selfie-preview hidden" alt="" />
             <svg class="cam" id="selfie-cam-icon" viewBox="0 0 24 24"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
-            <span class="stamp" id="selfie-stamp">2026-07-10 · 21:50:07</span>
+            <span class="stamp" id="selfie-stamp">2026-07-10 · 21:50:07 UTC</span>
           </div>
           <p class="small muted hidden" id="selfie-cam-error" role="alert"></p>
           <div class="selfie-badges">
@@ -406,14 +408,14 @@
             <span class="badge ok">✓ <span data-i18n="s_stamp">Timestamped</span></span>
             <span class="badge no">⛔ <span data-i18n="s_gallery">Gallery blocked</span></span>
           </div>
-          <button class="btn btn-primary" style="max-width:320px" id="selfie-send" data-i18n="s_send">Take & send selfie</button>
+          <button class="btn btn-primary" style="max-width:320px" id="selfie-send" data-i18n="s_send">Send a live selfie</button>
           <!-- Refinement 1: quiet secondary action, no red X -->
           <div class="selfie-actions mt hidden" id="selfie-validate">
             <button class="act-secondary" id="selfie-expire" data-i18n="s_letexpire">Let it expire</button>
             <button class="act-primary" id="selfie-approve" data-i18n="s_approve">Approve</button>
           </div>
           <div class="timer-bar mt" style="max-width:320px"><i id="selfie-bar" style="width:100%"></i></div>
-          <p class="small muted mt" data-i18n="s_note">Photos stay in this connection. Wingman blocks saving here — it can’t stop every screenshot.</p>
+          <p class="small muted mt" data-i18n="s_note">Visible only for this Wingman.</p>
           <button type="button" class="btn btn-ghost mt-s" id="selfie-report-btn" data-i18n="report_sub">Report & block</button>
         </div>
       </section>

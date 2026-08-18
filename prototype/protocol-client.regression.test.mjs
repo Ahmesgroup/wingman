@@ -7,6 +7,8 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const src = fs.readFileSync(path.join(__dirname, 'app.js'), 'utf8');
+const html = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
+const apiSrc = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
 
 function assert(cond, msg) {
   if (!cond) throw new Error(msg);
@@ -15,7 +17,15 @@ function assert(cond, msg) {
 assert(src.includes('allowPeerSim'), 'allowPeerSim guard missing');
 assert(src.includes('saveProfile'), 'profile save wire missing');
 assert(src.includes('WingmanRealtime'), 'realtime client missing');
-assert(src.includes('uploaded.mediaId'), 'opaque media id missing');
+assert(src.includes('getUserMedia'), 'camera capture missing');
+assert(src.includes('t_cam_denied'), 'camera denied copy missing');
+assert(src.includes('Send a live selfie'), 'EN live selfie CTA missing');
+assert(src.includes('Let them know'), 'EN selfie body missing');
+assert(src.includes('Visible only for this Wingman.'), 'EN selfie privacy missing');
+assert(src.includes('uploaded.capturedAt'), 'server capture timestamp wire missing');
+assert(src.includes('isSlowSelfieNet'), 'slow-network selfie honesty missing');
+assert(!html.includes('type="file"'), 'gallery file input must not exist on public selfie');
+assert(apiSrc.includes('TIMEOUT'), 'upload abort/timeout missing');
 assert(src.includes('listMessages'), 'mission message restore missing');
 assert(src.includes('profile-next-btn'), 'profile CTA wire missing');
 assert(src.includes('consent-cta-btn'), 'consent CTA wire missing');

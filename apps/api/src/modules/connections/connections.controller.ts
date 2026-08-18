@@ -15,7 +15,7 @@ import {
 import { FileInterceptor } from "@nestjs/platform-express";
 import { DomainError, WINDOWS_MS, type WingmanEngine } from "@wingman/domain";
 import { MissionMessageSchema, OutcomeSchema, SelfieSchema } from "@wingman/contracts";
-import type { MediaStore } from "@wingman/media";
+import { isMediaExpired, type MediaStore } from "@wingman/media";
 import type { NotificationOrchestrator } from "@wingman/notifications";
 import type { ProtocolPersistenceMirror } from "@wingman/persistence";
 import { CurrentUser } from "../../common/auth.js";
@@ -60,18 +60,21 @@ export class ConnectionsService {
       throw new DomainError("VALIDATION_REQUIRED", "Selfie file required");
     }
     const contentType = (file.mimetype || "application/octet-stream").split(";")[0]!.trim().toLowerCase();
+    const capturedAt = this.engine.clock.now();
     try {
       const meta = await this.media.put({
         connectionId: id,
         uploaderId: userId,
         contentType,
         body: new Uint8Array(file.buffer),
-        expiresAt: c.expiresAt ?? new Date(Date.now() + WINDOWS_MS.SELFIE),
+        createdAt: capturedAt,
+        expiresAt: c.expiresAt ?? new Date(capturedAt.getTime() + WINDOWS_MS.SELFIE),
       });
       return {
         mediaId: meta.mediaId,
         contentType: meta.contentType,
         byteLength: meta.byteLength,
+        capturedAt: meta.createdAt.toISOString(),
         expiresAt: meta.expiresAt.toISOString(),
       };
     } catch (e) {
@@ -90,6 +93,14 @@ export class ConnectionsService {
     const c = this.requireParticipant(id, userId);
     const bytes = await this.media.getBytes(mediaId);
     if (!bytes || bytes.meta.connectionId !== id) {
+      throw new DomainError("NOT_FOUND", "Media not found");
+    }
+    if (isMediaExpired(bytes.meta, this.engine.clock.now())) {
+      try {
+        await this.media.delete(mediaId);
+      } catch {
+        /* best-effort; TTL sweep remains */
+      }
       throw new DomainError("NOT_FOUND", "Media not found");
     }
     const isUploader = bytes.meta.uploaderId === userId;
@@ -122,6 +133,9 @@ export class ConnectionsService {
     const meta = await this.media.getMeta(mediaId);
     if (!meta || meta.connectionId !== id || meta.uploaderId !== userId) {
       throw new DomainError("NOT_FOUND", "Opaque mediaId not registered for this connection uploader");
+    }
+    if (isMediaExpired(meta, this.engine.clock.now())) {
+      throw new DomainError("NOT_FOUND", "Opaque mediaId expired");
     }
     const event = userId === c.initiatorId ? "initiator_selfie" : "recipient_selfie";
     const connection = this.engine.applyConnection(id, event, userId, { mediaId });

@@ -15,6 +15,8 @@ export type MediaPutInput = {
   contentType: string;
   body: Uint8Array;
   expiresAt: Date;
+  /** Server clock at PUT — never trust a client-supplied capture time. */
+  createdAt?: Date;
 };
 
 export type MediaBytes = {
@@ -54,6 +56,10 @@ export function assertSelfieUpload(contentType: string, byteLength: number): voi
   if (byteLength <= 0 || byteLength > SELFIE_MAX_BYTES) {
     throw new Error(`MEDIA_SIZE_INVALID:${byteLength}`);
   }
+}
+
+export function isMediaExpired(meta: Pick<MediaObjectMeta, "expiresAt">, now: Date = new Date()): boolean {
+  return meta.expiresAt.getTime() <= now.getTime();
 }
 
 export function newOpaqueMediaId(): string {
