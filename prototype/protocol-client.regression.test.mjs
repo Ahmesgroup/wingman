@@ -21,7 +21,7 @@ assert(src.includes('getUserMedia'), 'camera capture missing');
 assert(src.includes('t_cam_denied'), 'camera denied copy missing');
 assert(src.includes('Send a live selfie'), 'EN live selfie CTA missing');
 assert(src.includes('Let them know'), 'EN selfie body missing');
-assert(src.includes('Visible only for this Wingman.'), 'EN selfie privacy missing');
+assert(src.includes('Visible only for this connection.'), 'EN selfie privacy missing');
 assert(src.includes('uploaded.capturedAt'), 'server capture timestamp wire missing');
 assert(src.includes('isSlowSelfieNet'), 'slow-network selfie honesty missing');
 assert(!html.includes('type="file"'), 'gallery file input must not exist on public selfie');

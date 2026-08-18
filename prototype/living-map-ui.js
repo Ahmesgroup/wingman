@@ -6,7 +6,7 @@
 (function (global) {
   'use strict';
 
-  var TILE = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+  var TILE = 'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png';
   var ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; CARTO';
   var LAYER_ZOOM = { radar: 15, discover: 14, pulse: 14 };
 
@@ -63,6 +63,10 @@
         tap: true,
       });
       global.L.tileLayer(TILE, { attribution: ATTR, maxZoom: 18 }).addTo(map);
+      if (map.attributionControl) map.attributionControl.setPosition('bottomleft');
+      map.on('click', function () {
+        if (opts.onMapIdle) opts.onMapIdle();
+      });
       layerGroup = global.L.layerGroup().addTo(map);
       pulseGroup = global.L.layerGroup().addTo(map);
       map.setView([49.6116, 6.1319], LAYER_ZOOM.radar);
@@ -118,7 +122,7 @@
         var label = (m.destiny ? t('lm_destiny') + ' ' : '') + t('lm_someone') + '. ' + moodLabel(m.moodState);
         var icon = global.L.divIcon({
           className: 'lm-opp-wrap',
-          html: '<button type="button" class="' + cls + '" aria-label="' + label + '"></button>',
+          html: '<button type="button" class="' + cls + '" aria-label="' + label + '"><span class="lm-opp-core" aria-hidden="true"></span></button>',
           iconSize: [28, 28],
           iconAnchor: [14, 14],
         });

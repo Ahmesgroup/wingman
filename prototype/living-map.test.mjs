@@ -135,6 +135,7 @@ describe('living-map mobile chrome', () => {
   it('HTML keeps rollback Radar canvas and default Living Map root', () => {
     const html = readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'index.html'), 'utf8');
     const css = readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'styles.css'), 'utf8');
+    const ui = readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'living-map-ui.js'), 'utf8');
     assert.match(html, /id="radar-canvas"/);
     assert.match(html, /id="living-map-root"/);
     assert.match(html, /id="v-discover"/);
@@ -147,5 +148,8 @@ describe('living-map mobile chrome', () => {
     assert.match(css, /body\.living-map #v-radar/);
     assert.match(css, /lm-dock/);
     assert.match(css, /data-lm-world/);
+    assert.match(ui, /dark_nolabels/);
+    assert.match(css, /lm-opp-core/);
+    assert.doesNotMatch(css, /lm-empty\{[^}]*backdrop-filter/);
   });
 });

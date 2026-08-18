@@ -57,16 +57,14 @@
         <div id="living-map-el" class="living-map-el" role="application" aria-label="Around you"></div>
         <div class="lm-overlay lm-top">
           <div class="lm-brand">WING<b>MAN</b></div>
-          <div class="lm-presence" id="lm-presence">
+          <button type="button" class="lm-presence" id="lm-presence" aria-expanded="false" aria-controls="lm-mood-select">
             <span class="lm-presence-dot" aria-hidden="true"></span>
             <span id="lm-presence-label" data-i18n="lm_available">Available now</span>
-          </div>
+          </button>
         </div>
         <p class="lm-count" id="lm-count" aria-live="polite" data-i18n="lm_count_zero">0 nearby</p>
-        <div class="lm-meta" id="lm-meta">
-          <span class="lm-chip" id="lm-signals"><b id="lm-signals-n">2</b> <span data-i18n="stat_signals">Signals left</span></span>
-        </div>
-        <div class="lm-mood" id="lm-mood-select" role="group" aria-labelledby="lm-mood-label">
+        <span class="sr-only" id="lm-signals"><b id="lm-signals-n">2</b> <span data-i18n="stat_signals">Signals left</span></span>
+        <div class="lm-mood" id="lm-mood-select" role="group" aria-labelledby="lm-mood-label" hidden>
           <span id="lm-mood-label" class="sr-only" data-i18n="mood_title">Your mood</span>
           <button type="button" class="lm-mood-btn" data-mood="SUPER_READY" aria-pressed="false" data-i18n="mood_ready">Super ready</button>
           <button type="button" class="lm-mood-btn" data-mood="OPEN" aria-pressed="true" data-i18n="mood_open">Open</button>
@@ -84,6 +82,10 @@
         <div class="lm-pulse-panel hidden" id="lm-pulse-panel" hidden>
           <p class="lead" id="lm-pulse-title" data-i18n="lm_quiet">Quiet around here</p>
           <p class="small muted" id="lm-pulse-detail" data-i18n="lm_quiet_d">We’ll show you when a real opportunity appears nearby.</p>
+          <details class="privacy-details">
+            <summary data-i18n="pulse_privacy">How Pulse protects your privacy</summary>
+            <p class="small muted mt-s" data-i18n="pulse_privacy_d">Wingman never shows your exact location. What’s around you stays approximate, and no one sees who you are from Pulse.</p>
+          </details>
           <div id="lm-pulse-stats"></div>
         </div>
         <div class="lm-empty hidden" id="lm-empty" role="status">
@@ -184,7 +186,9 @@
         <div class="statusbar"><span class="time">21:48</span><span>Wingman</span></div>
         <div class="topbar"><div class="logo">WING<b>MAN</b></div><div class="subtitle" data-i18n="profile_sub">Your profile</div></div>
         <div class="body pad form-scroll">
-          <div class="field">
+          <div class="pf-sec">
+            <div class="eyebrow" data-i18n="pf_sec_identity">Who you are</div>
+            <div class="field">
             <label for="pf-name" data-i18n="pf_name">First name</label>
             <input id="pf-name" type="text" value="" placeholder="Alex" autocomplete="given-name" enterkeyhint="next" autocapitalize="words">
           </div>
@@ -210,22 +214,29 @@
           <div class="field"><label id="pf-gender-label" data-i18n="pf_gender">Gender</label>
             <div class="pillset" role="group" aria-labelledby="pf-gender-label"><button type="button" class="pill" aria-pressed="true" data-i18n="g_male">Male</button><button type="button" class="pill" aria-pressed="false" data-i18n="g_female">Female</button><button type="button" class="pill" aria-pressed="false" data-i18n="g_nb">Non-binary</button></div>
           </div>
+          <div class="field">
+            <label for="pf-height" data-i18n="pf_height">Height (cm)</label>
+            <input id="pf-height" type="number" value="" placeholder="178" inputmode="numeric" min="120" max="230" enterkeyhint="next">
+          </div>
+          </div>
+          <div class="pf-sec">
+            <div class="eyebrow" data-i18n="pf_sec_intention">Intention</div>
           <div class="field"><label id="pf-interest-label" data-i18n="pf_interest">Interested in</label>
             <div class="pillset" role="group" aria-labelledby="pf-interest-label"><button type="button" class="pill" aria-pressed="false" data-i18n="t_men">Men</button><button type="button" class="pill" aria-pressed="true" data-i18n="t_women">Women</button><button type="button" class="pill" aria-pressed="false" data-i18n="t_nb">Non-binary</button></div>
           </div>
           <div class="field"><label id="pf-intention-label" data-i18n="pf_intention">Your intention</label>
             <div class="pillset" role="group" aria-labelledby="pf-intention-label"><button type="button" class="pill" aria-pressed="true" data-intention="AVAILABLE_NOW" data-i18n="intention_available">Available now</button><button type="button" class="pill" aria-pressed="false" data-intention="JUST_EXPLORING" data-i18n="intention_exploring">Just exploring</button></div>
           </div>
-          <div class="field">
-            <label for="pf-height" data-i18n="pf_height">Height (cm)</label>
-            <input id="pf-height" type="number" value="" placeholder="178" inputmode="numeric" min="120" max="230" enterkeyhint="next">
           </div>
+          <div class="pf-sec">
+            <div class="eyebrow" data-i18n="pf_sec_interests">Interests</div>
           <div class="field"><label id="pf-interests-label" data-i18n="pf_interests">Interests (max 5)</label>
             <div class="pillset pillset-wrap" role="group" aria-labelledby="pf-interests-label"><button type="button" class="pill" aria-pressed="true" data-interest="Music" data-i18n="interest_music">Music</button><button type="button" class="pill" aria-pressed="true" data-interest="Travel" data-i18n="interest_travel">Travel</button><button type="button" class="pill" aria-pressed="true" data-interest="Food" data-i18n="interest_food">Food</button><button type="button" class="pill" aria-pressed="false" data-interest="Fitness" data-i18n="interest_fitness">Fitness</button><button type="button" class="pill" aria-pressed="false" data-interest="Art" data-i18n="interest_art">Art</button></div>
           </div>
           <div class="field">
             <label for="pf-bio" data-i18n="pf_bio">Daily bio (150 max)</label>
             <textarea id="pf-bio" rows="3" maxlength="150" placeholder="At the festival — looking for a good encounter" enterkeyhint="done"></textarea>
+          </div>
           </div>
         </div>
         <div class="form-footer">
@@ -388,7 +399,7 @@
             <button class="act-primary" id="selfie-approve" data-i18n="s_approve">Approve</button>
           </div>
           <div class="timer-bar mt" style="max-width:320px"><i id="selfie-bar" style="width:100%"></i></div>
-          <p class="small muted mt" data-i18n="s_note">Visible only for this Wingman.</p>
+          <p class="small muted mt" data-i18n="s_note">Visible only for this connection.</p>
           <button type="button" class="btn btn-ghost mt-s" id="selfie-report-btn" data-i18n="report_sub">Report & block</button>
         </div>
       </section>
@@ -397,7 +408,8 @@
       <section class="view" id="v-confirmed" data-noflow>
         <div class="confirm-stage" id="confirm-stage">
           <div class="halo left"></div><div class="halo right"></div>
-          <div class="confirm-title serif-hero" data-i18n="confirmed">You’re connected</div>
+          <div class="confirm-title serif-hero" data-i18n="confirmed">You both said yes.</div>
+          <p class="lead confirm-sub" data-i18n="confirmed_d">Ready to say hello?</p>
         </div>
       </section>
 
@@ -419,9 +431,10 @@
       <!-- 16. MISSION MEET -->
       <section class="view" id="v-mission-meet" data-noflow>
         <div class="statusbar"><span class="time">21:53</span><span>Wingman</span></div>
-        <div class="topbar"><div class="logo">WING<b>MAN</b></div><div class="subtitle" data-i18n="mm_sub">Decide where to meet</div></div>
+        <div class="topbar"><div class="logo">WING<b>MAN</b></div><div class="subtitle" data-i18n="mm_sub">Decide where to meet.</div></div>
         <div class="chat">
-          <div class="chat-head"><span class="chat-obj" data-i18n="mm_obj">Decide where to meet</span><span class="timer-text" style="font-size:18px" id="mm-timer">15:00</span></div>
+          <div class="chat-head"><span class="chat-obj" data-i18n="mm_obj">Decide where to meet.</span><span class="timer-text" style="font-size:18px" id="mm-timer">15:00</span></div>
+          <p class="small muted mb" data-i18n="mm_keep">Keep it simple — you have 15 minutes.</p>
           <div class="timer-bar mb"><i id="mm-bar" style="width:100%"></i></div>
           <div class="chat-log" id="chat-log"></div>
           <div class="chat-input">
@@ -430,7 +443,7 @@
           </div>
           <p class="chat-note" data-i18n="mm_note">Phone numbers and social handles stay blocked.</p>
           <div class="btn-row">
-            <button class="btn btn-love" id="mm-meet-btn" data-i18n="mm_meet">Let's meet</button>
+            <button class="btn btn-primary" id="mm-meet-btn" data-i18n="mm_meet">Let's meet</button>
             <button class="btn btn-ghost" id="mm-not-btn" data-i18n="mm_not">Not this time</button>
           </div>
           <button type="button" class="btn btn-ghost mt-s" id="mm-report-btn" data-i18n="report_sub">Report & block</button>
@@ -467,9 +480,9 @@
           <div class="cd-num" id="cd-num">30</div>
           <span class="muted small" data-i18n="cd_min">minutes</span>
           <h2 class="head center serif-hero" data-i18n="cd_title">Take your time.</h2>
-          <p class="lead center" data-i18n="cd_body">Great conversations don’t need another hello immediately.</p>
+          <p class="lead center" data-i18n="cd_body">When you’re ready, come back to Radar.</p>
           <div class="btn-row" style="max-width:320px">
-            <button class="btn btn-primary" data-go="v-radar" data-i18n="cd_ok">Back nearby</button>
+            <button class="btn btn-primary" data-go="v-radar" data-i18n="cd_ok">Back to Radar</button>
           </div>
         </div>
       </section>
@@ -480,7 +493,7 @@
           <div class="eyebrow" data-i18n="destiny_eyebrow">Your paths crossed again</div>
           <h1 class="big center serif-hero" data-i18n="destiny_title">You keep crossing paths.</h1>
           <p class="lead center" data-i18n="destiny_body">Wingman noticed you keep crossing paths — without showing where, when, or the route.</p>
-          <button class="btn btn-love mt" data-go="v-signal" data-i18n="destiny_try">Say hello</button>
+          <button class="btn btn-primary mt" data-go="v-signal" data-i18n="destiny_try">Say hello</button>
           <button class="btn btn-ghost mt-s" data-go="v-radar" data-i18n="destiny_ignore">Not now</button>
           <p class="small muted mt center" data-i18n="destiny_off">You can turn this off anytime in Me.</p>
         </div>
@@ -529,7 +542,8 @@
             <div class="row"><span data-i18n="set_photo">Photos</span><span class="v" data-i18n="set_photo_v">Only shared during a connection</span></div>
             <div class="row"><span data-i18n="set_loc">Location</span><span class="v" data-i18n="set_loc_v">Your exact location is never shown</span></div>
             <div class="row"><span id="lbl-destiny" data-i18n="set_destiny">Let Wingman notice repeated crossings without showing where they happened.</span><div class="switch" role="switch" aria-checked="false" tabindex="0" aria-labelledby="lbl-destiny"></div></div>
-            <button type="button" class="report-opt" id="set-consent-btn" data-i18n="set_consent_manage">Data & consent — Manage what Wingman can use</button>
+            <div class="eyebrow mb mt" data-i18n="set_consent">Data & consent</div>
+            <button type="button" class="report-opt" id="set-consent-btn" data-i18n="set_consent_manage">Manage what Wingman can use</button>
           </div>
           <div class="set-block" id="set-safety-block">
             <div class="eyebrow mb" data-i18n="set_safety">Safety</div>

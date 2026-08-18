@@ -22,6 +22,12 @@ The map is a **new representation of server truth**. Eligibility, presence, rank
 
 Privacy: payloads never include peer `lat`/`lng`. Markers are coarse `distanceBand` + `bearingBucket` around the viewer. Pulse does not reveal precise movement history.
 
+## Visual language (global polish)
+
+Dark desaturated Carto `dark_nolabels` terrain, translucent (not frosted) overlays, progressive disclosure. Mood is behind presence tap. Discover tray is two rows. Pulse privacy sits in `<details>`. Canvas Radar remains rollback until real-device review — not a second product.
+
+**PRODUCT PROTOCOL READY stays NO** until the two-phone Evidence Pack.
+
 ## Default vs rollback
 
 | Path | Surface |
