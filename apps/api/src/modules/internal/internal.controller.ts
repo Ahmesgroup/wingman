@@ -13,6 +13,7 @@ import { EPHEMERAL_STORE, MEDIA_STORE, NOTIFICATION_ORCH, PRISMA_CLIENT, PROTOCO
 import { RealtimeAppService } from "../realtime/realtime-app.service.js";
 import { MeasurementGate } from "../measurement/measurement.module.js";
 import type { MediaStore } from "@wingman/media";
+import { webPushCapabilityFromEnv } from "@wingman/providers";
 
 @Injectable()
 export class InternalService {
@@ -183,10 +184,17 @@ export class InternalController {
   /** Liveness — process is up (orchestration probes). Does not check deps. */
   @Get("live")
   live() {
+    const webPush = webPushCapabilityFromEnv(process.env);
     return {
       live: true,
       utc: new Date().toISOString(),
       livingMap: process.env.WINGMAN_LIVING_MAP_V1 === "true",
+      webPush: {
+        enabled: webPush.enabled,
+        provider: webPush.provider,
+        reason: webPush.enabled ? undefined : webPush.reason,
+        vapidPublicKey: webPush.enabled ? webPush.vapidPublicKey : null,
+      },
     };
   }
 

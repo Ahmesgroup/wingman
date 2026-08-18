@@ -31,7 +31,8 @@ verdict.
 | Durability cert | n/a | identity+connection marker survived Production redeploy |
 
 S28 detail: [`S28_PRODUCTION_PERSISTENCE.md`](./S28_PRODUCTION_PERSISTENCE.md).  
-S31 detail: [`S31_PRIVATE_SELFIE_MEDIA.md`](./S31_PRIVATE_SELFIE_MEDIA.md) — Vercel Blob private + camera upload path.
+S31 detail: [`S31_PRIVATE_SELFIE_MEDIA.md`](./S31_PRIVATE_SELFIE_MEDIA.md) — Vercel Blob private + camera upload path.  
+S32 detail: [`S32_WEB_BACKGROUND.md`](./S32_WEB_BACKGROUND.md) — web hide/show restore wired; push **BLOCKED** on VAPID/FCM credentials.
 
 ## Production smoke (2026-08-17 19:12 UTC)
 
@@ -84,7 +85,7 @@ still required. **PRODUCT PROTOCOL READY = NO.**
 | S29 | **PARTIAL wire** — Redis live; multi-phone Evidence Pack later |
 | S30 | **WIRED (client)** — browser geolocation (fail closed) + `/radar/heartbeat` while tab foreground; Evidence Pack later |
 | S31 | **WIRED (infra)** — `@wingman/media` + Vercel Blob private; Evidence Pack NOT STARTED |
-| S32 | **QUEUED / BLOCKED** upstream |
+| S32 | **PARTIAL wire (web)** — reconnect/restore; push **BLOCKED** on VAPID/FCM credentials. See [`S32_WEB_BACKGROUND.md`](./S32_WEB_BACKGROUND.md) |
 | S33 | **PARTIAL wire** — Mission Meet Report & block posts to `/safety/report` + `/safety/block`; Evidence Pack row 19 later |
 | S34 | **QUEUED / BLOCKED** upstream |
 | S35 V2 | **EXPERIMENT SPEC ONLY** — `PRODUCT_PROTOCOL_V2_ENABLED=false`; no engine merge |

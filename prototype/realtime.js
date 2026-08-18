@@ -70,6 +70,21 @@
       return socket;
     }
 
+    function reconnect() {
+      if (!enabled()) return null;
+      if (socket && socket.connected) {
+        if (lastEventId) socket.emit('resume', { lastEventId: lastEventId });
+        if (subscribedConnectionId) {
+          socket.emit('subscribe', {
+            connectionId: subscribedConnectionId,
+            missionId: subscribedConnectionId,
+          });
+        }
+        return socket;
+      }
+      return connect();
+    }
+
     function subscribeConnection(connectionId) {
       subscribedConnectionId = connectionId || null;
       if (!socket || !socket.connected || !connectionId) return;
@@ -79,6 +94,7 @@
     return {
       connect: connect,
       disconnect: disconnect,
+      reconnect: reconnect,
       subscribeConnection: subscribeConnection,
       get connected() { return Boolean(socket && socket.connected); },
     };

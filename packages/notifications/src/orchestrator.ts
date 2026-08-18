@@ -5,6 +5,7 @@ export type AppNotificationType =
   | "mission.opened"
   | "mission.updated"
   | "mission.expired"
+  | "mission.message"
   | "destiny.prompt";
 
 /** @deprecated use AppNotificationType — kept for existing call sites */
@@ -182,6 +183,7 @@ export class NotificationOrchestrator {
       case "mission.opened":
       case "mission.updated":
       case "mission.expired":
+      case "mission.message":
         return `wingman://missions/${id}`;
       case "destiny.prompt":
         return `wingman://destiny/${id}`;

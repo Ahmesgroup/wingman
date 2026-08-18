@@ -46,6 +46,11 @@ Protocol modules (`signals`, `connections`, `safety`, `destiny`, `domain`) **nev
 | `PUSH_PROVIDER=memory` | In-memory transport (tests) |
 | `PUSH_PROVIDER=logging` | Log-only |
 | `PUSH_PROVIDER=mobile` | FCM + APNs via `MobilePushTransport` + device token registry |
+| `PUSH_PROVIDER=web` | Fail-closed until VAPID/FCM credentials exist (`FailClosedWebPushTransport`) |
+
+`GET /internal/live` exposes `{ webPush: { enabled, provider, reason, vapidPublicKey } }` — never private keys.
+
+Without VAPID/FCM credentials, web push is **BLOCKED** (no fake SENT). See [`S32_WEB_BACKGROUND.md`](./S32_WEB_BACKGROUND.md).
 
 Register tokens:
 

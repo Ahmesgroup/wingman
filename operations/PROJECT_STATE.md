@@ -45,7 +45,7 @@ S28  Production Persistence Certification      GO (infra)
 S29  Real Multi-user Realtime                  PARTIAL wire
 S30  Real Radar & Geo Field Test               WIRED (client) — geo + heartbeat; Evidence Pack later
 S31  Real Selfie Exchange                      WIRED (infra) — Evidence Pack NOT STARTED
-S32  Push & Closed-app Protocol                QUEUED
+S32  Push & Closed-app Protocol                PARTIAL wire (web reconnect) / BLOCKED (push credentials)
 S33  Safety & Field-test Controls              PARTIAL wire (report/block API from Mission Meet)
 S34  Live Field Test Certification             QUEUED
 S35  Product Protocol V2                       EXPERIMENT SPEC ONLY (flag false)

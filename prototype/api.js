@@ -230,6 +230,12 @@
         const res = await fetch(baseUrl + '/internal/live', { headers: { Accept: 'application/json' } });
         return res.ok;
       },
+      liveStatus: async function () {
+        if (!baseUrl) return { live: false };
+        const res = await fetch(baseUrl + '/internal/live', { headers: { Accept: 'application/json' } });
+        if (!res.ok) return { live: false };
+        try { return await res.json(); } catch (_) { return { live: false }; }
+      },
 
       authMode: function () {
         return request('GET', '/auth/mode', undefined, { public: true });
@@ -384,6 +390,13 @@
       cooldownSkip: function (id, opts) { return request('POST', '/connections/' + id + '/cooldown/skip', {}, opts); },
       block: function (body, opts) { return request('POST', '/safety/block', body, opts); },
       report: function (body, opts) { return request('POST', '/safety/report', body, opts); },
+      registerPushToken: function (body, opts) {
+        return request('POST', '/devices/push-token', {
+          deviceId: deviceId,
+          platform: (body && body.platform) || 'web',
+          pushToken: body && body.pushToken,
+        }, opts);
+      },
     };
   }
 

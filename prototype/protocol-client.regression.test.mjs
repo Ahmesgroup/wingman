@@ -53,7 +53,14 @@ assert(fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8').includes('con
 assert(fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8').includes('set-consent-btn'), 'Me consent entry missing');
 assert(!fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8').includes('data-go="v-consent"'), 'profile still data-go');
 assert(fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8').includes("/radar/heartbeat"), 'radarHeartbeat client missing');
-assert(src.includes('startPresenceHeartbeat'), 'presence heartbeat loop missing');
+assert(src.includes('restoreForeground'), 'foreground restore missing');
+assert(src.includes('ensureRealtimeReconnect'), 'WS reconnect helper missing');
+assert(src.includes('WingmanPresenceReconnect'), 'reconnect policy missing');
+assert(src.includes('isHardAuthFailure'), 'auth-failure distinction missing');
+assert(fs.readFileSync(path.join(__dirname, 'realtime.js'), 'utf8').includes('reconnect:'), 'realtime.reconnect missing');
+assert(fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8').includes('registerPushToken'), 'push token client missing');
+assert(fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8').includes('data-i18n="lm_count_zero"'), 'living map leftover English count');
+assert(!fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8').includes('0 opportunities nearby'), 'raw English leftover in hidden Living Map');
 assert(src.includes('requestViewerLocation'), 'browser geolocation wire missing');
 assert(!/\$\('#radar-toggle'\)[\s\S]*?49\.6116/.test(src), 'Go active still hardcodes Luxembourg');
 

@@ -11,15 +11,15 @@ import {
   type ProtocolRepository,
 } from "@wingman/persistence";
 import {
-  ApnsPushProvider,
   ConsoleSmsProvider,
+  createMobilePushTransportFromEnv,
   createOtpVerificationFromEnv,
   createSmsProviderFromEnv,
-  FcmPushProvider,
+  FailClosedWebPushTransport,
   LoggingPushTransport,
   MemoryDeviceTokenStore,
-  MobilePushTransport,
   OtpDeliveryService,
+  webPushCapabilityFromEnv,
   type DeviceTokenStore,
   type OtpVerificationProvider,
   type SmsProvider,
@@ -170,10 +170,21 @@ function deviceStore(): DeviceTokenStore {
 function buildNotifications(): NotificationOrchestrator {
   if (sharedInfra.notifications) return sharedInfra.notifications;
   const mode = process.env.PUSH_PROVIDER ?? "memory";
+  const web = webPushCapabilityFromEnv(process.env);
   if (mode === "logging") return new NotificationOrchestrator(new LoggingPushTransport());
-  if (mode === "mobile" || mode === "fcm" || mode === "apns") {
+  if (mode === "web") {
     return new NotificationOrchestrator(
-      new MobilePushTransport(deviceStore(), [new FcmPushProvider(), new ApnsPushProvider()]),
+      new FailClosedWebPushTransport(web.reason ?? "web_push_sender_not_provisioned"),
+    );
+  }
+  if (mode === "mobile" || mode === "fcm" || mode === "apns") {
+    return new NotificationOrchestrator(createMobilePushTransportFromEnv(deviceStore(), process.env));
+  }
+  if (isPublicProd()) {
+    return new NotificationOrchestrator(
+      new FailClosedWebPushTransport(
+        web.enabled ? "web_push_sender_not_provisioned" : (web.reason ?? "vapid_or_fcm_credentials_missing"),
+      ),
     );
   }
   return new NotificationOrchestrator(new InMemoryPushTransport());

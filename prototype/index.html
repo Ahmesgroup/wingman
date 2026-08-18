@@ -232,7 +232,7 @@
               <span id="lm-presence-label" data-i18n="lm_available">Available now</span>
             </div>
           </div>
-          <p class="lm-count" id="lm-count" aria-live="polite">0 opportunities nearby</p>
+          <p class="lm-count" id="lm-count" aria-live="polite" data-i18n="lm_count_zero">0 nearby</p>
           <button type="button" class="lm-inbox hidden" id="lm-inbox" data-go="v-signal">
             <span class="inbox-dot" aria-hidden="true"></span>
             <b data-i18n="inbox_title">Someone nearby wants to meet you.</b>
@@ -557,7 +557,8 @@
           </div>
           <div class="set-block">
             <div class="eyebrow mb" data-i18n="set_notifications">Notifications</div>
-            <div class="row"><span id="lbl-push" data-i18n="set_push">Let Wingman tell you when someone nearby reaches out</span><div class="switch" id="set-push" role="switch" aria-checked="true" tabindex="0" aria-labelledby="lbl-push"></div></div>
+            <div class="row"><span id="lbl-push" data-i18n="set_push">Let Wingman tell you when someone nearby reaches out</span><div class="switch" id="set-push" role="switch" aria-checked="false" tabindex="0" aria-labelledby="lbl-push"></div></div>
+            <p class="small muted mt-s" id="push-status" data-i18n="t_push_off">Notifications are off until you allow them.</p>
           </div>
           <div class="set-block">
             <div class="eyebrow mb" data-i18n="set_language">Language</div>
@@ -649,6 +650,8 @@
 <script src="radar-dots.js"></script>
 <script src="presence-geo.js"></script>
 <script src="presence-heartbeat.js"></script>
+<script src="presence-reconnect.js"></script>
+<script src="web-push.js"></script>
 <script src="living-map.js"></script>
 <script src="living-map-ui.js"></script>
 <script src="payments/payment-types.js"></script>

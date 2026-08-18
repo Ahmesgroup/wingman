@@ -22,6 +22,7 @@ already near each other — or who repeatedly cross paths through Destiny Connec
 
 - **S30 client wire:** public Radar **Go active** requests coarse browser geolocation (`enableHighAccuracy: false`) and **fails closed** if denied/unavailable — no Luxembourg fallback, no fake nearby. Presence **heartbeat** posts `POST /radar/heartbeat` about every 40s while the tab is foreground (Redis/domain TTL remains 120s).
 - Living Map remains **off** by default (`WINGMAN_LIVING_MAP_V1` false). **PRODUCT PROTOCOL READY = NO** until the two-phone Evidence Pack.
+- **S32 web wire:** tab hide/show restores session, WebSocket, Radar, Mission chat from the server. Web push is **fail-closed** without VAPID/FCM credentials (no fake SENT). See [`S32_WEB_BACKGROUND.md`](./S32_WEB_BACKGROUND.md).
 
 ## Phase change
 
@@ -66,7 +67,7 @@ REAL USERS → REAL PHONES → REAL OTP → REAL RADAR → REAL SIGNAL
 | **S29** | Real Multi-user Realtime | 2 → 5 → 10 phones; Signal A→B without manual refresh; accept/expire/selfie/validation/ticket/Mission/Cooldown synced; WS reconnect, bg/fg, slow net, Wi‑Fi↔cellular, brief offline; **no contradictory states** |
 | **S30** | Real Radar & Geo Field Test | No simulated nearby users; coarse location + real presence + visibility; near/far/moving/offline/invisible/permission denied; **no precise coordinates exposed** |
 | **S31** | Real Selfie Exchange | Real camera iOS/Android; permissions; direct capture; private opaque media; correct recipient only; expiry/delete; mid-exchange leave; refuse camera / bad net; **no public file / durable URL leak** |
-| **S32** | Push & Closed-app Protocol | Signal/reply/expiry/ticket while app closed & locked; notification opens **correct protocol state** (not home) |
+| **S32** | Push & Closed-app Protocol | **PARTIAL wire (web)** — hide/show restore + fail-closed push stub; Evidence Pack (closed-app delivery) later |
 | **S33** | Safety & Field-test Controls | Real Block/Report; blocked user gone from protocol; server-enforced Signal limits; no raw phone/selfie/precise location in sensitive logs; kill-switch / feature flag without full redeploy; Destiny stays out of public test |
 | **S34** | Live Field Test Certification | 5–10 testers, multi-day; measure OTP, Radar, Signal path, Mission completion, errors, disconnects, time-to-first-Signal, abandons, reports, per-device issues → **GO PILOT** / **FIX LIST CLOSED** / **NO-GO** — no redesign from impressions |
 

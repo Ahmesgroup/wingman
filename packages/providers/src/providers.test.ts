@@ -5,12 +5,15 @@ import {
   ApnsPushProvider,
   ConsoleSmsProvider,
   FcmPushProvider,
+  FailClosedWebPushTransport,
   MemoryDeviceTokenStore,
   MobilePushTransport,
   ReliableSmsProvider,
   TwilioSmsProvider,
   TwilioVerifyProvider,
   mapTwilioVerifyHttpError,
+  sanitizePushPayload,
+  webPushCapabilityFromEnv,
 } from "./index.js";
 import { OtpDeliveryService } from "./otp-delivery.js";
 
@@ -234,5 +237,35 @@ describe("S18 production providers", () => {
     expect(() => {
       throw new InvalidDeviceError("dead");
     }).toThrow(InvalidDeviceError);
+  });
+
+  it("web push is blocked without VAPID/FCM credentials and does not fake SENT", async () => {
+    const cap = webPushCapabilityFromEnv({});
+    expect(cap.enabled).toBe(false);
+    expect(cap.reason).toBe("vapid_or_fcm_credentials_missing");
+    const blocked = new FailClosedWebPushTransport(cap.reason);
+    await expect(
+      blocked.send({
+        id: "e1",
+        type: "signal.received",
+        userId: "u1",
+        idempotencyKey: "k",
+        deepLink: "/",
+        payload: {},
+        createdAt: new Date(),
+      }),
+    ).rejects.toThrow(/WEB_PUSH_BLOCKED/);
+  });
+
+  it("sanitized push payload never includes phone, selfie, or chat text", () => {
+    const out = sanitizePushPayload("mission.message", {
+      connectionId: "c1",
+      text: "call me +33600000000",
+      selfie: "opaque",
+    });
+    expect(out.connectionId).toBe("c1");
+    expect(out.text).toBeUndefined();
+    expect(JSON.stringify(out)).not.toMatch(/\+336/);
+    expect(JSON.stringify(out)).not.toMatch(/selfie/i);
   });
 });

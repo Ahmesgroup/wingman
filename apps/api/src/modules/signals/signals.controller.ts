@@ -59,7 +59,7 @@ export class SignalsService {
       type: "signal.received",
       userId: body.receiverId,
       aggregateId: signal.id,
-      payload: { signalId: signal.id, senderId: userId },
+      payload: { signalId: signal.id, summary: "Someone nearby reached out" },
     });
     safeNotify(this.notifications);
     await this.realtime.publish({

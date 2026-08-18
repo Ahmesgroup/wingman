@@ -81,3 +81,14 @@ See [`PROJECT_STATE.md`](./PROJECT_STATE.md).
 
 Local prototype without the var → `http://localhost:3000`. Overrides `?api=` / `localStorage.wingman_api_base` only on localhost or `?qa=1`.
 
+## Web push (S32)
+
+| Variable | Default | Notes |
+|----------|---------|-------|
+| `PUSH_PROVIDER` | `memory` (tests) | `memory` \| `logging` \| `mobile` \| `web`. Public prod without credentials uses fail-closed (no fake SENT). |
+| `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` | unset | Web Push. **Do not invent.** Empty → `/internal/live.webPush.enabled=false`. |
+| `WEB_PUSH_VAPID_PUBLIC_KEY` / `WEB_PUSH_VAPID_PRIVATE_KEY` | unset | Aliases |
+| `FCM_PROJECT_ID` / `FCM_SERVER_KEY` / `FCM_VAPID_KEY` | unset | FCM web/mobile. All three needed for `webPush.enabled`. |
+
+See [`S32_WEB_BACKGROUND.md`](./S32_WEB_BACKGROUND.md). S32 push delivery stays **BLOCKED** until real credentials are set in the host (never committed).
+

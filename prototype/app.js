@@ -461,6 +461,8 @@ async function tryReconnect() {
     setApiBanner('live', t('t_api_live'));
     feedback('success', t('t_reconnected'));
     setPhase(state.radarActive ? 'available' : 'idle');
+    ensureRealtimeReconnect();
+    await restoreForeground({ silent: true });
   } catch (_) {
     state.apiLive = false;
     setOfflineUi(true, false);
@@ -515,6 +517,7 @@ const I18N = {
     set_privacy: 'Privacy', set_photo: 'Photos', set_photo_v: 'Only shared during a connection', set_none: 'None', set_loc: 'Location', set_loc_v: 'Your exact location is never shown', set_never: 'Never shown', set_consent: 'Data & consent', set_consent_manage: 'Data & consent — Manage what Wingman can use', set_accepted: 'Managed', set_gdpr: 'Your exact location is never shown', set_designed: 'Never shown',
     set_controls: 'Controls', set_destiny: 'Let Wingman notice repeated crossings without showing where they happened.', set_rm: 'Reduce motion', set_haptics: 'Haptics', set_rights: 'Your data', set_export: 'Export my data', set_delete: 'Delete my account', set_admin: 'Admin moderation preview →',
     set_safety: 'Safety', set_notifications: 'Notifications', set_push: 'Let Wingman tell you when someone nearby reaches out', set_language: 'Language', set_a11y: 'Accessibility',
+    t_push_off: 'Notifications stay off until you allow them.', t_push_on: 'Wingman can notify you about a Signal or a meeting message.', t_push_blocked: 'Push isn’t configured on this build (missing VAPID/FCM credentials).', t_push_denied: 'Notifications were blocked in the browser.',
     report_sub: 'Report & block', report_title: 'What happened?', report_body: 'Blocking is instant and silent. The other person is never notified.',
     rc_harass: 'Harassment', rc_threat: 'Threat', rc_imp: 'Impersonation', rc_sexual: 'Sexual content', rc_minor: 'Minor safety', rc_contact: 'Contact outside Wingman',
     report_done_badge: 'Blocked & reported', report_done_t: "You won't see each other again.", report_done_b: 'Repeated independent reports are reviewed by a person — never an automatic permanent ban.', report_done_cta: 'Back nearby',
@@ -537,7 +540,7 @@ const I18N = {
     lm_prox: 'How close', lm_prox_close: 'Very close', lm_prox_near: 'Nearby', lm_prox_around: 'Around me',
     lm_presence: 'Mood', lm_intention: 'Intention', lm_interests: 'Interests', lm_apply: 'Apply filters', lm_clear: 'Clear',
     lm_someone: 'Someone nearby', lm_new: 'Nearby now', lm_destiny: 'Your paths crossed again.',
-    lm_count: 'nearby', lm_count_one: 'nearby',
+    lm_count: 'nearby', lm_count_one: 'nearby', lm_count_zero: '0 nearby',
     lm_loc_denied: 'Location is off. Allow approximate location to see who’s nearby.',
     lm_loc_off: 'Location unavailable. Opportunities appear when we can place you.',
     lm_offline: 'You’re offline. The map stays up; nearby people refresh when you’re back.',
@@ -602,6 +605,7 @@ const I18N = {
     set_privacy: 'Vie privée', set_photo: 'Photos', set_photo_v: 'Partagées seulement pendant une connexion', set_none: 'Aucune', set_loc: 'Localisation', set_loc_v: 'Votre position exacte n’est jamais montrée', set_never: 'Jamais montrée', set_consent: 'Données et consentement', set_consent_manage: 'Données et consentement — Gérer ce que Wingman peut utiliser', set_accepted: 'Géré', set_gdpr: 'Votre position exacte n’est jamais montrée', set_designed: 'Jamais montrée',
     set_controls: 'Contrôles', set_destiny: 'Laisser Wingman remarquer les croisements répétés, sans montrer où cela s’est passé.', set_rm: 'Réduire les animations', set_haptics: 'Retour haptique', set_rights: 'Vos données', set_export: 'Exporter mes données', set_delete: 'Supprimer mon compte', set_admin: 'Aperçu modération admin →',
     set_safety: 'Sécurité', set_notifications: 'Notifications', set_push: 'Prévenez-moi quand quelqu’un près de moi se manifeste', set_language: 'Langue', set_a11y: 'Accessibilité',
+    t_push_off: 'Les notifications restent désactivées tant que vous ne les autorisez pas.', t_push_on: 'Wingman peut vous prévenir d’un Signal ou d’un message de rencontre.', t_push_blocked: 'Les notifications push ne sont pas configurées (identifiants VAPID/FCM manquants).', t_push_denied: 'Les notifications ont été bloquées dans le navigateur.',
     report_sub: 'Signaler et bloquer', report_title: 'Que s’est-il passé ?', report_body: 'Le blocage est immédiat et silencieux. L’autre personne n’est jamais prévenue.',
     rc_harass: 'Harcèlement', rc_threat: 'Menace', rc_imp: 'Usurpation', rc_sexual: 'Contenu sexuel', rc_minor: 'Sécurité des mineurs', rc_contact: 'Contact en dehors de Wingman',
     report_done_badge: 'Bloqué et signalé', report_done_t: 'Vous ne vous reverrez plus.', report_done_b: 'Des signalements indépendants répétés sont lus par une personne — jamais un bannissement automatique définitif.', report_done_cta: 'Retour autour de moi',
@@ -624,7 +628,7 @@ const I18N = {
     lm_prox: 'Distance', lm_prox_close: 'Très proche', lm_prox_near: 'À proximité', lm_prox_around: 'Autour de moi',
     lm_presence: 'Humeur', lm_intention: 'Intention', lm_interests: 'Intérêts', lm_apply: 'Appliquer', lm_clear: 'Effacer',
     lm_someone: 'Quelqu’un à proximité', lm_new: 'Tout près, maintenant', lm_destiny: 'Vos chemins se sont recroisés.',
-    lm_count: 'à proximité', lm_count_one: 'à proximité',
+    lm_count: 'à proximité', lm_count_one: 'à proximité', lm_count_zero: '0 à proximité',
     lm_loc_denied: 'La localisation est désactivée. Autorisez une position approximative pour voir qui est près de vous.',
     lm_loc_off: 'Localisation indisponible. Les opportunités apparaîtront quand nous pourrons vous situer.',
     lm_offline: 'Hors ligne. La carte reste affichée ; les personnes autour se mettront à jour à votre retour.',
@@ -690,6 +694,11 @@ function applyLang() {
   if (typeof syncLivingMapPresence === 'function') syncLivingMapPresence();
   if (typeof syncInboxChrome === 'function') syncInboxChrome();
   if (typeof syncRadarEmpty === 'function') syncRadarEmpty();
+  const pushSw = $('#set-push');
+  const pushSt = $('#push-status');
+  if (pushSt && pushSw) {
+    pushSt.textContent = pushSw.getAttribute('aria-checked') === 'true' ? dict.t_push_on : dict.t_push_off;
+  }
   if (typeof renderDiscoverList === 'function') {
     if (state.livingMap) renderDiscoverList(state.lmOpportunities);
     else renderDiscoverFromDots();
@@ -1230,12 +1239,98 @@ async function tickPresenceHeartbeat(force) {
 }
 
 function onPresenceVisibility() {
-  if (document.visibilityState === 'visible' && state.radarActive) {
-    void tickPresenceHeartbeat(true);
+  const Recon = typeof WingmanPresenceReconnect !== 'undefined' ? WingmanPresenceReconnect : null;
+  const visible = document.visibilityState !== 'hidden';
+  if (!visible) {
+    if (!Recon || Recon.restorePlan({ visible: false }).clearNearbyOnHide) {
+      clearRadarDots();
+    }
+    return;
   }
+  void restoreForeground({ silent: true });
 }
 if (typeof document !== 'undefined') {
   document.addEventListener('visibilitychange', onPresenceVisibility);
+}
+window.addEventListener('pageshow', function (e) {
+  if (e.persisted || document.visibilityState === 'visible') void restoreForeground({ silent: true });
+});
+
+let restoreForegroundInFlight = null;
+let restoreForegroundAgain = false;
+async function restoreForeground(opts) {
+  opts = opts || {};
+  if (restoreForegroundInFlight) {
+    restoreForegroundAgain = true;
+    return restoreForegroundInFlight;
+  }
+  restoreForegroundInFlight = (async function () {
+    const Recon = typeof WingmanPresenceReconnect !== 'undefined' ? WingmanPresenceReconnect : null;
+    const plan = Recon
+      ? Recon.restorePlan({
+        visible: typeof document === 'undefined' ? true : document.visibilityState !== 'hidden',
+        hasSession: isAuthedSession(),
+        radarActiveIntent: state.radarActive,
+        connectionId: state.connectionId,
+        socketConnected: Boolean(realtime && realtime.connected),
+      })
+      : {
+        restoreSession: isAuthedSession(),
+        reconnectSocket: isAuthedSession() && !(realtime && realtime.connected),
+        restoreRadar: isAuthedSession() && state.radarActive,
+        restoreMission: isAuthedSession() && Boolean(state.connectionId),
+        restoreChat: isAuthedSession() && Boolean(state.connectionId),
+      };
+    if (!plan.restoreSession) return;
+    if (!liveApi()) return;
+    try {
+      await api.me();
+    } catch (e) {
+      if (Recon ? Recon.isHardAuthFailure(e) : (e && (e.code === 'UNAUTHORIZED' || e.status === 401))) {
+        try { api.clearSession(); } catch (_) { /* ignore */ }
+        clearProtoSession();
+        state.radarActive = false;
+        stopPresenceHeartbeat();
+        if (!opts.silent) feedback('busy', t('t_auth_required'));
+        show('v-phone');
+        return;
+      }
+      setOfflineUi(true, false);
+      setApiBanner('offline', t('t_api_unreachable'));
+      return;
+    }
+    setOfflineUi(false, false);
+    if (state.apiLive) setApiBanner('live', t('t_api_live'));
+    if (plan.reconnectSocket || plan.restoreSession) ensureRealtimeReconnect();
+    if (plan.restoreRadar) {
+      await tickPresenceHeartbeat(true);
+      if (state.radarActive) {
+        try {
+          const cands = await api.radarCandidates();
+          applyRadarCandidates(cands);
+        } catch (_) {
+          clearRadarDots();
+        }
+      } else {
+        clearRadarDots();
+      }
+    } else if (!state.radarActive) {
+      clearRadarDots();
+    }
+    if (plan.restoreMission) {
+      try { await refreshConnectionUi(); } catch (_) { /* keep last known */ }
+    }
+    if (plan.restoreChat) {
+      try { await restoreChatLog(); } catch (_) { /* keep last known */ }
+    }
+  })().finally(function () {
+    restoreForegroundInFlight = null;
+    if (restoreForegroundAgain) {
+      restoreForegroundAgain = false;
+      void restoreForeground(opts);
+    }
+  });
+  return restoreForegroundInFlight;
 }
 
 function openLivingMapSheet(m) {
@@ -1914,6 +2009,11 @@ $$('[data-go][role="button"]').forEach(el => el.addEventListener('keydown', e =>
 /* switches (consent, settings) */
 document.addEventListener('click', e => {
   const sw = e.target.closest('.switch[role="switch"]'); if (!sw || sw.getAttribute('aria-disabled') === 'true') return;
+  if (sw.id === 'set-push') {
+    const wantOn = sw.getAttribute('aria-checked') !== 'true';
+    void onPushSwitch(wantOn);
+    return;
+  }
   const on = sw.getAttribute('aria-checked') === 'true'; sw.setAttribute('aria-checked', String(!on)); haptic('selection');
   if (sw.id === 'rm-switch') setReduceMotion(!on);
 });
@@ -2061,32 +2161,42 @@ async function bootApi() {
     // S27 session path — real identity from OTP tokens
     if (api.hasSession && api.userId) {
       state.meId = api.userId;
-      try {
-        const ents = await api.entitlements();
-        applyEntitlements(ents);
         try {
-          const ps = await api.paymentsStatus();
-          if (ps && ps.paymentsEnabled) console.warn('[wingman] payments unexpectedly enabled');
-        } catch (_) { /* ignore */ }
-        setOfflineUi(false, false);
-        setApiBanner('live', t('t_api_live'));
-        feedback('success', t('t_auth_ok'));
-        if (state.phase === 'offline' || !state.phase) setPhase('idle');
-        await refreshAuthMode();
-        ensureRealtime();
-        return;
-      } catch (_) {
-        // Stale tokens: stay online, clear session, return to phone auth.
-        try { api.clearSession(); } catch (__) { /* ignore */ }
-        clearProtoSession();
-        state.meId = 'proto-alex';
-        state.radarActive = false;
-        setOfflineUi(false, false);
-        setApiBanner('busy', t('t_auth_required'));
-        applyEntitlements({ plan: 'FREE', capabilities: { dailySignals: 2, activeConnectionTickets: 1 } });
-        await refreshAuthMode();
-        return;
-      }
+          const ents = await api.entitlements();
+          applyEntitlements(ents);
+          try {
+            const ps = await api.paymentsStatus();
+            if (ps && ps.paymentsEnabled) console.warn('[wingman] payments unexpectedly enabled');
+          } catch (_) { /* ignore */ }
+          setOfflineUi(false, false);
+          setApiBanner('live', t('t_api_live'));
+          feedback('success', t('t_auth_ok'));
+          if (state.phase === 'offline' || !state.phase) setPhase('idle');
+          await refreshAuthMode();
+          ensureRealtime();
+          return;
+        } catch (e) {
+          const Recon = typeof WingmanPresenceReconnect !== 'undefined' ? WingmanPresenceReconnect : null;
+          const hard = Recon ? Recon.isHardAuthFailure(e) : (e && (e.code === 'UNAUTHORIZED' || e.status === 401));
+          if (!hard) {
+            setOfflineUi(true, false);
+            setApiBanner('offline', t('t_api_unreachable'));
+            feedback('offline', t('t_api_unreachable'));
+            applyEntitlements({ plan: 'FREE', capabilities: { dailySignals: 2, activeConnectionTickets: 1 } });
+            ensureRealtimeReconnect();
+            return;
+          }
+          // Stale tokens: stay online, clear session, return to phone auth.
+          try { api.clearSession(); } catch (__) { /* ignore */ }
+          clearProtoSession();
+          state.meId = 'proto-alex';
+          state.radarActive = false;
+          setOfflineUi(false, false);
+          setApiBanner('busy', t('t_auth_required'));
+          applyEntitlements({ plan: 'FREE', capabilities: { dailySignals: 2, activeConnectionTickets: 1 } });
+          await refreshAuthMode();
+          return;
+        }
     }
 
     // Local lab only: x-user-id + seed (never on public Vercel field surface)
@@ -2182,25 +2292,7 @@ function restoreSessionIfAny() {
     }
     // Re-hydrate from API only — never restore fictional density from session.
     clearRadarDots();
-    if (liveApi()) {
-      startPresenceHeartbeat();
-      void tickPresenceHeartbeat(true);
-      api.radarCandidates().then(applyRadarCandidates).catch(() => {
-        stopPresenceHeartbeat();
-        state.radarActive = false;
-        const btn2 = $('#radar-toggle'), st2 = $('#radar-state');
-        if (btn2) {
-          btn2.classList.add('off');
-          btn2.setAttribute('aria-pressed', 'false');
-          btn2.textContent = t('radar_activate');
-        }
-        if (st2) {
-          st2.textContent = t('radar_invisible');
-          st2.classList.add('invisible');
-        }
-        clearRadarDots();
-      });
-    }
+    if (liveApi()) startPresenceHeartbeat();
   }
   syncRadarEmpty();
   syncSignalEmpty();
@@ -2212,6 +2304,7 @@ function restoreSessionIfAny() {
   } else {
     setPhase('idle');
   }
+  void restoreForeground({ silent: true });
 }
 
 /** After OTP session exists, don't trap the user on splash/phone again. */
@@ -2667,6 +2760,76 @@ function ensureRealtime() {
     },
   });
   realtime.connect();
+}
+
+function ensureRealtimeReconnect() {
+  if (!globalThis.WingmanRealtime || !api) return;
+  if (!realtime) {
+    ensureRealtime();
+    return;
+  }
+  if (typeof realtime.reconnect === 'function') realtime.reconnect();
+  else if (!realtime.connected) realtime.connect();
+}
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const raw = atob(base64);
+  const out = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+  return out;
+}
+
+async function onPushSwitch(wantOn) {
+  const sw = $('#set-push');
+  const status = $('#push-status');
+  const Push = typeof WingmanWebPush !== 'undefined' ? WingmanWebPush : null;
+  if (!wantOn) {
+    if (sw) sw.setAttribute('aria-checked', 'false');
+    if (status) status.textContent = t('t_push_off');
+    return;
+  }
+  if (!Push || !liveApi() || !isAuthedSession()) {
+    if (sw) sw.setAttribute('aria-checked', 'false');
+    if (status) status.textContent = t('t_push_blocked');
+    feedback('busy', t('t_push_blocked'));
+    return;
+  }
+  let live = { webPush: { enabled: false } };
+  try {
+    live = api.liveStatus ? await api.liveStatus() : live;
+  } catch (_) { /* fail closed */ }
+  const result = await Push.enable({
+    live: live,
+    requestPermission: function () {
+      if (!('Notification' in window)) return Promise.resolve('denied');
+      return Notification.requestPermission();
+    },
+    subscribe: async function (vapidKey) {
+      if (!('serviceWorker' in navigator) || !navigator.serviceWorker) return null;
+      const reg = await navigator.serviceWorker.register('/sw.js');
+      await navigator.serviceWorker.ready;
+      if (!reg.pushManager) return null;
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(vapidKey),
+      });
+      return sub && sub.endpoint ? sub.endpoint : null;
+    },
+    registerToken: async function (token) {
+      await api.registerPushToken({ platform: 'web', pushToken: token });
+    },
+  });
+  if (result.ok) {
+    if (sw) sw.setAttribute('aria-checked', 'true');
+    if (status) status.textContent = t('t_push_on');
+    return;
+  }
+  if (sw) sw.setAttribute('aria-checked', 'false');
+  const msg = result.reason === 'permission_denied' ? t('t_push_denied') : t('t_push_blocked');
+  if (status) status.textContent = msg;
+  feedback('busy', msg);
 }
 
 /* ------------------------------------------------------------ S27 phone auth */

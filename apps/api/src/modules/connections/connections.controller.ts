@@ -212,6 +212,14 @@ export class ConnectionsService {
     const message = this.engine.postMissionMessage(id, userId, text);
     const c = this.engine.connections.get(id);
     if (c) {
+      const peerId = userId === c.initiatorId ? c.recipientId : c.initiatorId;
+      this.notifications.handleAppEvent({
+        type: "mission.message",
+        userId: peerId,
+        aggregateId: id,
+        payload: { connectionId: id, summary: "New message in your meeting" },
+      });
+      safeNotify(this.notifications);
       await this.realtime.publish({
         type: "mission.message",
         aggregateId: id,
