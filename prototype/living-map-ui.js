@@ -15,14 +15,14 @@
   }
 
   function moodLabel(mood, lang) {
-    var fr = lang === 'fr';
+    var fr = (lang || (typeof document !== 'undefined' && document.documentElement.lang) || '') === 'fr';
     if (mood === 'SUPER_READY') return fr ? 'Prêt·e' : 'Super ready';
     if (mood === 'EXPLORING') return fr ? 'En exploration' : 'Exploring';
     return fr ? 'Ouvert·e' : 'Open';
   }
 
   function bandLabel(band, lang) {
-    var fr = lang === 'fr';
+    var fr = (lang || (typeof document !== 'undefined' && document.documentElement.lang) || '') === 'fr';
     if (band === 'VERY_CLOSE') return fr ? 'Très proche' : 'Very close';
     if (band === 'AROUND_ME') return fr ? 'Autour de moi' : 'Around me';
     return fr ? 'À proximité' : 'Nearby';
@@ -102,8 +102,8 @@
             '<button type="button" class="' +
             cls +
             '" aria-label="' +
-            (m.destiny ? 'Destiny. ' : '') +
-            'Someone nearby. ' +
+            (m.destiny ? (document.documentElement.lang === 'fr' ? 'Vos chemins se sont recroisés. ' : 'Your paths crossed again. ') : '') +
+            (document.documentElement.lang === 'fr' ? 'Quelqu’un à proximité. ' : 'Someone nearby. ') +
             moodLabel(m.moodState) +
             '"></button>',
           iconSize: [28, 28],
