@@ -23,6 +23,7 @@ describe('living-map production invariant', () => {
     assert.equal(LM.resolveEnabled({ configEnabled: false }), false);
     assert.equal(LM.resolveEnabled({ configEnabled: false, serverEnabled: true }), true);
     assert.equal(LM.resolveEnabled({ search: '?radar=canvas', serverEnabled: true }), false);
+    assert.equal(LM.resolveEnabled({ configEnabled: undefined }), true);
   });
 
   it('0 opportunities → 0 markers', () => {
@@ -136,8 +137,10 @@ describe('living-map mobile chrome', () => {
     const html = readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'index.html'), 'utf8');
     const css = readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'styles.css'), 'utf8');
     const ui = readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'living-map-ui.js'), 'utf8');
+    const app = readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'app.js'), 'utf8');
     assert.match(html, /id="radar-canvas"/);
     assert.match(html, /id="living-map-root"/);
+    assert.match(html, /id="lm-nav"/);
     assert.match(html, /id="v-discover"/);
     assert.match(html, /id="lm-filter-sheet"/);
     assert.match(html, /id="lm-discover-tray"/);
@@ -146,10 +149,51 @@ describe('living-map mobile chrome', () => {
     assert.match(html, /RADAR \| DISCOVER|nav_discover|v-discover/);
     assert.match(css, /safe-area-inset-bottom/);
     assert.match(css, /body\.living-map #v-radar/);
+    assert.match(css, /body\.living-map #radar-canvas/);
     assert.match(css, /lm-dock/);
-    assert.match(css, /data-lm-world/);
+    assert.match(css, /lm-preauth/);
+    assert.match(css, /#lm-nav/);
     assert.match(ui, /dark_nolabels/);
     assert.match(css, /lm-opp-core/);
     assert.doesNotMatch(css, /lm-empty\{[^}]*backdrop-filter/);
+    assert.match(app, /applyLivingMapFlag\(\)/);
+    assert.match(app, /if \(!canvas \|\| !ctx \|\| state\.livingMap\) return/);
+  });
+
+  it('certified path hides canvas Radar whenever Living Map is on (not only when near)', () => {
+    const css = readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'styles.css'), 'utf8');
+    assert.match(css, /body\.living-map #radar-canvas/);
+    assert.doesNotMatch(css, /body\.living-map\[data-lm-world="near"\][^{]*#radar-canvas/);
+    assert.doesNotMatch(css, /body\.living-map:not\(\[data-lm-world="near"\]\) #living-map-root\{visibility:hidden/);
+  });
+
+  it('tab switch changes overlay without remounting the map instance', () => {
+    const ui = readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'living-map-ui.js'), 'utf8');
+    const app = readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'app.js'), 'utf8');
+    const setLayer = ui.slice(ui.indexOf('function setLayer'), ui.indexOf('function invalidate'));
+    assert.doesNotMatch(setLayer, /destroy|remove\(\)|L\.map/);
+    const setWorld = app.slice(app.indexOf('function setLivingMapWorld'), app.indexOf('function setLivingMapMoodOpen'));
+    assert.doesNotMatch(setWorld, /destroy\(/);
+    assert.match(setWorld, /setLayer/);
+    assert.match(ui, /getInstanceId/);
+  });
+
+  it('0 candidates keep the map — never disable Living Map or start canvas', () => {
+    const app = readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'app.js'), 'utf8');
+    const refresh = app.slice(app.indexOf('async function refreshLivingMap'), app.indexOf('function scheduleLivingMapRefresh'));
+    assert.match(refresh, /syncLivingMapEmpty\(0\)/);
+    assert.doesNotMatch(refresh, /disableLivingMapUi/);
+    assert.doesNotMatch(refresh, /startRadar/);
+    assert.match(app, /Quiet around you/);
+    assert.match(app, /We'll let you know when an opportunity appears nearby/);
+    assert.match(app, /C'est calme autour de vous/);
+    assert.match(app, /Nous vous préviendrons lorsqu'une opportunité apparaîtra près de vous/);
+  });
+
+  it('Living Map flag is applied synchronously before canvas Radar starts', () => {
+    const app = readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'app.js'), 'utf8');
+    const boot = app.slice(app.indexOf('state.lang = readStoredLang()'));
+    assert.ok(boot.indexOf('applyLivingMapFlag()') < boot.indexOf('startRadar()'));
+    assert.match(app, /configEnabled: cfg\.livingMap !== false/);
   });
 });

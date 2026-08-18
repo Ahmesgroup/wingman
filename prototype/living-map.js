@@ -194,8 +194,8 @@
   }
 
   /**
-   * Living Map is the default public surface.
-   * Rollback: ?radar=canvas, livingMap=0, serverEnabled/configEnabled === false.
+   * Living Map is the certified public surface (default ON).
+   * Emergency rollback only: ?radar=canvas, livingMap=0, or serverEnabled/configEnabled === false.
    * Legacy ?livingMap=1 still forces the map on.
    */
   function resolveEnabled(opts) {

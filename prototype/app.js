@@ -34,6 +34,7 @@ const state = {
   viewerLoc: null,
   locState: 'unknown',
   lmOpportunities: [],
+  lmReturnView: 'v-radar',
   serverNow: () => Date.now(),
 };
 
@@ -595,9 +596,9 @@ const I18N = {
     t_meet: 'Opening the meeting…', t_ticket: 'Holding this moment…', t_chat: 'Sending…', t_outcome: 'Saving…',
     t_timeout: 'Taking too long — try again', t_offline_blocked: 'You’re offline — try again', t_offline_banner: 'You’re offline — we’ll catch up when you’re back',
     t_reconnecting: 'Reconnecting…', t_reconnected: 'Back online', t_reconnect_fail: 'Still offline', t_reconnect: 'Reconnect',
-    empty_radar: 'Go active to see who’s nearby.', empty_radar_alone: 'Quiet around here', empty_signals: 'No new Signals yet.', empty_signals_d: 'When someone nearby reaches out, you’ll see it here.',
+    empty_radar: 'Go active to see who’s nearby.', empty_radar_alone: 'Quiet around you', empty_signals: 'No new Signals yet.', empty_signals_d: 'When someone nearby reaches out, you’ll see it here.',
     lm_available: 'Available now', lm_exploring: 'Exploring', lm_filters: 'Filters', lm_filters_d: 'Show less of what’s already allowed for you. Filters never bypass privacy.',
-    lm_recenter: 'Recenter', lm_quiet: 'Quiet around here', lm_quiet_d: 'We’ll show you when a real opportunity appears nearby.',
+    lm_recenter: 'Recenter', lm_quiet: 'Quiet around you', lm_quiet_d: "We'll let you know when an opportunity appears nearby.",
     lm_prox: 'How close', lm_prox_close: 'Very close', lm_prox_near: 'Nearby', lm_prox_around: 'Around me',
     lm_presence: 'Mood', lm_intention: 'Intention', lm_interests: 'Interests', lm_apply: 'Apply filters', lm_clear: 'Clear',
     lm_someone: 'Someone nearby', lm_new: 'Nearby now', lm_destiny: 'Your paths crossed again.',
@@ -693,9 +694,9 @@ const I18N = {
     t_meet: 'Ouverture de la rencontre…', t_ticket: 'On garde ce moment…', t_chat: 'Envoi…', t_outcome: 'Enregistrement…',
     t_timeout: 'Trop long — réessayez', t_offline_blocked: 'Hors ligne — réessayez', t_offline_banner: 'Vous êtes hors ligne — on rattrapera à votre retour',
     t_reconnecting: 'Reconnexion…', t_reconnected: 'De retour en ligne', t_reconnect_fail: 'Toujours hors ligne', t_reconnect: 'Reconnecter',
-    empty_radar: 'Rendez-vous visible pour voir qui est près de vous.', empty_radar_alone: 'C’est calme autour de vous', empty_signals: 'Aucun nouveau Signal.', empty_signals_d: 'Lorsqu’une personne près de vous vous contactera, vous le verrez ici.',
+    empty_radar: 'Rendez-vous visible pour voir qui est près de vous.', empty_radar_alone: "C'est calme autour de vous", empty_signals: 'Aucun nouveau Signal.', empty_signals_d: 'Lorsqu’une personne près de vous vous contactera, vous le verrez ici.',
     lm_available: 'Disponible maintenant', lm_exploring: 'En exploration', lm_filters: 'Filtres', lm_filters_d: 'Affiche moins de ce qui vous est déjà proposé. Les filtres ne contournent jamais la vie privée.',
-    lm_recenter: 'Recentrer', lm_quiet: 'C’est calme autour de vous', lm_quiet_d: 'Wingman vous montrera une opportunité réelle lorsqu’elle apparaîtra près de vous.',
+    lm_recenter: 'Recentrer', lm_quiet: "C'est calme autour de vous", lm_quiet_d: "Nous vous préviendrons lorsqu'une opportunité apparaîtra près de vous.",
     lm_prox: 'Distance', lm_prox_close: 'Très proche', lm_prox_near: 'À proximité', lm_prox_around: 'Autour de moi',
     lm_presence: 'Humeur', lm_intention: 'Intention', lm_interests: 'Intérêts', lm_apply: 'Appliquer', lm_clear: 'Effacer',
     lm_someone: 'Quelqu’un à proximité', lm_new: 'Tout près, maintenant', lm_destiny: 'Vos chemins se sont recroisés.',
@@ -855,6 +856,7 @@ function show(id) {
   const v = $('#' + id); if (!v) return;
   state.viewId = id;
   setLivingMapWorld(id);
+  syncShellNav();
   if (id !== 'v-radar' && id !== 'v-discover' && id !== 'v-pulse') {
     closeOpportunitySheet();
     closeFilterSheet();
@@ -878,9 +880,26 @@ function navItems() {
     ['v-settings', 'me', 'M12 12a4 4 0 100-8 4 4 0 000 8z M4 21c1.5-4 6-6 8-6s6.5 2 8 6'],
   ];
 }
+function navKeyForView(id) {
+  if (id === 'v-discover') return 'discover';
+  if (id === 'v-pulse') return 'pulse';
+  if (id === 'v-settings') return 'me';
+  return 'radar';
+}
+function syncShellNav() {
+  const bar = $('#lm-nav');
+  if (!bar) return;
+  const key = navKeyForView(state.viewId);
+  $$('button', bar).forEach(function (b) {
+    const on = navKeyForView(b.dataset.go) === key;
+    if (on) b.setAttribute('aria-current', 'page');
+    else b.removeAttribute('aria-current');
+  });
+}
 function buildNav() {
   $$('[data-navbar]').forEach(bar => {
-    const current = bar.closest('.view').dataset.nav;
+    const view = bar.closest('.view');
+    const current = view && view.dataset.nav ? view.dataset.nav : navKeyForView(state.viewId);
     bar.innerHTML = navItems().map(([vid, key, d]) => {
       const on = key === current || (key === 'me' && current === 'settings') || (key === 'radar' && current === 'signal');
       const badge = (key === 'radar' && state.hasIncomingSignal)
@@ -894,11 +913,12 @@ function buildNav() {
   });
 }
 
-/* ------------------------------------------------------------- RADAR canvas */
+/* ------------------------------------------------------------- RADAR canvas (rollback only) */
 const canvas = $('#radar-canvas');
-const ctx = canvas.getContext('2d');
+const ctx = canvas && typeof canvas.getContext === 'function' ? canvas.getContext('2d') : null;
 const DPR = Math.min(window.devicePixelRatio || 1, 2);
 function sizeCanvas() {
+  if (!canvas || !ctx || state.livingMap) return;
   const w = canvas.clientWidth || 400, h = 340;
   canvas.width = w * DPR; canvas.height = h * DPR;
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
@@ -919,6 +939,7 @@ function buildingShapes(w, h) {
   ].map(([x, y, bw, bh]) => ({ x: x * w, y: y * h, w: bw * w, h: bh * h }));
 }
 function drawRadar() {
+  if (!canvas || !ctx || state.livingMap) return;
   const w = canvas.clientWidth || 400, h = 340, cx = w / 2, cy = h / 2;
   ctx.clearRect(0, 0, w, h);
   ctx.fillStyle = '#080D1A'; ctx.fillRect(0, 0, w, h);
@@ -982,11 +1003,14 @@ function drawRadar() {
   }
 }
 function roundRect(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
-function startRadar() { cancelAnimationFrame(rafId); rafId = requestAnimationFrame(drawRadar); }
+function startRadar() {
+  if (!canvas || !ctx || state.livingMap) return;
+  cancelAnimationFrame(rafId); rafId = requestAnimationFrame(drawRadar);
+}
 
 // tap a dot -> open anonymous sheet
 let currentDot = null;
-canvas.addEventListener('click', e => {
+if (canvas) canvas.addEventListener('click', e => {
   if (!state.radarActive) { toast(t('t_go_active')); return; }
   const rect = canvas.getBoundingClientRect();
   const px = (e.clientX - rect.left) / rect.width, py = (e.clientY - rect.top) / rect.height;
@@ -1025,7 +1049,7 @@ $('#close-sheet').addEventListener('click', () => {
   closeOpportunitySheet();
   const canvasEl = $('#radar-canvas'); if (canvasEl) canvasEl.focus();
 });
-canvas.addEventListener('keydown', e => {
+if (canvas) canvas.addEventListener('keydown', e => {
   if (e.key !== 'Enter' && e.key !== ' ') return;
   e.preventDefault();
   if (!state.radarActive) {
@@ -1163,18 +1187,40 @@ let radarRefreshTimer = null;
 const RADAR_REFRESH_DEBOUNCE_MS = 280;
 const lmFilterState = { proximity: [], presence: [], intention: [], interests: [] };
 
+const LM_PREAUTH = new Set(['v-splash', 'v-onboard1', 'v-onboard2', 'v-onboard3', 'v-phone', 'v-otp', 'v-profile', 'v-consent']);
+const LM_MAP_TABS = new Set(['v-radar', 'v-discover', 'v-pulse']);
+const LM_SHELL_NAV = new Set(['v-radar', 'v-discover', 'v-pulse', 'v-settings', 'v-signal']);
+
 function livingMapOn() {
   return Boolean(state.livingMap);
 }
 
+function resolveLivingMapFlag(serverOn) {
+  const cfg = window.__WINGMAN_CONFIG__ || {};
+  if (typeof WingmanLivingMap === 'undefined') return false;
+  return WingmanLivingMap.resolveEnabled({
+    search: typeof location !== 'undefined' ? location.search : '',
+    configEnabled: cfg.livingMap !== false,
+    serverEnabled: serverOn,
+  });
+}
+
+function applyLivingMapFlag(serverOn) {
+  if (resolveLivingMapFlag(serverOn)) enableLivingMapUi();
+  else disableLivingMapUi();
+}
+
 function enableLivingMapUi() {
   state.livingMap = true;
+  if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
   document.body.classList.add('living-map');
   const root = $('#living-map-root');
   if (root) {
     root.classList.remove('hidden');
     root.hidden = false;
   }
+  const shellNav = $('#lm-nav');
+  if (shellNav) shellNav.hidden = false;
   const mapEl = $('#living-map-el');
   if (mapEl) mapEl.setAttribute('aria-label', t('radar_sub'));
   if (!livingMapCtl && typeof WingmanLivingMapUi !== 'undefined') {
@@ -1191,12 +1237,13 @@ function enableLivingMapUi() {
   syncLivingMapMood();
   syncSignalsChrome();
   setLivingMapWorld(state.viewId || 'v-radar');
+  syncShellNav();
   if (livingMapCtl) livingMapCtl.invalidate();
 }
 
 function disableLivingMapUi() {
   state.livingMap = false;
-  document.body.classList.remove('living-map');
+  document.body.classList.remove('living-map', 'lm-preauth', 'lm-shell-nav', 'lm-map-chrome', 'lm-me');
   document.body.removeAttribute('data-lm-world');
   document.body.removeAttribute('data-lm-layer');
   const root = $('#living-map-root');
@@ -1204,25 +1251,39 @@ function disableLivingMapUi() {
     root.classList.add('hidden');
     root.hidden = true;
   }
+  const shellNav = $('#lm-nav');
+  if (shellNav) shellNav.hidden = true;
   if (livingMapCtl) {
     livingMapCtl.destroy();
     livingMapCtl = null;
   }
   buildNav();
+  sizeCanvas();
+  startRadar();
 }
 
 function setLivingMapWorld(viewId) {
   if (!state.livingMap) {
     document.body.removeAttribute('data-lm-world');
     document.body.removeAttribute('data-lm-layer');
+    document.body.classList.remove('lm-preauth', 'lm-shell-nav', 'lm-map-chrome', 'lm-me');
     return;
   }
-  const near = viewId === 'v-radar' || viewId === 'v-discover' || viewId === 'v-pulse';
+  const preauth = LM_PREAUTH.has(viewId);
+  const mapTab = LM_MAP_TABS.has(viewId);
+  const me = viewId === 'v-settings';
   const layer = viewId === 'v-discover' ? 'discover' : viewId === 'v-pulse' ? 'pulse' : 'radar';
-  document.body.dataset.lmWorld = near ? 'near' : 'away';
-  document.body.dataset.lmLayer = near ? layer : 'radar';
-  if (livingMapCtl && near) {
+  document.body.classList.toggle('lm-preauth', preauth);
+  document.body.classList.toggle('lm-shell-nav', LM_SHELL_NAV.has(viewId));
+  document.body.classList.toggle('lm-map-chrome', mapTab);
+  document.body.classList.toggle('lm-me', me);
+  document.body.dataset.lmWorld = preauth ? 'away' : 'near';
+  document.body.dataset.lmLayer = layer;
+  if (mapTab) state.lmReturnView = viewId;
+  if (livingMapCtl && mapTab) {
     livingMapCtl.setLayer(layer);
+    livingMapCtl.invalidate();
+  } else if (livingMapCtl && me) {
     livingMapCtl.invalidate();
   }
 }
@@ -1889,7 +1950,8 @@ function viewForConnectionState(st) {
 }
 function onEnter(id) {
   if (id === 'v-radar') {
-    sizeCanvas(); startRadar(); syncRadarEmpty();
+    if (!state.livingMap) { sizeCanvas(); startRadar(); }
+    syncRadarEmpty();
     if (state.livingMap) {
       if (livingMapCtl) livingMapCtl.invalidate();
       void (async function () {
@@ -1901,7 +1963,10 @@ function onEnter(id) {
     if (!state.offline) setPhase(state.radarActive ? 'available' : 'idle');
   }
   if (id === 'v-discover') {
-    if (state.livingMap) void refreshLivingMap();
+    if (state.livingMap) {
+      if (livingMapCtl) livingMapCtl.invalidate();
+      void refreshLivingMap();
+    }
     else renderDiscoverFromDots();
   }
   if (id === 'v-report') {
@@ -1909,7 +1974,10 @@ function onEnter(id) {
   }
   if (id === 'v-pulse') {
     void refreshPulseLive();
-    if (state.livingMap) void refreshLivingMap();
+    if (state.livingMap) {
+      if (livingMapCtl) livingMapCtl.invalidate();
+      void refreshLivingMap();
+    }
   }
   if (id === 'v-signal') {
     state.hasIncomingSignal = Boolean(state.signalId) || state.hasIncomingSignal;
@@ -2849,9 +2917,15 @@ document.addEventListener('focusin', (e) => {
   }, 50);
 });
 
-window.addEventListener('resize', () => { sizeCanvas(); startRadar(); syncVisualViewport(); });
+window.addEventListener('resize', () => {
+  sizeCanvas(); startRadar(); syncVisualViewport();
+  if (state.livingMap && livingMapCtl) livingMapCtl.invalidate();
+});
 window.addEventListener('orientationchange', () => {
-  setTimeout(() => { sizeCanvas(); startRadar(); syncVisualViewport(); }, 200);
+  setTimeout(() => {
+    sizeCanvas(); startRadar(); syncVisualViewport();
+    if (state.livingMap && livingMapCtl) livingMapCtl.invalidate();
+  }, 200);
 });
 
 /* P4 smoke — full client loop without engines/payments */
@@ -3488,6 +3562,7 @@ $('#otp-verify-btn') && $('#otp-verify-btn').addEventListener('click', async () 
 state.lang = readStoredLang();
 document.documentElement.lang = state.lang;
 applyLang();
+applyLivingMapFlag();
 sizeCanvas();
 startRadar();
 syncViewA11y(state.viewId || 'v-splash');
@@ -3511,22 +3586,15 @@ bootApi().then(() => {
 }).then(async () => {
   resumeAuthedFunnelIfNeeded();
   try {
-    const cfg = window.__WINGMAN_CONFIG__ || {};
     let serverOn;
     if (api && !api.useMock) {
       try {
         const live = await fetch((api.baseUrl || '') + '/internal/live', { headers: { Accept: 'application/json' } }).then(function (r) { return r.json(); });
         if (live && typeof live.livingMap === 'boolean') serverOn = live.livingMap;
-      } catch (_) { /* keep config / query */ }
+      } catch (_) { /* keep config / query — server may only roll back */ }
     }
-    const on = typeof WingmanLivingMap !== 'undefined' && WingmanLivingMap.resolveEnabled({
-      search: location.search,
-      configEnabled: cfg.livingMap === true,
-      serverEnabled: serverOn,
-    });
-    if (on) enableLivingMapUi();
-    else disableLivingMapUi();
-  } catch (_) { /* rollback canvas Radar */ }
+    applyLivingMapFlag(serverOn);
+  } catch (_) { /* keep last resolved surface */ }
   if (/[?&]smoke=1\b/.test(location.search)) runP4Smoke();
 });
 window.__wingmanRunP4Smoke = runP4Smoke;

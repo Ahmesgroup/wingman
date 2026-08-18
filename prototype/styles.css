@@ -807,7 +807,7 @@ body.field-test .brand-tag{letter-spacing:1.2px}
 .grow{flex:1}
 .hidden{display:none!important}
 
-/* ---- Living Map (default terrain; canvas Radar is rollback) ---- */
+/* ---- Living Map (authenticated shell; canvas Radar is emergency rollback only) ---- */
 .living-map-root{
   position:absolute;inset:0;z-index:0;display:none;flex-direction:column;
   pointer-events:none
@@ -931,29 +931,47 @@ body.field-test .brand-tag{letter-spacing:1.2px}
   cursor:pointer;font-size:12px;font-weight:700;color:var(--air);min-height:var(--touch-min);
   display:flex;align-items:center
 }
-body.living-map #living-map-root{display:block!important}
+body.living-map #living-map-root{display:block!important;visibility:visible}
+body.living-map.lm-preauth #living-map-root{visibility:hidden;pointer-events:none}
+body.living-map #radar-canvas,
+body.living-map .radar-shell,
+body.living-map #v-radar > .statusbar,
+body.living-map #v-radar > .topbar,
+body.living-map #v-radar > .radar-body,
+body.living-map #v-discover > .statusbar,
+body.living-map #v-discover > .topbar,
+body.living-map #v-discover > .body,
+body.living-map #v-pulse > .statusbar,
+body.living-map #v-pulse > .topbar,
+body.living-map #v-pulse > .body,
+body.living-map .view > .nav{display:none!important}
 body.living-map #v-radar{position:relative}
 body.living-map #pulse-legacy{display:none!important}
 body.living-map #pulse-live{display:block!important}
-body.living-map[data-lm-world="near"] #living-map-root{visibility:visible}
-body.living-map:not([data-lm-world="near"]) #living-map-root{visibility:hidden;pointer-events:none}
-body.living-map[data-lm-world="near"] #v-radar,
-body.living-map[data-lm-world="near"] #v-discover,
-body.living-map[data-lm-world="near"] #v-pulse{
+body.living-map .view.active{animation:none}
+body.living-map:not(.lm-preauth) #v-radar.view.active,
+body.living-map:not(.lm-preauth) #v-discover.view.active,
+body.living-map:not(.lm-preauth) #v-pulse.view.active{
   background:transparent;pointer-events:none
 }
-body.living-map[data-lm-world="near"] #v-radar > .statusbar,
-body.living-map[data-lm-world="near"] #v-radar > .topbar,
-body.living-map[data-lm-world="near"] #v-radar > .radar-body,
-body.living-map[data-lm-world="near"] #v-discover > .statusbar,
-body.living-map[data-lm-world="near"] #v-discover > .topbar,
-body.living-map[data-lm-world="near"] #v-discover > .body,
-body.living-map[data-lm-world="near"] #v-pulse > .statusbar,
-body.living-map[data-lm-world="near"] #v-pulse > .topbar,
-body.living-map[data-lm-world="near"] #v-pulse > .body{display:none!important}
-body.living-map[data-lm-world="near"] .view .nav{
-  pointer-events:auto;z-index:5;background:rgba(11,16,32,.78)
+body.living-map:not(.lm-preauth) .view.active:not(#v-radar):not(#v-discover):not(#v-pulse){
+  position:absolute;inset:0;z-index:6;background:var(--bg-primary);pointer-events:auto
 }
+body.living-map #lm-nav{
+  display:none;pointer-events:auto;z-index:5;background:rgba(11,16,32,.78)
+}
+body.living-map.lm-shell-nav #lm-nav{display:flex}
+body.living-map.lm-preauth #lm-nav{display:none!important}
+body.living-map:not(.lm-map-chrome) .lm-top,
+body.living-map:not(.lm-map-chrome) .lm-dock,
+body.living-map:not(.lm-map-chrome) .lm-empty,
+body.living-map:not(.lm-map-chrome) .lm-count,
+body.living-map:not(.lm-map-chrome) .lm-mood,
+body.living-map:not(.lm-map-chrome) .lm-discover-tray,
+body.living-map:not(.lm-map-chrome) .lm-pulse-panel,
+body.living-map:not(.lm-map-chrome) .lm-inbox,
+body.living-map:not(.lm-map-chrome) .lm-destiny-banner,
+body.living-map:not(.lm-map-chrome) .lm-loc{display:none!important}
 body.living-map #dot-sheet,body.living-map #lm-filter-sheet{z-index:8}
 body.living-map[data-lm-layer="radar"] #lm-discover-tray,
 body.living-map[data-lm-layer="radar"] #lm-pulse-panel,

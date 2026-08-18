@@ -80,8 +80,8 @@
         </div>
         <div class="lm-discover-tray hidden" id="lm-discover-tray" hidden></div>
         <div class="lm-pulse-panel hidden" id="lm-pulse-panel" hidden>
-          <p class="lead" id="lm-pulse-title" data-i18n="lm_quiet">Quiet around here</p>
-          <p class="small muted" id="lm-pulse-detail" data-i18n="lm_quiet_d">We’ll show you when a real opportunity appears nearby.</p>
+          <p class="lead" id="lm-pulse-title" data-i18n="lm_quiet">Quiet around you</p>
+          <p class="small muted" id="lm-pulse-detail" data-i18n="lm_quiet_d">We'll let you know when an opportunity appears nearby.</p>
           <details class="privacy-details">
             <summary data-i18n="pulse_privacy">How Pulse protects your privacy</summary>
             <p class="small muted mt-s" data-i18n="pulse_privacy_d">Wingman never shows your exact location. What’s around you stays approximate, and no one sees who you are from Pulse.</p>
@@ -89,8 +89,8 @@
           <div id="lm-pulse-stats"></div>
         </div>
         <div class="lm-empty hidden" id="lm-empty" role="status">
-          <b data-i18n="lm_quiet">Quiet around here</b>
-          <p data-i18n="lm_quiet_d">We’ll show you when a real opportunity appears nearby.</p>
+          <b data-i18n="lm_quiet">Quiet around you</b>
+          <p data-i18n="lm_quiet_d">We'll let you know when an opportunity appears nearby.</p>
         </div>
         <div class="lm-loc hidden" id="lm-loc" role="status"></div>
         <div class="lm-dock">
@@ -100,6 +100,7 @@
             <button type="button" class="lm-fab" id="lm-recenter-btn" data-i18n="lm_recenter">Recenter</button>
           </div>
         </div>
+        <nav class="nav" id="lm-nav" data-navbar hidden></nav>
       </div>
 
       <!-- 1. SPLASH -->
@@ -278,7 +279,7 @@
         </div>
       </section>
 
-      <!-- 6/7. RADAR (canvas rollback). Living Map is the default terrain behind this view. -->
+      <!-- 6/7. RADAR — Living Map is the certified shell. Canvas exists only for emergency rollback (?radar=canvas / flag false). -->
       <section class="view" id="v-radar" data-nav="radar">
         <div class="statusbar"><span class="time">21:49</span><span>Wingman</span></div>
         <div class="topbar"><div class="logo">WING<b>MAN</b></div><div class="subtitle" data-i18n="radar_sub">Around you</div></div>
@@ -338,8 +339,8 @@
           <p class="lead mb" id="discover-lead" data-i18n="discover_lead">People already near you — only what’s real right now.</p>
           <div id="discover-list"></div>
           <div class="empty-state hidden" id="discover-empty">
-            <b data-i18n="lm_quiet">Quiet around here</b>
-            <p data-i18n="lm_quiet_d">We’ll show you when a real opportunity appears nearby.</p>
+            <b data-i18n="lm_quiet">Quiet around you</b>
+            <p data-i18n="lm_quiet_d">We'll let you know when an opportunity appears nearby.</p>
           </div>
         </div>
         <nav class="nav" data-navbar></nav>
@@ -505,8 +506,8 @@
         <div class="topbar"><div class="logo">WING<b>MAN</b></div><div class="subtitle" data-i18n="pulse_sub">What’s happening around you</div></div>
         <div class="body pad">
           <div id="pulse-live">
-            <p class="lead mb" id="pulse-title" data-i18n="lm_quiet">Quiet around here</p>
-            <p class="small muted" id="pulse-detail" data-i18n="lm_quiet_d">We’ll show you when a real opportunity appears nearby.</p>
+            <p class="lead mb" id="pulse-title" data-i18n="lm_quiet">Quiet around you</p>
+            <p class="small muted" id="pulse-detail" data-i18n="lm_quiet_d">We'll let you know when an opportunity appears nearby.</p>
             <details class="privacy-details">
               <summary data-i18n="pulse_privacy">How Pulse protects your privacy</summary>
               <p class="small muted mt-s" data-i18n="pulse_privacy_d">Wingman never shows your exact location. What’s around you stays approximate, and no one sees who you are from Pulse.</p>

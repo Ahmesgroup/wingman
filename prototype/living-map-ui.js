@@ -20,6 +20,7 @@
     opts = opts || {};
     var LM = global.WingmanLivingMap;
     var map = null;
+    var instanceId = 0;
     var userMarker = null;
     var layerGroup = null;
     var pulseGroup = null;
@@ -57,6 +58,7 @@
 
     function init() {
       if (map || !ready()) return map;
+      instanceId += 1;
       map = global.L.map(opts.el, {
         zoomControl: false,
         attributionControl: true,
@@ -190,6 +192,7 @@
     }
 
     function setLayer(next) {
+      /* Overlay change only — never remount the Leaflet instance. */
       var name = next === 'discover' || next === 'pulse' ? next : 'radar';
       if (layer === name) {
         renderMarkers();
@@ -220,6 +223,7 @@
       pulseGroup = null;
       markers = [];
       zones = [];
+      instanceId = 0;
     }
 
     return {
@@ -234,6 +238,7 @@
       getMarkers: function () { return markers; },
       getZones: function () { return zones; },
       getLayer: function () { return layer; },
+      getInstanceId: function () { return instanceId; },
       getSelectedId: function () { return selectedId; },
       moodLabel: moodLabel,
       bandLabel: bandLabel,
