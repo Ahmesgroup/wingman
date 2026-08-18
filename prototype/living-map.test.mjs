@@ -278,4 +278,43 @@ describe('living-map P0 actionability', () => {
     assert.doesNotMatch(send, /sendSignal\([\s\S]*lat:/);
     assert.match(app, /selectionFromMarker/);
   });
+
+  it('sheet Say hello does not open camera or bind selfie media (V3.1 order)', () => {
+    const sendStart = app.indexOf("$('#send-signal-btn').addEventListener('click'");
+    const send = app.slice(sendStart, app.indexOf("/* ------------------------------------------------------- radar toggle/mood"));
+    assert.equal(LM.sayHelloOpensCamera(), false);
+    assert.doesNotMatch(send, /startSelfieCamera\(/);
+    assert.doesNotMatch(send, /getUserMedia/);
+    assert.doesNotMatch(send, /uploadSelfieMedia/);
+    assert.doesNotMatch(send, /api\.selfie\(/);
+    assert.doesNotMatch(send, /show\('v-selfie'\)/);
+    assert.match(send, /ensureRealtime/);
+    assert.match(html, /id="selfie-video"/);
+    assert.match(app, /getUserMedia/);
+  });
+
+  it('accept / match.created leads A to the live selfie screen', () => {
+    assert.equal(LM.selfieLeadView('WAITING_FOR_INITIATOR_SELFIE', 'v-radar'), 'v-selfie');
+    assert.equal(LM.selfieLeadView('WAITING_FOR_INITIATOR_SELFIE', 'v-discover'), 'v-selfie');
+    assert.equal(LM.selfieLeadView('WAITING_FOR_RECIPIENT_SELFIE', 'v-pulse'), 'v-selfie');
+    assert.equal(LM.selfieLeadView('WAITING_FOR_INITIATOR_APPROVAL', 'v-settings'), 'v-selfie');
+    assert.equal(LM.selfieLeadView('WAITING_FOR_INITIATOR_SELFIE', 'v-selfie'), null);
+    assert.equal(LM.selfieLeadView('WAITING_FOR_INITIATOR_SELFIE', 'v-phone'), null);
+    assert.equal(LM.selfieLeadView('WAITING_FOR_INITIATOR_SELFIE', 'v-report'), null);
+    assert.equal(LM.selfieLeadView('PENDING', 'v-radar'), null);
+    assert.equal(LM.selfieLeadView('MISSION_MEET_ACTIVE', 'v-radar'), null);
+    assert.match(app, /function leadToProtocolSelfie/);
+    assert.match(app, /leadToProtocolSelfie\(p\.state\)/);
+    assert.match(app, /env\.type === 'match\.created'/);
+    const enterSelfie = app.slice(app.indexOf("if (id === 'v-selfie')"), app.indexOf("if (id === 'v-confirmed')"));
+    assert.match(enterSelfie, /startSelfieCamera/);
+  });
+
+  it('attribution sits above the presence CTA and keeps 44px hit targets', () => {
+    assert.match(css, /bottom:calc\(128px \+ var\(--safe-bottom\)\)/);
+    assert.match(css, /\.lm-dock\{[^}]*bottom:calc\(72px \+ var\(--safe-bottom\)\)/);
+    assert.match(ui, /var HIT = 44/);
+    assert.match(css, /min-width:44px/);
+    assert.match(css, /min-height:44px/);
+  });
 });

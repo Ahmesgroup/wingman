@@ -822,7 +822,7 @@ body.field-test .brand-tag{letter-spacing:1.2px}
 }
 .lm-attrib{
   position:absolute;left:12px;right:auto;top:auto;
-  bottom:calc(120px + var(--safe-bottom));
+  bottom:calc(128px + var(--safe-bottom));
   z-index:4;pointer-events:auto;
   font-size:9px;line-height:1.35;font-weight:500;
   max-width:min(168px,40vw);
@@ -1029,7 +1029,7 @@ body.living-map:not([data-lm-count="0"]) #lm-empty{display:none!important}
   .lm-loc{bottom:calc(156px + var(--safe-bottom))}
   .lm-discover-tray,.lm-pulse-panel{bottom:calc(148px + var(--safe-bottom));max-height:22vh}
   .lm-destiny-banner{bottom:calc(148px + var(--safe-bottom))}
-  .lm-attrib{bottom:calc(112px + var(--safe-bottom));top:auto;max-width:min(150px,38vw)}
+  .lm-attrib{bottom:calc(120px + var(--safe-bottom));top:auto;max-width:min(150px,38vw)}
   body.living-map .nav{z-index:5}
   body.living-map .sheet{z-index:8}
 }

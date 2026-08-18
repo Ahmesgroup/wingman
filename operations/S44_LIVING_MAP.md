@@ -38,6 +38,24 @@ Do not re-enable Leaflet's default `attributionControl` prefix. Keep the three t
 
 Radar opportunities → privacy-safe markers (`candidateId` / `userId` opaque) → 44px hit target → compact sheet → existing `POST /signals`. Selfie remains the next protocol artefact after Signal/Connection — not merged into Signal.
 
+## Say hello protocol handoff (this sprint)
+
+**What “Say hello” / “Dire bonjour” does on Production:** it starts the canonical **V3.1** engine — `POST /signals` with opaque `receiverId`. It does **not** open the live camera, upload media, or bind a selfie.
+
+| Step | Actor | Existing operation |
+|------|--------|-------------------|
+| 1 | A taps marker | compact sheet (`data-candidate-id` opaque) |
+| 2 | A taps Say hello | `POST /signals` `{ receiverId, source: 'RADAR' }` |
+| 3 | B | `signal.received` without refresh (S29) |
+| 4 | B opens / accepts | Connection `WAITING_FOR_INITIATOR_SELFIE` (`match.created`) |
+| 5 | A is led to `v-selfie` | live `getUserMedia` (existing selfie screen) |
+| 6 | A sends photo | `POST /connections/:id/media` then `POST /connections/:id/selfie` |
+| 7 | B selfie → A approves | existing Connection transitions → Mutual → Mission |
+
+**“Selfie Signal” as camera-before-signal** remains **S35**, `PRODUCT_PROTOCOL_V2_ENABLED=false`, **OFF**. Human copy may say “Say hello” without changing API order. No Signal / selfie-media / Connection domain merge.
+
+**PRODUCT PROTOCOL READY = NO.** Two-phone Evidence Pack = **NOT RUN**.
+
 ## Visual language (global polish)
 
 Dark desaturated Carto `dark_nolabels` terrain, translucent (not frosted) overlays, progressive disclosure. Mood is behind presence tap. Discover tray is two rows. Pulse privacy sits in `<details>`. Canvas Radar remains rollback until real-device review — not a second product.

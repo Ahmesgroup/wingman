@@ -1103,8 +1103,10 @@ $('#send-signal-btn').addEventListener('click', async () => {
         state.peerId = targetId;
         state.signalsLeft = Math.max(0, state.signalsLeft - 1);
         syncSignalsChrome();
+        persistSession();
       });
-      // Sender stays on Radar — recipient gets signal.received over realtime.
+      // V3.1: Say hello creates the Signal only. Live capture waits for accept.
+      ensureRealtime();
       setPhase('available', t('t_phase_available'));
       feedback('signal', t('t_signal_sent'));
       return;
@@ -1980,6 +1982,23 @@ function viewForConnectionState(st) {
   if (st === 'COMPLETED' || st === 'EXPIRED' || st === 'CANCELLED' || st === 'BLOCKED' || st === 'FAILED') return 'v-radar';
   return null;
 }
+
+/** Live camera after accept — never before POST /signals. */
+function leadToProtocolSelfie(connectionState) {
+  if (!state.connectionId) return;
+  const LM = typeof WingmanLivingMap !== 'undefined' ? WingmanLivingMap : null;
+  let next = null;
+  if (LM && typeof LM.selfieLeadView === 'function') {
+    next = LM.selfieLeadView(connectionState, state.viewId);
+  } else if (
+    connectionState === 'WAITING_FOR_INITIATOR_SELFIE' ||
+    connectionState === 'WAITING_FOR_RECIPIENT_SELFIE' ||
+    connectionState === 'WAITING_FOR_INITIATOR_APPROVAL'
+  ) {
+    if (state.viewId !== 'v-selfie') next = 'v-selfie';
+  }
+  if (next) show(next);
+}
 function onEnter(id) {
   if (id === 'v-radar') {
     if (!state.livingMap) { sizeCanvas(); startRadar(); }
@@ -2149,6 +2168,7 @@ async function refreshConnectionUi(opts) {
   if (opts.route) {
     const target = viewForConnectionState(st);
     const protocol = ['v-selfie', 'v-confirmed', 'v-ticket', 'v-mission-meet', 'v-mission-mode', 'v-outcome', 'v-cooldown'];
+    leadToProtocolSelfie(st);
     if (target && target !== state.viewId && protocol.indexOf(state.viewId) !== -1 && state.viewId !== 'v-confirmed') {
       show(target);
     }
@@ -3319,7 +3339,9 @@ function handleRealtimeEvent(env) {
     if (p.connectionId) state.connectionId = p.connectionId;
     if (p.state) state.connectionState = p.state;
     if (realtime && state.connectionId) realtime.subscribeConnection(state.connectionId);
-    void refreshConnectionUi();
+    persistSession();
+    leadToProtocolSelfie(p.state);
+    void refreshConnectionUi({ route: true });
     if (p.state === 'MISSION_MEET_ACTIVE' && state.viewId !== 'v-mission-meet') {
       feedback('mission', t('t_mission_active'));
       haptic('mission');

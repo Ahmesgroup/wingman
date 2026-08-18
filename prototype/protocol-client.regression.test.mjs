@@ -47,6 +47,9 @@ assert(src.includes("if (p.senderId) state.peerId = p.senderId;"), 'recipient pe
 assert(src.includes('scheduleRadarRefresh'), 'debounced radar.changed refresh missing');
 assert(src.includes("feedback('signal', t('t_signal_received'))"), 'incoming Signal toast missing');
 assert(src.includes("announce(t('t_signal_received'))"), 'incoming Signal a11y announce missing');
+assert(src.includes('function leadToProtocolSelfie'), 'initiator selfie lead after accept missing');
+assert(src.includes('leadToProtocolSelfie(p.state)'), 'match.created must lead to selfie screen');
+assert(fs.readFileSync(path.join(__dirname, 'living-map.js'), 'utf8').includes('sayHelloOpensCamera'), 'S35 camera-before-signal helper missing');
 assert(src.includes("env.type === 'radar.changed'"), 'radar.changed handler missing');
 assert(src.includes('scheduleRadarRefresh()'), 'block/radar realtime refresh missing');
 assert(fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8').includes('id="set-safety-btn"'), 'Me Safety button missing');

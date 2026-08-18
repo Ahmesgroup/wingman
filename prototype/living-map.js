@@ -234,6 +234,43 @@
   }
 
   /**
+   * S35 “Selfie Signal” (camera before POST /signals) stays OFF.
+   * Production Say hello is V3.1: create Signal, then live camera after accept.
+   */
+  function sayHelloOpensCamera() {
+    return false;
+  }
+
+  var SELFIE_LEAD_STATES = {
+    WAITING_FOR_INITIATOR_SELFIE: true,
+    WAITING_FOR_RECIPIENT_SELFIE: true,
+    WAITING_FOR_INITIATOR_APPROVAL: true,
+  };
+  var SELFIE_LEAD_HOLD_VIEWS = {
+    'v-splash': true,
+    'v-onboard1': true,
+    'v-onboard2': true,
+    'v-onboard3': true,
+    'v-phone': true,
+    'v-otp': true,
+    'v-profile': true,
+    'v-consent': true,
+    'v-report': true,
+    'v-report-done': true,
+  };
+
+  /**
+   * When the Connection machine is in a selfie window, lead the actor to v-selfie
+   * (live getUserMedia). Null if already there, not a selfie state, or auth/report hold.
+   */
+  function selfieLeadView(connectionState, currentViewId) {
+    if (!SELFIE_LEAD_STATES[connectionState]) return null;
+    if (currentViewId === 'v-selfie') return null;
+    if (SELFIE_LEAD_HOLD_VIEWS[currentViewId]) return null;
+    return 'v-selfie';
+  }
+
+  /**
    * Protocol selection — opaque ids only. Display lat/lng are never sent onward.
    */
   function selectionFromMarker(marker) {
@@ -274,6 +311,8 @@
     emptyStateVisible: emptyStateVisible,
     countChromeVisible: countChromeVisible,
     emptyCountMutuallyExclusive: emptyCountMutuallyExclusive,
+    sayHelloOpensCamera: sayHelloOpensCamera,
+    selfieLeadView: selfieLeadView,
     selectionFromMarker: selectionFromMarker,
   };
 });
