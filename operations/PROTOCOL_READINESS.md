@@ -1,7 +1,7 @@
 # Protocol readiness — PRODUCT PROTOCOL READY
 
 **Status:** **NO**  
-**Updated:** 2026-08-17  
+**Updated:** 2026-08-18  
 **Surfaces:** https://wingman-prototype.vercel.app/ · https://wingman-api-three.vercel.app/
 
 Destiny OFF · Payments OFF · No fake public peers · No `x-user-id` on public prod.
@@ -56,7 +56,7 @@ still required. **PRODUCT PROTOCOL READY = NO.**
 |------|--------------|---------|-------|----------|-------------------|------------|---------|
 | REAL OTP | `api.js` Bearer + device | `POST /auth/otp/*` Twilio Verify | Auth sessions | n/a | Session tokens in LS | No SMS claim when field-test; prod claims SMS via Twilio | **PASS wire** / Evidence Pack **NOT STARTED** |
 | REAL PROFILE | `#profile-next-btn` → `POST /me/profile` | `GET/POST /me` | Engine + mirror (`ProtocolIdentity`) | none | **Durability GO (infra)** | Removed `data-go` skip | **PASS wire** / durable **GO (infra)** |
-| REAL RADAR | `radarActivate` + `candidatesToDots` | `/radar/*` | Presence ephemeral (Redis target) | `radar.changed` | Must re-activate | Ghost dots removed | **PASS alone=0** / geo hardcode remains |
+| REAL RADAR | `radarActivate` + geolocation + heartbeat + `candidatesToDots` | `/radar/*` | Presence ephemeral (Redis target) | `radar.changed` | Heartbeat while tab foreground | Ghost dots removed | **PASS wire** / Evidence Pack NOT STARTED |
 | REAL SIGNAL | send as self; receive via WS | `/signals` | Engine + mirror | `signal.received` | Durability IN PROGRESS | Sender no longer fakes incoming | **PASS wire** / Evidence Pack NOT STARTED |
 | REAL SELFIE A/B | camera → private upload → opaque `mediaId` | `POST .../media` + `POST .../selfie` + authorized `GET .../media/:id` | private Blob + Connection | `validation.updated` | Connection id | Peer impersonation gated to lab | **WIRED (infra)** / Evidence Pack **NOT STARTED** |
 | REAL MUTUAL | approve as initiator | `POST .../approve` | Connection | `validation.updated` | if durable | — | **PASS wire** |
@@ -82,7 +82,7 @@ still required. **PRODUCT PROTOCOL READY = NO.**
 | S27B | **OPEN** — Twilio configured; SMS evidence later |
 | S28 | **GO (infra)** — Neon + Upstash; fail-closed; ready=prisma/redis/postgres; durability cert passed |
 | S29 | **PARTIAL wire** — Redis live; multi-phone Evidence Pack later |
-| S30 | **PARTIAL** — hardcoded Luxembourg coords remain |
+| S30 | **WIRED (client)** — browser geolocation (fail closed) + `/radar/heartbeat` while tab foreground; Evidence Pack later |
 | S31 | **WIRED (infra)** — `@wingman/media` + Vercel Blob private; Evidence Pack NOT STARTED |
 | S32 | **QUEUED / BLOCKED** upstream |
 | S33 | **PARTIAL wire** — Mission Meet Report & block posts to `/safety/report` + `/safety/block`; Evidence Pack row 19 later |

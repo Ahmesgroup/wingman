@@ -12,8 +12,10 @@ locations, or selfies.
 
 1. Recruit two people, called **A** and **B** below. Each needs their own phone number and phone. Use different browsers
    or PWA installs only if each person is still using their own phone.
-2. Put both people in the same safe public place, roughly 10–50 metres apart. Turn on mobile data/Wi-Fi and location
-   permission for the site. Keep the page open for the entire run unless a row says to close it.
+2. Put both people in the same safe public place, roughly 10–50 metres apart. Turn on mobile data/Wi-Fi. When the
+   browser asks for location, **allow approximate location**. If location is denied, **Go active** stays off and nobody
+   appears nearby — that is expected (fail closed), not a Radar defect. Keep the page **in the foreground** for the
+   entire run unless a row says to close it (presence lasts about two minutes without a foreground heartbeat).
 3. Each person opens the public URL above, then records their device model, OS, and browser/PWA in the table.
 4. Agree on neutral test profile names (for example, “A” and “B”). Do not enter contact details, real addresses, or
    sensitive information in profile or chat.
@@ -30,7 +32,7 @@ locations, or selfies.
 | 3 | A completes and saves a minimal profile, closes the browser/PWA completely, then opens the public URL again. | A is still signed in and the saved profile is still present. | | | | |
 | 4 | B repeats step 3. | B is still signed in and the saved profile is still present. | | | | |
 | 5 | Each accepts the displayed consent and continues to Radar. With the keyboard open on any form, use the visible next/save control. | The control is visible and works; neither person is blocked by the keyboard. Default Radar is the canvas (not Living Map). | | | | |
-| 6 | Keep B out of Radar (do not tap Go active). A taps **Go active** and waits up to one minute. | A sees the empty-state wording and **0 nearby people**; no invented person appears. | | | | |
+| 6 | Keep B out of Radar (do not tap Go active). A allows location if asked, taps **Go active**, and waits up to one minute. | A sees the empty-state wording and **0 nearby people**; no invented person appears. If A denied location, A stays invisible and still sees 0 nearby. | | | | |
 | 7 | B taps **Go active** at the agreed nearby location. A and B each wait up to one minute without refreshing. | Each sees only the other eligible participant (1 nearby); no extra or stale person appears. | | | | |
 | 8 | B taps **Go invisible**. A does not refresh. | A returns to empty-state / **0 nearby**; B has disappeared. | | | | |
 | 9 | B taps **Go active** again. A and B wait up to one minute without refreshing. | Each sees only the other again (1 nearby). | | | | |

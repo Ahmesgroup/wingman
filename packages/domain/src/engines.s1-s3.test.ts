@@ -29,6 +29,20 @@ describe("S1 presence", () => {
     expect(engine.presence.get("b")?.online).toBe(false);
     expect(() => engine.getCandidates("a")).toThrow();
   });
+
+  it("heartbeat before TTL keeps radar-visible presence", () => {
+    const clock = new FakeClock(new Date("2026-08-08T09:00:00.000Z"));
+    const engine = new WingmanEngine({ clock });
+    seedPair(engine);
+    engine.activateRadar("a", { lat: 48.8566, lng: 2.3522 });
+    engine.activateRadar("b", { lat: 48.8567, lng: 2.3523 });
+    clock.advanceMs(WINDOWS_MS.PRESENCE_TTL - 1_000);
+    engine.heartbeat("a");
+    engine.heartbeat("b");
+    clock.advanceMs(2_000);
+    expect(engine.getCandidates("a")).toHaveLength(1);
+    expect(engine.getCandidates("b")[0].userId).toBe("a");
+  });
 });
 
 describe("S2 radar privacy", () => {

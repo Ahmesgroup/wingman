@@ -18,6 +18,11 @@ already near each other — or who repeatedly cross paths through Destiny Connec
 - Two-phone Evidence Pack: **NOT STARTED / BLOCKED** (next human gate after S28 infra). [`EVIDENCE_PACK_TWO_PHONE.md`](./EVIDENCE_PACK_TWO_PHONE.md).
 - Mission Meet **Report & block** now posts `/safety/report` then `/safety/block` (was a local screen only). That does not fill Evidence Pack row 19.
 
+### 2026-08-18 engineering note (honest)
+
+- **S30 client wire:** public Radar **Go active** requests coarse browser geolocation (`enableHighAccuracy: false`) and **fails closed** if denied/unavailable — no Luxembourg fallback, no fake nearby. Presence **heartbeat** posts `POST /radar/heartbeat` about every 40s while the tab is foreground (Redis/domain TTL remains 120s).
+- Living Map remains **off** by default (`WINGMAN_LIVING_MAP_V1` false). **PRODUCT PROTOCOL READY = NO** until the two-phone Evidence Pack.
+
 ## Phase change
 
 ```text

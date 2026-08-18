@@ -21,7 +21,7 @@ assert(src.includes('profile-next-btn'), 'profile CTA wire missing');
 assert(src.includes('consent-cta-btn'), 'consent CTA wire missing');
 assert(src.includes('Make the first acquaintance easy'), 'locked primary tagline missing from public onboarding');
 assert(src.includes('Love is in the air.'), 'secondary emotional slogan missing from public onboarding');
-assert(src.includes('first real-world interaction'), 'supporting description missing from public onboarding');
+assert(src.includes('Wingman makes it easy to say hello to someone already near you.'), 'locked splash supporting line missing');
 assert(!src.includes('From presence to hello'), 'superseded positioning remains in public onboarding');
 assert(src.includes('await api.report(body);'), 'report API wire missing');
 assert(src.includes('await api.block({ userId: state.peerId });'), 'block API wire missing');
@@ -49,6 +49,12 @@ for (const line of lines) {
 assert(fs.existsSync(path.join(__dirname, 'realtime.js')), 'realtime.js missing');
 assert(fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8').includes('profile-next-btn'), 'html profile CTA');
 assert(fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8').includes('consent-cta-btn'), 'html consent CTA');
+assert(fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8').includes('consent-back-btn'), 'consent back missing');
+assert(fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8').includes('set-consent-btn'), 'Me consent entry missing');
 assert(!fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8').includes('data-go="v-consent"'), 'profile still data-go');
+assert(fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8').includes("/radar/heartbeat"), 'radarHeartbeat client missing');
+assert(src.includes('startPresenceHeartbeat'), 'presence heartbeat loop missing');
+assert(src.includes('requestViewerLocation'), 'browser geolocation wire missing');
+assert(!/\$\('#radar-toggle'\)[\s\S]*?49\.6116/.test(src), 'Go active still hardcodes Luxembourg');
 
 console.log('protocol-client.regression.test.mjs: ok');

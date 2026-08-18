@@ -214,6 +214,7 @@
           </div>
         </div>
         <div class="form-footer">
+          <button type="button" class="btn btn-ghost hidden" id="consent-back-btn" data-i18n="consent_back">Back</button>
           <button type="button" class="btn btn-primary" id="consent-cta-btn" data-i18n="consent_cta">Agree & go nearby</button>
         </div>
       </section>
@@ -548,7 +549,7 @@
             <div class="row"><span data-i18n="set_photo">Photos</span><span class="v" data-i18n="set_photo_v">Only shared during a connection</span></div>
             <div class="row"><span data-i18n="set_loc">Location</span><span class="v" data-i18n="set_loc_v">Your exact location is never shown</span></div>
             <div class="row"><span id="lbl-destiny" data-i18n="set_destiny">Let Wingman notice repeated crossings without showing where they happened.</span><div class="switch" role="switch" aria-checked="false" tabindex="0" aria-labelledby="lbl-destiny"></div></div>
-            <button type="button" class="report-opt" data-go="v-consent" data-i18n="set_consent_manage">Data & consent — Manage what Wingman can use</button>
+            <button type="button" class="report-opt" id="set-consent-btn" data-i18n="set_consent_manage">Data & consent — Manage what Wingman can use</button>
           </div>
           <div class="set-block">
             <div class="eyebrow mb" data-i18n="set_safety">Safety</div>
@@ -646,6 +647,8 @@
 <script src="api.js"></script>
 <script src="realtime.js"></script>
 <script src="radar-dots.js"></script>
+<script src="presence-geo.js"></script>
+<script src="presence-heartbeat.js"></script>
 <script src="living-map.js"></script>
 <script src="living-map-ui.js"></script>
 <script src="payments/payment-types.js"></script>

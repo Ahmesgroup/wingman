@@ -320,16 +320,22 @@ function syncRadarEmpty() {
   if (dist) dist.classList.toggle('hidden', empty);
   const emptyEl = $('#radar-empty');
   if (emptyEl) {
-    emptyEl.textContent = state.radarActive ? t('empty_radar_alone') : t('empty_radar');
+    if (!state.radarActive && (state.locState === 'denied' || state.locState === 'unavailable')) {
+      emptyEl.textContent = t(state.locState === 'denied' ? 'lm_loc_denied' : 'lm_loc_off');
+    } else {
+      emptyEl.textContent = state.radarActive ? t('empty_radar_alone') : t('empty_radar');
+    }
   }
   syncRadarA11yList();
 }
 
 function viewerCoords() {
-  if (state.viewerLoc && Number.isFinite(state.viewerLoc.lat) && Number.isFinite(state.viewerLoc.lng)) {
+  const Geo = typeof WingmanPresenceGeo !== 'undefined' ? WingmanPresenceGeo : null;
+  if (Geo) return Geo.activateLocation(state.viewerLoc, state.locState);
+  if (state.viewerLoc && Number.isFinite(state.viewerLoc.lat) && Number.isFinite(state.viewerLoc.lng) && state.locState === 'granted') {
     return state.viewerLoc;
   }
-  return { lat: 49.6116, lng: 6.1319 };
+  return null;
 }
 
 function setNearbyCount(n) {
@@ -484,6 +490,7 @@ const I18N = {
     c_core: 'Use Wingman', c_core_d: 'Needed so Wingman can introduce you to people nearby.', c_loc: 'Approximate location', c_loc_d: 'Nearby only — your exact location is never shown.',
     c_destiny: 'Notice repeated crossings', c_destiny_d: 'Off by default. Wingman never shows where they happened.', c_push: 'Notifications', c_push_d: 'When someone nearby reaches out, or a meeting is confirmed.',
     c_analytics: 'Help improve Wingman', c_analytics_d: 'Optional. Anonymous product insights only.', consent_cta: 'Agree & go nearby',
+    consent_back: 'Back', consent_save: 'Save',
     radar_sub: 'Around you', radar_invisible: 'Invisible', radar_active: 'Available', radar_dist: 'Someone very close · Nearby', radar_activate: 'Go active', radar_deactivate: 'Go invisible',
     mood_ready: 'Super ready', mood_open: 'Open', mood_explore: 'Unsure', mood_ready_d: 'Meet now', mood_open_d: "If it's right", mood_explore_d: 'Just exploring', mood_title: 'Your mood',
     stat_signals: 'Signals left', stat_nearby: 'Nearby', stat_tickets: 'Held connections',
@@ -570,6 +577,7 @@ const I18N = {
     c_core: 'Utiliser Wingman', c_core_d: 'Nécessaire pour vous présenter aux personnes déjà près de vous.', c_loc: 'Localisation approximative', c_loc_d: 'À proximité seulement — votre position exacte n’est jamais montrée.',
     c_destiny: 'Repérer les croisements répétés', c_destiny_d: 'Désactivé par défaut. Wingman ne montre jamais où cela s’est passé.', c_push: 'Notifications', c_push_d: 'Quand quelqu’un près de vous se manifeste, ou qu’une rencontre est confirmée.',
     c_analytics: 'Aider à améliorer Wingman', c_analytics_d: 'Optionnel. Aperçus anonymes uniquement.', consent_cta: 'Accepter et voir autour de moi',
+    consent_back: 'Retour', consent_save: 'Enregistrer',
     radar_sub: 'Autour de vous', radar_invisible: 'Invisible', radar_active: 'Disponible', radar_dist: 'Quelqu\'un très proche · À proximité', radar_activate: 'Me rendre visible', radar_deactivate: 'Devenir invisible',
     mood_ready: 'Prêt·e', mood_open: 'Ouvert·e', mood_explore: 'Incertain·e', mood_ready_d: 'Se voir maintenant', mood_open_d: 'Si c\'est le bon', mood_explore_d: 'Juste explorer', mood_title: 'Votre humeur',
     stat_signals: 'Signaux restants', stat_nearby: 'À proximité', stat_tickets: 'Rencontres en attente',
@@ -676,6 +684,7 @@ function applyLang() {
   if (rs) rs.textContent = state.radarActive ? dict.radar_active : dict.radar_invisible;
   const tog = $('#radar-toggle');
   if (tog) tog.textContent = state.radarActive ? dict.radar_deactivate : dict.radar_activate;
+  if (typeof syncConsentChrome === 'function') syncConsentChrome();
   if (typeof applyFieldTestAuthCopy === 'function') applyFieldTestAuthCopy();
   if (typeof refreshBirthMonthLabels === 'function') refreshBirthMonthLabels();
   if (typeof syncLivingMapPresence === 'function') syncLivingMapPresence();
@@ -939,7 +948,12 @@ $('#send-signal-btn').addEventListener('click', async () => {
   if (liveApi()) {
     try {
       await withLoading(t('t_loading'), async () => {
-        const loc = viewerCoords();
+        const loc = await requestViewerLocation();
+        if (!loc) {
+          const err = new Error('LOCATION_REQUIRED');
+          err.code = 'LOCATION_REQUIRED';
+          throw err;
+        }
         await api.radarActivate({ lat: loc.lat, lng: loc.lng, visibility: 'ACTIVE' });
         const res = await api.sendSignal(
           { receiverId: targetId, source: 'RADAR' },
@@ -954,7 +968,11 @@ $('#send-signal-btn').addEventListener('click', async () => {
       setPhase('available', t('t_phase_available'));
       feedback('signal', t('t_signal_sent'));
       return;
-    } catch (_) {
+    } catch (e) {
+      if (e && e.code === 'LOCATION_REQUIRED') {
+        feedback('busy', t((typeof WingmanPresenceGeo !== 'undefined' && WingmanPresenceGeo.locMessageKey(state.locState)) || 'lm_loc_off'));
+        return;
+      }
       feedback('error', t('t_api_unreachable'));
       return;
     }
@@ -972,18 +990,29 @@ $('#radar-toggle').addEventListener('click', async () => {
     try {
       if (next) {
         await withLoading(t('t_loading'), async () => {
-          const loc = viewerCoords();
+          const loc = await requestViewerLocation();
+          if (!loc) {
+            const err = new Error('LOCATION_REQUIRED');
+            err.code = 'LOCATION_REQUIRED';
+            throw err;
+          }
           await api.radarActivate({ lat: loc.lat, lng: loc.lng, visibility: 'ACTIVE' });
           const cands = await api.radarCandidates();
           applyRadarCandidates(cands);
         });
       } else {
         await withLoading(t('t_loading'), async () => {
+          stopPresenceHeartbeat();
           await api.radarDeactivate();
           clearRadarDots();
         });
       }
     } catch (e) {
+      if (e && e.code === 'LOCATION_REQUIRED') {
+        feedback('busy', t((typeof WingmanPresenceGeo !== 'undefined' && WingmanPresenceGeo.locMessageKey(state.locState)) || 'lm_loc_off'));
+        syncRadarEmpty();
+        return;
+      }
       if (e && e.code === 'UNAUTHORIZED') {
         clearProtoSession();
         try { api.clearSession(); } catch (_) { /* ignore */ }
@@ -1010,6 +1039,8 @@ $('#radar-toggle').addEventListener('click', async () => {
   if (state.livingMap) void refreshLivingMap();
   setPhase(state.radarActive ? 'available' : 'idle');
   feedback(state.radarActive ? 'success' : 'offline', state.radarActive ? t('t_active') : t('t_invisible'));
+  if (state.radarActive) startPresenceHeartbeat();
+  else stopPresenceHeartbeat();
 });
 $('#mood-select').addEventListener('click', e => {
   const b = e.target.closest('.mood-btn'); if (!b) return;
@@ -1019,7 +1050,6 @@ $('#mood-select').addEventListener('click', e => {
 });
 
 /* ------------------------------------------------------------- Living Map */
-const LM_FALLBACK = { lat: 49.6116, lng: 6.1319 };
 let livingMapCtl = null;
 let livingMapRefreshTimer = null;
 const lmFilterState = { proximity: [], presence: [], intention: [], interests: [] };
@@ -1103,34 +1133,109 @@ function setLocBanner(msg) {
 
 function requestViewerLocation() {
   return new Promise(function (resolve) {
-    const local = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
     if (state.offline) {
       state.locState = 'offline';
       setLocBanner(t('lm_offline'));
-      resolve(state.viewerLoc || (local ? LM_FALLBACK : null));
+      syncRadarEmpty();
+      resolve(null);
       return;
     }
     if (!navigator.geolocation) {
       state.locState = 'unavailable';
       setLocBanner(t('lm_loc_off'));
-      resolve(local ? LM_FALLBACK : state.viewerLoc);
+      syncRadarEmpty();
+      resolve(null);
       return;
     }
     navigator.geolocation.getCurrentPosition(
       function (pos) {
         state.locState = 'granted';
-        state.viewerLoc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        const Geo = typeof WingmanPresenceGeo !== 'undefined' ? WingmanPresenceGeo : null;
+        state.viewerLoc = Geo
+          ? Geo.coarsen(pos.coords.latitude, pos.coords.longitude)
+          : { lat: pos.coords.latitude, lng: pos.coords.longitude };
         setLocBanner('');
+        syncRadarEmpty();
         resolve(state.viewerLoc);
       },
       function (err) {
         state.locState = err && err.code === 1 ? 'denied' : 'unavailable';
         setLocBanner(state.locState === 'denied' ? t('lm_loc_denied') : t('lm_loc_off'));
-        resolve(local ? LM_FALLBACK : state.viewerLoc);
+        syncRadarEmpty();
+        resolve(null);
       },
       { enableHighAccuracy: false, timeout: 8000, maximumAge: 30000 },
     );
   });
+}
+
+let presenceHeartbeatTimer = null;
+let presenceHeartbeatLast = 0;
+
+function stopPresenceHeartbeat() {
+  if (presenceHeartbeatTimer) {
+    clearInterval(presenceHeartbeatTimer);
+    presenceHeartbeatTimer = null;
+  }
+}
+
+function startPresenceHeartbeat() {
+  stopPresenceHeartbeat();
+  if (!liveApi() || !state.radarActive) return;
+  presenceHeartbeatLast = Date.now();
+  const Hb = typeof WingmanPresenceHeartbeat !== 'undefined' ? WingmanPresenceHeartbeat : null;
+  const interval = Hb ? Hb.HEARTBEAT_INTERVAL_MS : 40000;
+  presenceHeartbeatTimer = setInterval(function () { void tickPresenceHeartbeat(false); }, interval);
+}
+
+async function tickPresenceHeartbeat(force) {
+  const Hb = typeof WingmanPresenceHeartbeat !== 'undefined' ? WingmanPresenceHeartbeat : null;
+  const visible = typeof document === 'undefined' ? true : document.visibilityState !== 'hidden';
+  const now = Date.now();
+  const should = Hb
+    ? Hb.shouldSendHeartbeat({
+      radarActive: state.radarActive,
+      visible: visible,
+      lastSentAt: presenceHeartbeatLast,
+      now: now,
+      force: force,
+    })
+    : (state.radarActive && visible && (force || now - presenceHeartbeatLast >= 40000));
+  if (!should || !liveApi()) return;
+  const Geo = typeof WingmanPresenceGeo !== 'undefined' ? WingmanPresenceGeo : null;
+  const loc = Geo ? Geo.heartbeatLocation(state.viewerLoc, state.locState) : viewerCoords();
+  try {
+    await api.radarHeartbeat(loc ? { lat: loc.lat, lng: loc.lng } : {});
+    presenceHeartbeatLast = now;
+  } catch (e) {
+    if (e && (e.code === 'NOT_FOUND' || e.code === 'CONFLICT')) {
+      stopPresenceHeartbeat();
+      state.radarActive = false;
+      const btn = $('#radar-toggle'), st = $('#radar-state');
+      if (btn) {
+        btn.classList.add('off');
+        btn.setAttribute('aria-pressed', 'false');
+        btn.textContent = t('radar_activate');
+      }
+      if (st) {
+        st.textContent = t('radar_invisible');
+        st.classList.add('invisible');
+      }
+      clearRadarDots();
+      syncRadarEmpty();
+      syncLivingMapPresence();
+      setPhase('idle');
+    }
+  }
+}
+
+function onPresenceVisibility() {
+  if (document.visibilityState === 'visible' && state.radarActive) {
+    void tickPresenceHeartbeat(true);
+  }
+}
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', onPresenceVisibility);
 }
 
 function openLivingMapSheet(m) {
@@ -2078,7 +2183,23 @@ function restoreSessionIfAny() {
     // Re-hydrate from API only — never restore fictional density from session.
     clearRadarDots();
     if (liveApi()) {
-      api.radarCandidates().then(applyRadarCandidates).catch(() => clearRadarDots());
+      startPresenceHeartbeat();
+      void tickPresenceHeartbeat(true);
+      api.radarCandidates().then(applyRadarCandidates).catch(() => {
+        stopPresenceHeartbeat();
+        state.radarActive = false;
+        const btn2 = $('#radar-toggle'), st2 = $('#radar-state');
+        if (btn2) {
+          btn2.classList.add('off');
+          btn2.setAttribute('aria-pressed', 'false');
+          btn2.textContent = t('radar_activate');
+        }
+        if (st2) {
+          st2.textContent = t('radar_invisible');
+          st2.classList.add('invisible');
+        }
+        clearRadarDots();
+      });
     }
   }
   syncRadarEmpty();
@@ -2404,6 +2525,32 @@ $('#profile-next-btn') && $('#profile-next-btn').addEventListener('click', async
     return;
   }
   show('v-consent');
+  openConsentFromSettings(false);
+});
+
+let consentFromSettings = false;
+
+function openConsentFromSettings(fromSettings) {
+  consentFromSettings = Boolean(fromSettings);
+  syncConsentChrome();
+}
+
+function syncConsentChrome() {
+  const back = $('#consent-back-btn');
+  const cta = $('#consent-cta-btn');
+  if (back) {
+    back.classList.toggle('hidden', !consentFromSettings);
+    back.textContent = t('consent_back');
+  }
+  if (cta) cta.textContent = t(consentFromSettings ? 'consent_save' : 'consent_cta');
+}
+
+$('#set-consent-btn') && $('#set-consent-btn').addEventListener('click', () => {
+  openConsentFromSettings(true);
+  show('v-consent');
+});
+$('#consent-back-btn') && $('#consent-back-btn').addEventListener('click', () => {
+  show(consentFromSettings ? 'v-settings' : 'v-profile');
 });
 
 async function postConsents() {
@@ -2455,7 +2602,7 @@ $('#consent-cta-btn') && $('#consent-cta-btn').addEventListener('click', async (
     feedback('busy', t('t_api_unreachable'));
     return;
   }
-  show('v-radar');
+  show(consentFromSettings ? 'v-settings' : 'v-radar');
 });
 
 function handleRealtimeEvent(env) {

@@ -4,7 +4,7 @@
 **Client UI surface:** `078d308` · https://wingman-prototype.vercel.app/  
 **Active track:** [`LIVE_FIELD_TEST.md`](./LIVE_FIELD_TEST.md) — S27–S34 protocol productionization  
 **Protocol matrix:** [`PROTOCOL_READINESS.md`](./PROTOCOL_READINESS.md) · Evidence: [`EVIDENCE_PACK_TWO_PHONE.md`](./EVIDENCE_PACK_TWO_PHONE.md)  
-**PRODUCT PROTOCOL READY:** **NO** (2026-08-17)  
+**PRODUCT PROTOCOL READY:** **NO** (2026-08-18)  
 **Locked status:** Protocol wiring **improved** · Production durability **GO (infra)** · Private selfie media **WIRED (infra)** · Two-phone Evidence Pack **NOT STARTED / BLOCKED**  
 **Positioning:** **Social Interaction Facilitation Technology** · **Make the first acquaintance easy.** Wingman
 facilitates the first real-world interaction between people who are already near each other — or who repeatedly cross
@@ -43,7 +43,7 @@ S27A Field-Test Identity                       OPEN (Evidence Pack NOT STARTED)
 S27B Production SMS OTP                        OPEN (Twilio Verify; evidence later)
 S28  Production Persistence Certification      GO (infra)
 S29  Real Multi-user Realtime                  PARTIAL wire
-S30  Real Radar & Geo Field Test               PARTIAL (alone=0; hardcode geo remains)
+S30  Real Radar & Geo Field Test               WIRED (client) — geo + heartbeat; Evidence Pack later
 S31  Real Selfie Exchange                      WIRED (infra) — Evidence Pack NOT STARTED
 S32  Push & Closed-app Protocol                QUEUED
 S33  Safety & Field-test Controls              PARTIAL wire (report/block API from Mission Meet)

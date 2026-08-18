@@ -265,6 +265,7 @@
 
       radarActivate: function (body, opts) { return request('POST', '/radar/activate', body, opts); },
       radarDeactivate: function (opts) { return request('POST', '/radar/deactivate', {}, opts); },
+      radarHeartbeat: function (body, opts) { return request('POST', '/radar/heartbeat', body || {}, opts); },
       radarCandidates: function (near, around, opts) {
         return request('GET', '/radar/candidates?nearRadiusM=' + (near || 50) + '&aroundRadiusM=' + (around || 200), undefined, opts);
       },
