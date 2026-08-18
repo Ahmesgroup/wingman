@@ -302,6 +302,7 @@
             <div class="bio" id="sheet-bio">Fun night out ✨</div>
             <div class="tags" id="sheet-tags"><span>🎵</span><span>🍷</span><span>🌍</span></div>
             <button type="button" class="btn btn-primary" id="send-signal-btn" data-i18n="send_signal">Send a Signal</button>
+            <button type="button" class="btn btn-ghost mt-s" id="sheet-report-btn" data-i18n="report_sub">Report & block</button>
             <button type="button" class="btn btn-ghost mt-s" id="close-sheet" data-i18n="close">Close</button>
           </div>
         </div>
@@ -373,6 +374,7 @@
               <div class="info"><b data-i18n="lm_someone">Someone nearby</b><p data-i18n="inbox_hint">Open it before it quietly expires.</p><p class="exp" id="sig-timer">Expires in 7:00</p></div>
               <button type="button" class="btn btn-secondary btn-compact" id="open-signal-btn" data-i18n="open">Open</button>
             </div>
+            <button type="button" class="btn btn-ghost mt-s" id="sig-report-btn" data-i18n="report_sub">Report & block</button>
             <div class="sig qa-only" style="opacity:.55" id="sig-expired-row">
               <div class="glyph">·</div>
               <div class="info"><b data-i18n="lm_someone">Someone nearby</b><p class="exp gone" data-i18n="sig_expired">Expired</p></div>
@@ -412,6 +414,7 @@
           </div>
           <div class="timer-bar mt" style="max-width:320px"><i id="selfie-bar" style="width:100%"></i></div>
           <p class="small muted mt" data-i18n="s_note">Photos stay in this connection. Wingman blocks saving here — it can’t stop every screenshot.</p>
+          <button type="button" class="btn btn-ghost mt-s" id="selfie-report-btn" data-i18n="report_sub">Report & block</button>
         </div>
       </section>
 
@@ -434,6 +437,7 @@
           <div class="cd-num mt" style="font-size:34px" id="ticket-time">2:00:00</div>
           <button class="btn btn-primary mt" id="ticket-open-btn" data-i18n="ticket_open">I'm available now</button>
           <button class="btn btn-ghost mt-s" id="ticket-later-btn" data-i18n="ticket_later">Later</button>
+          <button type="button" class="btn btn-ghost mt-s" id="ticket-report-btn" data-i18n="report_sub">Report & block</button>
         </div>
       </section>
 
@@ -551,9 +555,10 @@
             <div class="row"><span id="lbl-destiny" data-i18n="set_destiny">Let Wingman notice repeated crossings without showing where they happened.</span><div class="switch" role="switch" aria-checked="false" tabindex="0" aria-labelledby="lbl-destiny"></div></div>
             <button type="button" class="report-opt" id="set-consent-btn" data-i18n="set_consent_manage">Data & consent — Manage what Wingman can use</button>
           </div>
-          <div class="set-block">
+          <div class="set-block" id="set-safety-block">
             <div class="eyebrow mb" data-i18n="set_safety">Safety</div>
-            <button type="button" class="report-opt" data-go="v-report" data-i18n="report_sub">Report & block</button>
+            <p class="small muted mb" data-i18n="set_safety_d">If someone makes you uncomfortable, report them and block them. Blocking is instant and silent — they are never told. You will not see each other nearby, and they cannot say hello again.</p>
+            <button type="button" class="report-opt" id="set-safety-btn" data-i18n="report_sub">Report & block</button>
           </div>
           <div class="set-block">
             <div class="eyebrow mb" data-i18n="set_notifications">Notifications</div>
@@ -590,20 +595,28 @@
         <div class="body pad">
           <h2 class="head" data-i18n="report_title">What happened?</h2>
           <p class="lead mb" data-i18n="report_body">Blocking is instant and silent. The other person is never notified.</p>
-          <button type="button" class="report-opt" data-report-category="HARASSMENT" data-i18n="rc_harass">Harassment</button>
-          <button type="button" class="report-opt" data-report-category="THREAT" data-i18n="rc_threat">Threat</button>
-          <button type="button" class="report-opt" data-report-category="IMPERSONATION" data-i18n="rc_imp">Impersonation</button>
-          <button type="button" class="report-opt" data-report-category="SEXUAL_CONTENT" data-i18n="rc_sexual">Sexual content</button>
-          <button type="button" class="report-opt" data-report-category="MINOR_SAFETY" data-i18n="rc_minor">Minor safety</button>
-          <button type="button" class="report-opt" data-report-category="OFF_PLATFORM_CONTACT" data-i18n="rc_contact">Off-platform contact</button>
+          <p class="small muted mb" id="report-confirm" data-i18n="report_confirm">Choose a reason. We block them immediately. They are never told.</p>
+          <div id="report-categories">
+            <button type="button" class="report-opt" data-report-category="HARASSMENT" data-i18n="rc_harass">Harassment</button>
+            <button type="button" class="report-opt" data-report-category="THREAT" data-i18n="rc_threat">Threat</button>
+            <button type="button" class="report-opt" data-report-category="IMPERSONATION" data-i18n="rc_imp">Impersonation</button>
+            <button type="button" class="report-opt" data-report-category="SEXUAL_CONTENT" data-i18n="rc_sexual">Sexual content</button>
+            <button type="button" class="report-opt" data-report-category="MINOR_SAFETY" data-i18n="rc_minor">Minor safety</button>
+            <button type="button" class="report-opt" data-report-category="OFF_PLATFORM_CONTACT" data-i18n="rc_contact">Contact outside Wingman</button>
+          </div>
+          <div class="empty-state hidden" id="report-empty">
+            <b data-i18n="report_empty_t">No one to report yet.</b>
+            <p data-i18n="report_empty">Open someone’s card nearby, or use Report & block during a meeting.</p>
+          </div>
+          <button type="button" class="btn btn-ghost mt" id="report-back-btn" data-i18n="report_back">Back</button>
         </div>
       </section>
       <section class="view" id="v-report-done" data-noflow>
         <div class="mission-mode">
-          <div class="pill-badge" data-i18n="report_done_badge">✓ Blocked & reported</div>
+          <div class="pill-badge" data-i18n="report_done_badge">Blocked</div>
           <h2 class="head center" data-i18n="report_done_t">You won't see each other again.</h2>
-          <p class="lead center" data-i18n="report_done_b">Repeated independent reports trigger human review — not an automatic permanent ban.</p>
-          <button class="btn btn-primary mt" data-go="v-radar" data-i18n="report_done_cta">Back to Radar</button>
+          <p class="lead center" data-i18n="report_done_b">They will not appear nearby, and they cannot say hello again. They are never told. Repeated reports are reviewed by a person — never an automatic permanent ban.</p>
+          <button class="btn btn-primary mt" data-go="v-radar" data-i18n="report_done_cta">Back nearby</button>
         </div>
       </section>
 

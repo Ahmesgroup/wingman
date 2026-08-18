@@ -451,6 +451,9 @@ export class WingmanEngine {
     if (senderId !== c.initiatorId && senderId !== c.recipientId) {
       throw new DomainError("NOT_FOUND", "Not a participant");
     }
+    if (isBlockedEitherWay(this.blocks, c.initiatorId, c.recipientId)) {
+      throw new DomainError("BLOCKED_PAIR", "Blocked");
+    }
     if (c.state !== "MISSION_MEET_ACTIVE" && c.state !== "MISSION_CONFIRMED") {
       throw new DomainError("FORBIDDEN_TRANSITION", "Mission chat not active");
     }
@@ -510,6 +513,8 @@ export class WingmanEngine {
 
   // ---- Safety ----
   blockUser(blockerId: string, blockedId: string): BlockRecord {
+    const existing = this.blocks.find((b) => b.blockerId === blockerId && b.blockedId === blockedId);
+    if (existing) return existing;
     const block = createBlock(newId("blk"), blockerId, blockedId, this.clock);
     this.blocks.push(block);
     // close active signals
@@ -539,6 +544,14 @@ export class WingmanEngine {
   }
 
   reportUser(reporterId: string, reportedId: string, category: string, connectionId?: string): ReportRecord {
+    const windowMs = 10 * 60 * 1000;
+    const now = this.clock.now().getTime();
+    const recent = this.reports.filter(
+      (r) => r.reporterId === reporterId && now - r.createdAt.getTime() < windowMs,
+    );
+    if (recent.length >= 8) {
+      throw new DomainError("RATE_LIMITED", "Too many reports");
+    }
     const report = createReport(newId("rpt"), reporterId, reportedId, category, this.clock, connectionId);
     this.reports.push(report);
     this.audit("safety.report", reporterId, reportedId, { category });

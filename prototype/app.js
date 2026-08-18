@@ -516,11 +516,13 @@ const I18N = {
     settings_sub: 'Me', set_account: 'Account', set_plan: 'Your plan', set_plan_name: 'Plan', set_plan_signals: 'Signals each day', set_plan_tickets: 'Held connections', set_plan_note: 'Payments aren’t available yet.',
     set_privacy: 'Privacy', set_photo: 'Photos', set_photo_v: 'Only shared during a connection', set_none: 'None', set_loc: 'Location', set_loc_v: 'Your exact location is never shown', set_never: 'Never shown', set_consent: 'Data & consent', set_consent_manage: 'Data & consent — Manage what Wingman can use', set_accepted: 'Managed', set_gdpr: 'Your exact location is never shown', set_designed: 'Never shown',
     set_controls: 'Controls', set_destiny: 'Let Wingman notice repeated crossings without showing where they happened.', set_rm: 'Reduce motion', set_haptics: 'Haptics', set_rights: 'Your data', set_export: 'Export my data', set_delete: 'Delete my account', set_admin: 'Admin moderation preview →',
-    set_safety: 'Safety', set_notifications: 'Notifications', set_push: 'Let Wingman tell you when someone nearby reaches out', set_language: 'Language', set_a11y: 'Accessibility',
+    set_safety: 'Safety', set_safety_d: 'If someone makes you uncomfortable, report them and block them. Blocking is instant and silent — they are never told. You will not see each other nearby, and they cannot say hello again.', set_notifications: 'Notifications', set_push: 'Let Wingman tell you when someone nearby reaches out', set_language: 'Language', set_a11y: 'Accessibility',
     t_push_off: 'Notifications stay off until you allow them.', t_push_on: 'Wingman can notify you about a Signal or a meeting message.', t_push_blocked: 'Push isn’t configured on this build (missing VAPID/FCM credentials).', t_push_denied: 'Notifications were blocked in the browser.',
-    report_sub: 'Report & block', report_title: 'What happened?', report_body: 'Blocking is instant and silent. The other person is never notified.',
+    report_sub: 'Report & block', report_short: 'Report', report_title: 'What happened?', report_body: 'Blocking is instant and silent. The other person is never notified.',
+    report_confirm: 'Choose a reason. We block them immediately. They are never told.',
+    report_empty_t: 'No one to report yet.', report_empty: 'Open someone’s card nearby, or use Report & block during a meeting.', report_back: 'Back',
     rc_harass: 'Harassment', rc_threat: 'Threat', rc_imp: 'Impersonation', rc_sexual: 'Sexual content', rc_minor: 'Minor safety', rc_contact: 'Contact outside Wingman',
-    report_done_badge: 'Blocked & reported', report_done_t: "You won't see each other again.", report_done_b: 'Repeated independent reports are reviewed by a person — never an automatic permanent ban.', report_done_cta: 'Back nearby',
+    report_done_badge: 'Blocked', report_done_t: "You won't see each other again.", report_done_b: 'They will not appear nearby, and they cannot say hello again. They are never told. Repeated reports are reviewed by a person — never an automatic permanent ban.', report_done_cta: 'Back nearby',
     plan_sub: 'Your plan', plan_active: 'Active', plan_payments_off: 'Payments aren’t available yet.', plan_back: 'Back to Me',
     pw_f1: '2 Signals / day', pw_f2: '1 held connection — up to 2h', pw_f3: 'Repeated crossings included', pw_f4: '15 min to decide where to meet',
     admin_sub: 'Moderation queue', admin_body: 'A report during a session is the only time evidence is kept. It is stored encrypted, and every access is logged.',
@@ -556,6 +558,7 @@ const I18N = {
     t_signal_received: 'Someone nearby wants to meet you.', t_validation: 'Waiting for a photo', t_match: 'You’re connected',
     t_mission_active: 'Decide where to meet', t_mission_done: 'This meeting ended', t_cooldown_on: 'A quiet pause',
     t_session_restored: 'Welcome back', t_no_signals: 'No Signals left today', t_export_ok: 'Your data file is ready', t_delete_ok: 'Account deletion requested',
+    t_report_rate: 'Too many reports just now. They are still blocked — try again later.',
     t_cam_off: 'Camera unavailable on this device.', t_cam_denied: 'Camera permission denied. Allow the camera to send a photo — gallery is blocked.', t_cam_fail: 'Could not open the camera.',
     t_need_interest: 'Select who you are interested in', t_need_birth: 'Date of birth required', t_profile_invalid: 'Invalid profile (18+ required)', t_need_core: 'Your agreement is required to use Wingman',
     t_go_active: 'Go active to see who’s nearby', t_anon_profile: 'Anonymous profile', t_expires_in: 'Expires in', t_silently_expired: 'It quietly expired', t_chat_expired: 'Time to decide ran out',
@@ -604,11 +607,13 @@ const I18N = {
     settings_sub: 'Moi', set_account: 'Compte', set_plan: 'Votre offre', set_plan_name: 'Offre', set_plan_signals: 'Signaux par jour', set_plan_tickets: 'Rencontres en attente', set_plan_note: 'Les paiements ne sont pas encore disponibles.',
     set_privacy: 'Vie privée', set_photo: 'Photos', set_photo_v: 'Partagées seulement pendant une connexion', set_none: 'Aucune', set_loc: 'Localisation', set_loc_v: 'Votre position exacte n’est jamais montrée', set_never: 'Jamais montrée', set_consent: 'Données et consentement', set_consent_manage: 'Données et consentement — Gérer ce que Wingman peut utiliser', set_accepted: 'Géré', set_gdpr: 'Votre position exacte n’est jamais montrée', set_designed: 'Jamais montrée',
     set_controls: 'Contrôles', set_destiny: 'Laisser Wingman remarquer les croisements répétés, sans montrer où cela s’est passé.', set_rm: 'Réduire les animations', set_haptics: 'Retour haptique', set_rights: 'Vos données', set_export: 'Exporter mes données', set_delete: 'Supprimer mon compte', set_admin: 'Aperçu modération admin →',
-    set_safety: 'Sécurité', set_notifications: 'Notifications', set_push: 'Prévenez-moi quand quelqu’un près de moi se manifeste', set_language: 'Langue', set_a11y: 'Accessibilité',
+    set_safety: 'Sécurité', set_safety_d: 'Si quelqu’un vous met mal à l’aise, signalez-le et bloquez-le. Le blocage est immédiat et silencieux — l’autre n’est jamais prévenu. Vous ne vous verrez plus à proximité, et iel ne pourra plus dire bonjour.', set_notifications: 'Notifications', set_push: 'Prévenez-moi quand quelqu’un près de moi se manifeste', set_language: 'Langue', set_a11y: 'Accessibilité',
     t_push_off: 'Les notifications restent désactivées tant que vous ne les autorisez pas.', t_push_on: 'Wingman peut vous prévenir d’un Signal ou d’un message de rencontre.', t_push_blocked: 'Les notifications push ne sont pas configurées (identifiants VAPID/FCM manquants).', t_push_denied: 'Les notifications ont été bloquées dans le navigateur.',
-    report_sub: 'Signaler et bloquer', report_title: 'Que s’est-il passé ?', report_body: 'Le blocage est immédiat et silencieux. L’autre personne n’est jamais prévenue.',
+    report_sub: 'Signaler et bloquer', report_short: 'Signaler', report_title: 'Que s’est-il passé ?', report_body: 'Le blocage est immédiat et silencieux. L’autre personne n’est jamais prévenue.',
+    report_confirm: 'Choisissez un motif. Nous les bloquons tout de suite. Ils ne sont jamais prévenus.',
+    report_empty_t: 'Personne à signaler pour le moment.', report_empty: 'Ouvrez la carte de quelqu’un à proximité, ou utilisez Signaler et bloquer pendant une rencontre.', report_back: 'Retour',
     rc_harass: 'Harcèlement', rc_threat: 'Menace', rc_imp: 'Usurpation', rc_sexual: 'Contenu sexuel', rc_minor: 'Sécurité des mineurs', rc_contact: 'Contact en dehors de Wingman',
-    report_done_badge: 'Bloqué et signalé', report_done_t: 'Vous ne vous reverrez plus.', report_done_b: 'Des signalements indépendants répétés sont lus par une personne — jamais un bannissement automatique définitif.', report_done_cta: 'Retour autour de moi',
+    report_done_badge: 'Bloqué', report_done_t: 'Vous ne vous reverrez plus.', report_done_b: 'Cette personne n’apparaîtra plus à proximité, et ne pourra plus dire bonjour. Elle n’est jamais prévenue. Des signalements répétés sont lus par une personne — jamais un bannissement automatique définitif.', report_done_cta: 'Retour autour de moi',
     plan_sub: 'Votre offre', plan_active: 'Active', plan_payments_off: 'Les paiements ne sont pas encore disponibles.', plan_back: 'Retour à Moi',
     pw_f1: '2 Signaux / jour', pw_f2: '1 rencontre en attente — jusqu’à 2 h', pw_f3: 'Croisements répétés inclus', pw_f4: '15 min pour décider d’un lieu',
     admin_sub: 'File de modération', admin_body: 'Une preuve n’est créée que si quelqu’un signale pendant une rencontre. Elle est chiffrée, et chaque accès est journalisé.',
@@ -644,6 +649,7 @@ const I18N = {
     t_signal_received: 'Quelqu’un près de vous aimerait faire connaissance.', t_validation: 'En attente d’une photo', t_match: 'Vous êtes connectés',
     t_mission_active: 'Décidez d’un lieu', t_mission_done: 'Cette rencontre est terminée', t_cooldown_on: 'Une pause discrète',
     t_session_restored: 'Bon retour', t_no_signals: 'Plus de Signaux aujourd’hui', t_export_ok: 'Votre fichier est prêt', t_delete_ok: 'Suppression du compte demandée',
+    t_report_rate: 'Trop de signalements pour le moment. La personne reste bloquée — réessayez plus tard.',
     t_cam_off: 'Caméra indisponible sur cet appareil.', t_cam_denied: 'Permission caméra refusée. Autorisez la caméra pour envoyer une photo — pas de galerie.', t_cam_fail: 'Impossible d’ouvrir la caméra.',
     t_need_interest: 'Choisissez qui vous intéresse', t_need_birth: 'Date de naissance requise', t_profile_invalid: 'Profil invalide (18 ans et plus requis)', t_need_core: 'Votre accord est requis pour utiliser Wingman',
     t_go_active: 'Rendez-vous visible pour voir qui est près de vous', t_anon_profile: 'Profil anonyme', t_expires_in: 'Expire dans', t_silently_expired: 'Cela a expiré en silence', t_chat_expired: 'Le temps pour décider est écoulé',
@@ -694,6 +700,8 @@ function applyLang() {
   if (typeof syncLivingMapPresence === 'function') syncLivingMapPresence();
   if (typeof syncInboxChrome === 'function') syncInboxChrome();
   if (typeof syncRadarEmpty === 'function') syncRadarEmpty();
+  if (state.livingMap && typeof refreshLivingMap === 'function') void refreshLivingMap();
+  else if (typeof renderDiscoverFromDots === 'function') renderDiscoverFromDots();
   const pushSw = $('#set-push');
   const pushSt = $('#push-status');
   if (pushSt && pushSw) {
@@ -764,6 +772,7 @@ function show(id) {
   const protocolViews = new Set([
     'v-radar', 'v-discover', 'v-signal', 'v-selfie', 'v-ticket', 'v-mission-meet', 'v-mission-mode',
     'v-outcome', 'v-cooldown', 'v-confirmed', 'v-destiny', 'v-pulse', 'v-settings',
+    'v-report', 'v-report-done',
   ]);
   // Public product: block protocol UI without OTP — stop ghost Radar / dead Go active.
   if (protocolViews.has(id) && api && api.productPath && !isAuthedSession()) {
@@ -921,10 +930,14 @@ function openSheet(d) {
   announce($('#sheet-age').textContent + ' · ' + $('#sheet-mood').textContent);
   requestAnimationFrame(() => { const b = $('#send-signal-btn'); if (b) b.focus(); });
 }
-$('#close-sheet').addEventListener('click', () => {
+function closeOpportunitySheet() {
   const sheet = $('#dot-sheet');
+  if (!sheet) return;
   sheet.classList.remove('open');
   sheet.setAttribute('aria-hidden', 'true');
+}
+$('#close-sheet').addEventListener('click', () => {
+  closeOpportunitySheet();
   const canvasEl = $('#radar-canvas'); if (canvasEl) canvasEl.focus();
 });
 canvas.addEventListener('keydown', e => {
@@ -951,8 +964,7 @@ $('#send-signal-btn').addEventListener('click', async () => {
   }
   const w = canvas.clientWidth || 400; signalWave = { x: w / 2, y: 170, t: performance.now() };
   startRadar(); haptic('signalSent');
-  $('#dot-sheet').classList.remove('open');
-  $('#dot-sheet').setAttribute('aria-hidden', 'true');
+  closeOpportunitySheet();
 
   if (liveApi()) {
     try {
@@ -1426,14 +1438,23 @@ function renderDiscoverList(list) {
     const color = MOOD_COLORS[mood] || MOOD_COLORS.OPEN;
     const reasons = reasonBits(o).join(' · ');
     const title = o.destiny ? t('lm_destiny') : t('lm_someone');
-    return '<button type="button" class="discover-row" data-uid="' + o.userId + '">' +
+    return '<div class="discover-row" data-uid="' + o.userId + '">' +
+      '<button type="button" class="discover-open" data-uid="' + o.userId + '">' +
       '<span class="sw" style="background:' + color + '" aria-hidden="true"></span>' +
-      '<div><b>' + title + '</b><p>' + (reasons || t('reason_nearby')) + '</p></div></button>';
+      '<div><b>' + title + '</b><p>' + (reasons || t('reason_nearby')) + '</p></div></button>' +
+      '<button type="button" class="discover-report" data-uid="' + o.userId + '">' + t('report_short') + '</button>' +
+      '</div>';
   }).join('');
-  $$('.discover-row', wrap).forEach(function (btn) {
+  $$('.discover-open', wrap).forEach(function (btn) {
     btn.addEventListener('click', function () {
       const o = rows.find(function (x) { return x.userId === btn.dataset.uid; });
       if (o) openLivingMapSheet(o);
+    });
+  });
+  $$('.discover-report', wrap).forEach(function (btn) {
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      openReportFor(btn.dataset.uid);
     });
   });
 }
@@ -1589,6 +1610,9 @@ function onEnter(id) {
   if (id === 'v-discover') {
     if (state.livingMap) void refreshLivingMap();
     else renderDiscoverFromDots();
+  }
+  if (id === 'v-report') {
+    syncReportView();
   }
   if (id === 'v-pulse') {
     void refreshPulseLive();
@@ -1846,12 +1870,62 @@ function hasLivePeer() {
   return Boolean(state.peerId && state.peerId !== 'proto-peer' && state.peerId !== state.meId);
 }
 
-$('#mm-report-btn') && $('#mm-report-btn').addEventListener('click', () => {
-  if (!hasLivePeer() && api && api.productPath) {
-    feedback('busy', t('t_api_unreachable'));
-    return;
+function syncReportView() {
+  const has = hasLivePeer();
+  const cats = $('#report-categories');
+  const empty = $('#report-empty');
+  const confirm = $('#report-confirm');
+  if (cats) cats.classList.toggle('hidden', !has);
+  if (confirm) confirm.classList.toggle('hidden', !has);
+  if (empty) empty.classList.toggle('hidden', has);
+}
+
+function applyLocalBlock(userId) {
+  if (!userId) return;
+  for (let i = dots.length - 1; i >= 0; i--) {
+    if (dots[i] && dots[i].userId === userId) dots.splice(i, 1);
   }
+  state.lmOpportunities = (state.lmOpportunities || []).filter(function (o) { return o && o.userId !== userId; });
+  setNearbyCount(typeof WingmanRadarDots !== 'undefined' ? WingmanRadarDots.nearbyCountFromDots(dots) : dots.length);
+  syncRadarEmpty();
+  renderDiscoverFromDots();
+  if (liveApi()) {
+    api.radarCandidates().then(applyRadarCandidates).catch(function () { /* keep local removal */ });
+  }
+}
+
+function openReportFor(userId) {
+  if (userId && userId !== 'proto-peer' && userId !== state.meId) {
+    state.peerId = userId;
+  }
+  state.reportReturnView = state.viewId === 'v-report' ? (state.reportReturnView || 'v-settings') : state.viewId;
+  closeOpportunitySheet();
   show('v-report');
+}
+
+function bindReportEntry(id) {
+  const el = $('#' + id);
+  if (!el) return;
+  el.addEventListener('click', () => {
+    if (id === 'sheet-report-btn') {
+      openReportFor(currentDot && currentDot.userId);
+      return;
+    }
+    openReportFor(state.peerId);
+  });
+}
+
+bindReportEntry('mm-report-btn');
+bindReportEntry('sheet-report-btn');
+bindReportEntry('sig-report-btn');
+bindReportEntry('selfie-report-btn');
+bindReportEntry('ticket-report-btn');
+$('#set-safety-btn') && $('#set-safety-btn').addEventListener('click', () => {
+  openReportFor(hasLivePeer() ? state.peerId : null);
+});
+$('#report-back-btn') && $('#report-back-btn').addEventListener('click', () => {
+  const back = state.reportReturnView && state.reportReturnView !== 'v-report' ? state.reportReturnView : 'v-settings';
+  show(back);
 });
 
 document.querySelectorAll('#v-report [data-report-category]').forEach((btn) => {
@@ -1859,21 +1933,33 @@ document.querySelectorAll('#v-report [data-report-category]').forEach((btn) => {
     if (state.busy) return;
     const category = btn.getAttribute('data-report-category');
     if (!category) return;
-    if (!liveApi() || !hasLivePeer()) {
+    if (!hasLivePeer()) {
+      syncReportView();
+      return;
+    }
+    if (!liveApi()) {
       if (api && api.productPath) {
         feedback('busy', t('t_api_unreachable'));
         return;
       }
+      applyLocalBlock(state.peerId);
       show('v-report-done');
       return;
     }
+    const targetId = state.peerId;
     try {
       await withLoading(t('t_loading'), async () => {
-        const body = { userId: state.peerId, category };
+        const body = { userId: targetId, category };
         if (state.connectionId) body.connectionId = state.connectionId;
-        await api.report(body);
-        await api.block({ userId: state.peerId });
+        try {
+          await api.report(body);
+        } catch (e) {
+          if (!(e && e.code === 'RATE_LIMITED')) throw e;
+          feedback('busy', t('t_report_rate'));
+        }
+        await api.block({ userId: targetId });
       });
+      applyLocalBlock(targetId);
       state.signalId = null;
       state.connectionId = null;
       state.connectionState = null;
@@ -2744,7 +2830,19 @@ function handleRealtimeEvent(env) {
     return;
   }
   if (env.type === 'connection.closed' || env.type === 'mission.expired') {
+    const blocked = env.type === 'connection.closed' && p.reason === 'block';
+    if (blocked && (state.viewId === 'v-report' || state.viewId === 'v-report-done')) {
+      return;
+    }
     feedback('busy', env.type === 'mission.expired' ? t('t_chat_expired') : t('t_mission_done'));
+    if (blocked) {
+      state.signalId = null;
+      state.connectionId = null;
+      state.connectionState = null;
+      state.hasIncomingSignal = false;
+      syncSignalEmpty();
+      show('v-radar');
+    }
   }
 }
 

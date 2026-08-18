@@ -64,7 +64,7 @@ still required. **PRODUCT PROTOCOL READY = NO.**
 | REAL MISSION CHAT | `message` + WS + `GET .../messages` | messages + `mission.message` | Redis ephemeral target | `mission.message` | Durability IN PROGRESS | No fake chat states on product | **PASS wire** / durable IN PROGRESS |
 | REAL MISSION MODE | meet-now / lets-meet / finish | connection transitions | Connection | `mission.updated` | if durable | — | **PASS wire** |
 | REAL OUTCOME | own outcome only | `POST .../outcome` | Connection | `mission.updated` | if durable | Peer sim lab-only | **PASS wire** |
-| REAL BLOCK / REPORT | Mission Meet → category | `POST /safety/report` + `POST /safety/block` | Engine + mirror | `connection.closed` | block durable | Admin preview hidden on public field-test | **PASS wire** / Evidence Pack **NOT STARTED** |
+| REAL BLOCK / REPORT | Radar / Discover / Signal / Selfie / Mission / Me → Safety → category | `POST /safety/report` + `POST /safety/block` | Engine + mirror | `connection.closed` | block durable | Admin preview hidden on public field-test | **PASS wire** / Evidence Pack **NOT STARTED** |
 | REAL COOLDOWN → RADAR | cooldown UI + deactivate/activate | connection + presence | Presence ephemeral | — | presence no | — | **PASS wire** |
 
 ## Gate A / B / C
@@ -86,7 +86,7 @@ still required. **PRODUCT PROTOCOL READY = NO.**
 | S30 | **WIRED (client)** — browser geolocation (fail closed) + `/radar/heartbeat` while tab foreground; Evidence Pack later |
 | S31 | **WIRED (infra)** — `@wingman/media` + Vercel Blob private; Evidence Pack NOT STARTED |
 | S32 | **PARTIAL wire (web)** — reconnect/restore; push **BLOCKED** on VAPID/FCM credentials. See [`S32_WEB_BACKGROUND.md`](./S32_WEB_BACKGROUND.md) |
-| S33 | **PARTIAL wire** — Mission Meet Report & block posts to `/safety/report` + `/safety/block`; Evidence Pack row 19 later |
+| S33 | **WIRED (product path)** — two-tap report/block from Radar, Discover, Signal, Selfie/ticket, Mission Meet, Me → Safety; server-enforced; Evidence Pack row 19 later. See [`S33_SAFETY.md`](./S33_SAFETY.md) |
 | S34 | **QUEUED / BLOCKED** upstream |
 | S35 V2 | **EXPERIMENT SPEC ONLY** — `PRODUCT_PROTOCOL_V2_ENABLED=false`; no engine merge |
 
@@ -94,6 +94,6 @@ still required. **PRODUCT PROTOCOL READY = NO.**
 
 **= NO**
 
-Two-phone Evidence Pack remains **NOT STARTED** (human phones required). Private selfie media is **WIRED (infra)** but not GREEN until field evidence. Report & block is now posted from Mission Meet on the public client; that does not fill Evidence Pack row 19.
+Two-phone Evidence Pack remains **NOT STARTED** (human phones required). Private selfie media is **WIRED (infra)** but not GREEN until field evidence. Report & block is posted from Radar, Discover, Signal, Selfie/ticket, Mission Meet, and Me → Safety; that does not fill Evidence Pack row 19.
 
 V2 is documented separately in [`S35_PRODUCT_PROTOCOL_V2.md`](./S35_PRODUCT_PROTOCOL_V2.md). It cannot change this readiness verdict or become default Production before its own A/B gate and the V1 Evidence Pack.

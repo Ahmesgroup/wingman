@@ -70,6 +70,34 @@ describe("S6 safety privacy", () => {
     expect(engine.getCandidates("b")).toEqual([]);
   });
 
+  it("duplicate block is idempotent and still forbids a new Signal", () => {
+    const { engine } = readyPair();
+    const first = engine.blockUser("a", "b");
+    const second = engine.blockUser("a", "b");
+    expect(second.id).toBe(first.id);
+    expect(engine.blocks.filter((b) => b.blockerId === "a" && b.blockedId === "b")).toHaveLength(1);
+    expect(() => engine.sendSignal("a", "b")).toThrow(DomainError);
+    expect(() => engine.sendSignal("b", "a")).toThrow(DomainError);
+  });
+
+  it("report persists independently of block", () => {
+    const { engine } = readyPair();
+    const report = engine.reportUser("a", "b", "HARASSMENT");
+    expect(engine.reports).toHaveLength(1);
+    expect(engine.reports[0]?.id).toBe(report.id);
+    expect(engine.reports[0]?.category).toBe("HARASSMENT");
+    engine.blockUser("a", "b");
+    expect(engine.reports).toHaveLength(1);
+  });
+
+  it("report burst is rate limited without dropping the block path", () => {
+    const { engine } = readyPair();
+    for (let i = 0; i < 8; i++) engine.reportUser("a", "b", "HARASSMENT");
+    expect(() => engine.reportUser("a", "b", "HARASSMENT")).toThrow(DomainError);
+    const block = engine.blockUser("a", "b");
+    expect(block.blockerId).toBe("a");
+  });
+
   it("consent records are append-only", () => {
     const { engine } = readyPair();
     engine.grantConsent("a", "CORE_MATCHING", "v1");

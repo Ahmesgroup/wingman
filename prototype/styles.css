@@ -867,11 +867,19 @@ body.living-map #v-radar{position:relative}
 body.living-map #pulse-legacy{display:none!important}
 body.living-map #pulse-live{display:block!important}
 .discover-row{
-  display:flex;gap:12px;align-items:center;
+  display:flex;gap:10px;align-items:stretch;
   background:var(--glass);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
   border:1px solid var(--glass-border);
-  border-radius:var(--r-card);padding:14px;margin-bottom:10px;text-align:left;width:100%;
-  min-height:var(--touch-min)
+  border-radius:var(--r-card);padding:8px 8px 8px 14px;margin-bottom:10px;width:100%;
+}
+.discover-open{
+  display:flex;gap:12px;align-items:center;flex:1;text-align:left;background:transparent;border:0;
+  min-height:var(--touch-min);padding:6px 0;color:inherit
+}
+.discover-report{
+  flex-shrink:0;align-self:center;min-height:var(--touch-min);min-width:var(--touch-min);
+  padding:8px 12px;border:1px solid var(--border);border-radius:var(--r-sm);
+  background:transparent;color:var(--t-secondary);font-size:12px;font-weight:600
 }
 .discover-row .sw{width:16px;height:16px;border-radius:50%;flex-shrink:0}
 .discover-row b{display:block;font-size:14px}
