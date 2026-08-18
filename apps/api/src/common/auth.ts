@@ -35,7 +35,7 @@ export class SessionAuthGuard implements CanActivate {
     private readonly reflector: Reflector,
   ) {}
 
-  canActivate(context: ExecutionContext): boolean {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     if (this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [context.getHandler(), context.getClass()])) {
       return true;
     }
@@ -54,7 +54,7 @@ export class SessionAuthGuard implements CanActivate {
     const token = header.slice("Bearer ".length);
     const deviceId = req.header("x-device-id") ?? undefined;
     try {
-      const { userId } = this.auth.authenticate(token, deviceId);
+      const { userId } = await this.auth.authenticate(token, deviceId);
       req[CURRENT_USER] = userId;
       return true;
     } catch (e) {

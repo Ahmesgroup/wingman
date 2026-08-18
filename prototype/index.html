@@ -61,7 +61,10 @@
           · <a href="https://carto.com/attributions" rel="noopener">CARTO</a>
         </p>
         <div class="lm-overlay lm-top">
-          <div class="lm-brand">WING<b>MAN</b></div>
+          <div class="lm-brand-stack">
+            <div class="lm-brand">WING<b>MAN</b></div>
+            <p class="lm-place" id="lm-place" hidden></p>
+          </div>
           <button type="button" class="lm-presence" id="lm-presence" aria-expanded="false" aria-controls="lm-mood-select">
             <span class="lm-presence-dot" aria-hidden="true"></span>
             <span id="lm-presence-label" data-i18n="lm_available">Available now</span>
@@ -576,6 +579,7 @@
           </div>
           <div class="set-block">
             <div class="eyebrow mb" data-i18n="set_rights">Your data</div>
+            <button type="button" class="report-opt" id="logout-btn" data-i18n="set_logout">Sign out</button>
             <button type="button" class="report-opt" id="export-data-btn" data-i18n="set_export">Export my data</button>
             <button type="button" class="report-opt" id="delete-account-btn" data-i18n="set_delete">Delete my account</button>
           </div>
@@ -714,6 +718,7 @@
 <script src="presence-reconnect.js"></script>
 <script src="web-push.js"></script>
 <script src="living-map.js"></script>
+<script src="session-restore.js"></script>
 <script src="living-map-ui.js"></script>
 <script src="payments/payment-types.js"></script>
 <script src="payments/providers/disabled.js"></script>

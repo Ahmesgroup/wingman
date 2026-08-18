@@ -34,6 +34,15 @@ describe("profile update (protocol onboarding)", () => {
     expect(saved.profile.firstName).toBe("Alex");
     expect(saved.profile.birthDate).toBe("1998-04-12");
 
+    const withLocale = engine.updateProfile("u1", {
+      gender: "MALE",
+      interestedIn: ["WOMEN"],
+      firstName: "Alex",
+      birthDate: "1998-04-12",
+      locale: "fr",
+    });
+    expect(withLocale.profile.locale).toBe("fr");
+
     expect(() =>
       engine.updateProfile("u1", {
         gender: "MALE",

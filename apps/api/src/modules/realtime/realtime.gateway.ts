@@ -58,7 +58,7 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
 
   async handleConnection(client: AuthedSocket): Promise<void> {
     client.data.rooms = new Set();
-    const userId = this.authenticate(client);
+    const userId = await this.authenticate(client);
     if (!userId) {
       client.emit("error", { code: "UNAUTHORIZED", message: "Socket auth required" });
       client.disconnect(true);
@@ -124,7 +124,7 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
     return { ok: true, serverTime: new Date().toISOString() };
   }
 
-  private authenticate(client: Socket): string | null {
+  private async authenticate(client: Socket): Promise<string | null> {
     const auth = client.handshake.auth as {
       token?: string;
       deviceId?: string;
@@ -140,7 +140,7 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
 
     if (bearer) {
       try {
-        return this.auth.authenticate(bearer, deviceId).userId;
+        return (await this.auth.authenticate(bearer, deviceId)).userId;
       } catch {
         return null;
       }

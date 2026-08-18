@@ -26,13 +26,25 @@ Privacy: payloads never include peer `lat`/`lng`. Markers are coarse `distanceBa
 
 Visible control is `#lm-attrib` (Leaflet default prefix is **disabled**).
 
-| Credit | Required? | Why |
-|--------|-----------|-----|
-| OpenStreetMap | **YES** | ODbL — required for any OSM-derived basemap |
-| CARTO | **YES** | Carto basemap terms for `basemaps.cartocdn.com` (dark_nolabels) |
-| Leaflet | Customary | BSD-2-Clause is satisfied in docs; a text link is kept. **Not** the Ukraine-flag SVG Leaflet 1.9 injects in `Control.Attribution` prefix (`leaflet-attribution-flag`, blue/yellow bars). That flag is **not** a license condition and is omitted. |
+| Layer | Choice | License / limits |
+|-------|--------|------------------|
+| Renderer | Leaflet 1.9.4 (CDN unpkg) | BSD-2-Clause — text link kept; **Ukraine-flag SVG omitted** (not a license condition) |
+| Data | OpenStreetMap | ODbL — **© OpenStreetMap contributors required** |
+| Tiles | CARTO `dark_nolabels` via `basemaps.cartocdn.com` | CARTO basemap terms — **© CARTO required**. Not `tile.openstreetmap.org` (no public OSM tile as unlimited prod infra). |
+| Geocode | In-process Luxembourg commune gazetteer (`publicViewerPlace`) | City/municipality only for the **viewer**. No Nominatim at request time. No paid vendor. Outside gazetteer → no city (never invent). |
 
 Do not re-enable Leaflet's default `attributionControl` prefix. Keep the three text links tappable and clear of the presence CTA / nav / safe-area.
+
+## Durable session (access 1h / refresh 30d)
+
+Auth sessions and phone→userId mapping persist in **Redis** (same Upstash as presence). In-memory AuthService alone cannot survive Vercel isolates — that was the “phone every launch” boundary.
+
+| Token | TTL (actual, from `@wingman/auth`) |
+|-------|-------------------------------------|
+| Access | **1 hour** (`AUTH_ACCESS_TTL_MS`) |
+| Refresh | **30 days** (`AUTH_REFRESH_TTL_MS`) |
+
+Reopen within the refresh window restores session → `GET /me` → skip onboarding when profile + `CORE_MATCHING` exist → Living Map. Phone auth only if tokens expired, session revoked, explicit logout, or integrity failed.
 
 ## P0 actionability (marker → sheet → Signal)
 
@@ -82,7 +94,9 @@ Map background → real presence → real candidates → filters → Signal → 
 ## Tests
 
 ```text
-node --test prototype/living-map.test.mjs prototype/i18n-parity.test.mjs prototype/protocol-client.regression.test.mjs
+node --test prototype/living-map.test.mjs prototype/i18n-parity.test.mjs prototype/protocol-client.regression.test.mjs prototype/session-restore.test.mjs
 pnpm --filter @wingman/radar-intelligence test
-pnpm --filter @wingman/api exec vitest run src/s44.living-map.test.ts
+pnpm --filter @wingman/auth test
+pnpm --filter @wingman/geo-intelligence test
+pnpm --filter @wingman/api exec vitest run src/s44.living-map.test.ts src/me.profile.test.ts src/auth.e2e.test.ts
 ```

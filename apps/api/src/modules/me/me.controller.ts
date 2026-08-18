@@ -10,6 +10,20 @@ import { PROTOCOL_MIRROR } from "../infra/infra.tokens.js";
 
 type ProfileBody = z.infer<typeof ProfileUpdateSchema>;
 
+function grantedConsentPurposes(
+  consents: Array<{ userId: string; purpose: string; action: string; occurredAt: Date }>,
+  userId: string,
+): string[] {
+  const latest = new Map<string, { action: string; at: number }>();
+  for (const c of consents) {
+    if (c.userId !== userId) continue;
+    const at = c.occurredAt instanceof Date ? c.occurredAt.getTime() : 0;
+    const prev = latest.get(c.purpose);
+    if (!prev || at >= prev.at) latest.set(c.purpose, { action: c.action, at });
+  }
+  return [...latest.entries()].filter(([, v]) => v.action === "GRANTED").map(([p]) => p);
+}
+
 @Injectable()
 export class MeService {
   constructor(
@@ -19,10 +33,11 @@ export class MeService {
 
   get(userId: string) {
     const user = this.engine.users.get(userId);
+    const granted = grantedConsentPurposes(this.engine.consents, userId);
     if (!user) {
-      return { userId, profile: null };
+      return { userId, profile: null, consents: granted };
     }
-    return { userId, profile: user.profile };
+    return { userId, profile: user.profile, consents: granted };
   }
 
   async updateProfile(userId: string, body: ProfileBody) {
@@ -36,6 +51,7 @@ export class MeService {
       interests: body.interests,
       mood: body.mood,
       intention: body.intention,
+      locale: body.locale,
     });
     await this.mirror.mirrorUser(userId);
     return { userId, profile: user.profile };

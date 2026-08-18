@@ -35,6 +35,9 @@ const state = {
   locState: 'unknown',
   lmOpportunities: [],
   lmReturnView: 'v-radar',
+  cachedProfile: null,
+  cachedConsents: [],
+  viewerCity: null,
   serverNow: () => Date.now(),
 };
 
@@ -287,7 +290,7 @@ function clearProtoSession() {
 }
 
 function isAuthedSession() {
-  return Boolean(api && api.hasSession && api.userId);
+  return Boolean(api && api.hasSession && api.userId && api.userId !== 'proto-alex');
 }
 
 /** Public product: protocol screens need OTP session — never resume a ghost Radar. */
@@ -609,6 +612,7 @@ const I18N = {
     lm_loc_off: 'Location unavailable. Opportunities appear when we can place you.',
     lm_offline: 'You’re offline. The map stays up; nearby people refresh when you’re back.',
     lm_you: 'You',
+    lm_place: 'Radar',
     discover_sub: 'Around you now', discover_lead: 'People already near you — only what’s real right now.',
     nav_discover: 'Discover', nav_me: 'Me',
     reason_nearby: 'Nearby', reason_available: 'Available now',
@@ -627,6 +631,7 @@ const I18N = {
     t_go_active: 'Go active to see who’s nearby', t_anon_profile: 'Anonymous profile', t_expires_in: 'Expires in', t_silently_expired: 'It quietly expired', t_chat_expired: 'Time to decide ran out',
     t_cam_required: 'Allow the camera to send a live selfie.', t_capture_fail: 'Couldn’t take the photo', t_slow_net: 'Slow network — try again', t_selfie_fail: 'Photo didn’t send', t_media_missing: 'Photo didn’t go through', t_api_selfie: 'Can’t send a photo right now',
     t_otp_sent_to: 'Sent to', t_bad_phone: 'Invalid number', t_nearby_people: 'Nearby people',
+    set_logout: 'Sign out', t_signed_out: 'Signed out',
   },
   fr: {
     brandtag: 'Facilitez la première rencontre', splash_tag: 'Wingman facilite le premier « bonjour » avec quelqu’un déjà près de vous.', splash_love: 'L’amour est dans l’air.', splash_cta: 'Commencer',
@@ -709,6 +714,7 @@ const I18N = {
     lm_loc_off: 'Localisation indisponible. Les opportunités apparaîtront quand nous pourrons vous situer.',
     lm_offline: 'Hors ligne. La carte reste affichée ; les personnes autour se mettront à jour à votre retour.',
     lm_you: 'Vous',
+    lm_place: 'Radar',
     discover_sub: 'Autour de vous maintenant', discover_lead: 'Des personnes déjà près de vous — seulement ce qui est réel, maintenant.',
     nav_discover: 'Découvrir', nav_me: 'Moi',
     reason_nearby: 'À proximité', reason_available: 'Disponible maintenant',
@@ -727,6 +733,7 @@ const I18N = {
     t_go_active: 'Rendez-vous visible pour voir qui est près de vous', t_anon_profile: 'Profil anonyme', t_expires_in: 'Expire dans', t_silently_expired: 'Cela a expiré en silence', t_chat_expired: 'Le temps pour décider est écoulé',
     t_cam_required: 'Autorisez la caméra pour envoyer une photo en direct.', t_capture_fail: 'Impossible de prendre la photo', t_slow_net: 'Réseau lent — réessayez', t_selfie_fail: 'La photo n’est pas partie', t_media_missing: 'La photo n’est pas passée', t_api_selfie: 'Impossible d’envoyer une photo pour le moment',
     t_otp_sent_to: 'Envoyé au', t_bad_phone: 'Numéro invalide', t_nearby_people: 'Personnes à proximité',
+    set_logout: 'Se déconnecter', t_signed_out: 'Déconnecté',
   },
 };
 
@@ -754,6 +761,28 @@ function setLang(lang) {
   document.documentElement.lang = state.lang;
   persistLang(state.lang);
   applyLang();
+  void persistLocaleToProfile();
+}
+
+async function persistLocaleToProfile() {
+  if (!liveApi() || !state.cachedProfile) return;
+  const p = state.cachedProfile;
+  if (!p.gender || !Array.isArray(p.interestedIn) || !p.interestedIn.length) return;
+  try {
+    const saved = await api.saveProfile({
+      gender: p.gender,
+      interestedIn: p.interestedIn,
+      firstName: p.firstName,
+      birthDate: p.birthDate,
+      heightCm: p.heightCm,
+      dailyBio: p.dailyBio,
+      interests: p.interests,
+      mood: p.mood,
+      intention: p.intention,
+      locale: state.lang,
+    });
+    if (saved && saved.profile) state.cachedProfile = saved.profile;
+  } catch (_) { /* local bootstrap remains */ }
 }
 
 function applyLang() {
@@ -771,6 +800,7 @@ function applyLang() {
   if (typeof refreshBirthMonthLabels === 'function') refreshBirthMonthLabels();
   if (typeof syncLivingMapPresence === 'function') syncLivingMapPresence();
   if (typeof syncLivingMapMood === 'function') syncLivingMapMood();
+  if (typeof syncLivingMapPlace === 'function') syncLivingMapPlace();
   if (typeof syncSignalsChrome === 'function') syncSignalsChrome();
   const mapEl = $('#living-map-el');
   if (mapEl) mapEl.setAttribute('aria-label', dict.radar_sub);
@@ -1094,7 +1124,8 @@ $('#send-signal-btn').addEventListener('click', async () => {
           err.code = 'LOCATION_REQUIRED';
           throw err;
         }
-        await api.radarActivate({ lat: loc.lat, lng: loc.lng, visibility: 'ACTIVE' });
+        const act = await api.radarActivate({ lat: loc.lat, lng: loc.lng, visibility: 'ACTIVE' });
+        applyViewerPlace(act);
         const res = await api.sendSignal(
           { receiverId: targetId, source: 'RADAR' },
           { idempotencyKey: 'proto-' + Date.now() },
@@ -1112,6 +1143,8 @@ $('#send-signal-btn').addEventListener('click', async () => {
       return;
     } catch (e) {
       if (e && e.code === 'LOCATION_REQUIRED') {
+        state.viewerCity = null;
+        syncLivingMapPlace();
         feedback('busy', t((typeof WingmanPresenceGeo !== 'undefined' && WingmanPresenceGeo.locMessageKey(state.locState)) || 'lm_loc_off'));
         return;
       }
@@ -1138,7 +1171,8 @@ $('#radar-toggle').addEventListener('click', async () => {
             err.code = 'LOCATION_REQUIRED';
             throw err;
           }
-          await api.radarActivate({ lat: loc.lat, lng: loc.lng, visibility: 'ACTIVE' });
+          const act = await api.radarActivate({ lat: loc.lat, lng: loc.lng, visibility: 'ACTIVE' });
+          applyViewerPlace(act);
           const cands = await api.radarCandidates();
           applyRadarCandidates(cands);
         });
@@ -1151,6 +1185,8 @@ $('#radar-toggle').addEventListener('click', async () => {
       }
     } catch (e) {
       if (e && e.code === 'LOCATION_REQUIRED') {
+        state.viewerCity = null;
+        syncLivingMapPlace();
         feedback('busy', t((typeof WingmanPresenceGeo !== 'undefined' && WingmanPresenceGeo.locMessageKey(state.locState)) || 'lm_loc_off'));
         syncRadarEmpty();
         return;
@@ -1344,6 +1380,7 @@ function syncLivingMapPresence() {
       ? t('radar_invisible')
       : (state.mood === 'UNSURE' || state.mood === 'EXPLORING' ? t('lm_exploring') : t('lm_available'));
   }
+  if (typeof syncLivingMapPlace === 'function') syncLivingMapPlace();
   const tog = $('#lm-radar-toggle');
   if (tog) {
     tog.classList.toggle('off', !state.radarActive);
@@ -1382,6 +1419,30 @@ function syncLivingMapEmpty(count) {
   }
   setNearbyCount(n);
   if (document.body) document.body.dataset.lmCount = String(n);
+}
+
+function applyViewerPlace(payload) {
+  const city = payload && payload.viewerPlace && payload.viewerPlace.city;
+  if (city && typeof city === 'string') {
+    state.viewerCity = city;
+  }
+  syncLivingMapPlace();
+}
+
+function syncLivingMapPlace() {
+  const el = $('#lm-place');
+  if (!el) return;
+  const status = !state.radarActive
+    ? t('radar_invisible')
+    : (state.mood === 'UNSURE' || state.mood === 'EXPLORING' ? t('lm_exploring') : t('lm_available'));
+  const city = state.viewerCity;
+  if (!city) {
+    el.hidden = true;
+    el.textContent = '';
+    return;
+  }
+  el.hidden = false;
+  el.textContent = t('nav_radar') + ' · ' + city + ' / ' + status;
 }
 
 function setLocBanner(msg) {
@@ -1466,7 +1527,8 @@ async function tickPresenceHeartbeat(force) {
   const Geo = typeof WingmanPresenceGeo !== 'undefined' ? WingmanPresenceGeo : null;
   const loc = Geo ? Geo.heartbeatLocation(state.viewerLoc, state.locState) : viewerCoords();
   try {
-    await api.radarHeartbeat(loc ? { lat: loc.lat, lng: loc.lng } : {});
+    const beat = await api.radarHeartbeat(loc ? { lat: loc.lat, lng: loc.lng } : {});
+    applyViewerPlace(beat);
     presenceHeartbeatLast = now;
   } catch (e) {
     if (e && (e.code === 'NOT_FOUND' || e.code === 'CONFLICT')) {
@@ -2661,6 +2723,22 @@ $('#export-data-btn') && $('#export-data-btn').addEventListener('click', () => {
 $('#delete-account-btn') && $('#delete-account-btn').addEventListener('click', () => {
   feedback('busy', t('t_delete_ok'));
 });
+$('#logout-btn') && $('#logout-btn').addEventListener('click', async () => {
+  if (state.busy) return;
+  try {
+    if (api && api.logout) await api.logout();
+  } catch (_) { /* local clear still required */ }
+  try { if (api) api.clearSession(); } catch (_) { /* ignore */ }
+  clearProtoSession();
+  state.meId = 'proto-alex';
+  state.cachedProfile = null;
+  state.cachedConsents = [];
+  state.viewerCity = null;
+  state.radarActive = false;
+  stopPresenceHeartbeat();
+  feedback('success', t('t_signed_out'));
+  show('v-phone');
+});
 
 /* reduce motion */
 function setReduceMotion(on) {
@@ -2742,7 +2820,7 @@ async function bootApi() {
   const bootOnSplash = !state.viewId || state.viewId === 'v-splash';
   if (!bootOnSplash) setLoading(true, t('t_loading'));
   try {
-    api = await WingmanApi.bootstrapApi({ userId: state.meId });
+    api = await WingmanApi.bootstrapApi();
     const product = Boolean(api.productPath);
     state.apiLive = !api.useMock && !api.unreachable && Boolean(api.baseUrl);
 
@@ -2766,10 +2844,16 @@ async function bootApi() {
       return;
     }
 
-    // S27 session path — real identity from OTP tokens
-    if (api.hasSession && api.userId) {
-      state.meId = api.userId;
+    // S27 session path — real identity from OTP tokens (durable across serverless)
+    if (api.hasSession) {
+      state.meId = api.userId || state.meId;
         try {
+          const me = await api.me();
+          if (me && me.userId) {
+            state.meId = me.userId;
+            api.setUserId(me.userId);
+          }
+          applyRestoredMe(me);
           const ents = await api.entitlements();
           applyEntitlements(ents);
           try {
@@ -2778,7 +2862,6 @@ async function bootApi() {
           } catch (_) { /* ignore */ }
           setOfflineUi(false, false);
           setApiBanner('live', t('t_api_live'));
-          feedback('success', t('t_auth_ok'));
           if (state.phase === 'offline' || !state.phase) setPhase('idle');
           await refreshAuthMode();
           ensureRealtime();
@@ -2831,8 +2914,10 @@ async function bootApi() {
     clearProtoSession();
     state.radarActive = false;
     setOfflineUi(false, false);
-    setApiBanner('busy', t('t_auth_required'));
-    feedback('busy', t('t_auth_required'));
+    if (api.hadBootTokens) {
+      setApiBanner('busy', t('t_auth_required'));
+      feedback('busy', t('t_auth_required'));
+    }
     applyEntitlements({ plan: 'FREE', capabilities: { dailySignals: 2, activeConnectionTickets: 1 } });
     await refreshAuthMode();
   } catch (_) {
@@ -2863,6 +2948,8 @@ function restoreSessionIfAny() {
     'v-radar', 'v-signal', 'v-selfie', 'v-ticket', 'v-mission-meet', 'v-mission-mode', 'v-outcome', 'v-cooldown',
   ]);
   const wantsProtocol = saved.viewId && resumeViews.has(saved.viewId);
+  const SR = typeof WingmanSessionRestore !== 'undefined' ? WingmanSessionRestore : null;
+  const profileOk = SR ? SR.profileComplete(state.cachedProfile) : Boolean(state.cachedProfile && state.cachedProfile.firstName);
 
   // Hosted product: never dump users onto Radar with dead CTAs when OTP tokens are gone.
   if (wantsProtocol && api && api.productPath && !isAuthedSession()) {
@@ -2905,7 +2992,7 @@ function restoreSessionIfAny() {
   }
   syncRadarEmpty();
   syncSignalEmpty();
-  if (wantsProtocol && saved.viewId !== 'v-splash') {
+  if (wantsProtocol && saved.viewId !== 'v-splash' && profileOk) {
     show(saved.viewId);
     feedback('info', t('t_session_restored'));
   } else if (saved.phase && saved.phase !== 'offline') {
@@ -2916,6 +3003,107 @@ function restoreSessionIfAny() {
   void restoreForeground({ silent: true });
 }
 
+/** After OTP session exists, restore profile/locale and skip onboarding when complete. */
+function applyRestoredMe(me) {
+  if (!me) return;
+  state.cachedProfile = me.profile || null;
+  state.cachedConsents = Array.isArray(me.consents) ? me.consents : [];
+  const SR = typeof WingmanSessionRestore !== 'undefined' ? WingmanSessionRestore : null;
+  if (SR && me.profile) {
+    const loc = SR.localeFromProfile(me.profile, state.lang);
+    if (loc !== state.lang) setLang(loc);
+    else if (!me.profile.locale) void persistLocaleToProfile();
+  }
+  if (me.profile) fillProfileForm(me.profile);
+}
+
+function fillProfileForm(profile) {
+  if (!profile) return;
+  const name = $('#pf-name');
+  if (name && profile.firstName) name.value = profile.firstName;
+  if (profile.birthDate) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(profile.birthDate);
+    if (m) {
+      const y = $('#pf-birth-year');
+      const mo = $('#pf-birth-month');
+      const d = $('#pf-birth-day');
+      if (y) y.value = m[1];
+      if (mo) mo.value = String(Number(m[2]));
+      fillBirthDays();
+      if (d) d.value = String(Number(m[3]));
+      syncBirthHidden();
+    }
+  }
+  const genderMap = { MALE: 'g_male', FEMALE: 'g_female', NON_BINARY: 'g_nb' };
+  const gKey = genderMap[profile.gender];
+  if (gKey) {
+    $$('#v-profile [aria-labelledby="pf-gender-label"] .pill').forEach((p) => {
+      p.setAttribute('aria-pressed', String(p.getAttribute('data-i18n') === gKey));
+    });
+  }
+  const interestMap = { MEN: 't_men', WOMEN: 't_women', NON_BINARY_PEOPLE: 't_nb' };
+  if (Array.isArray(profile.interestedIn)) {
+    $$('#v-profile [aria-labelledby="pf-interest-label"] .pill').forEach((p) => {
+      const key = p.getAttribute('data-i18n');
+      const on = Object.keys(interestMap).some((k) => interestMap[k] === key && profile.interestedIn.indexOf(k) !== -1);
+      p.setAttribute('aria-pressed', String(on));
+    });
+  }
+  if (profile.intention) {
+    $$('#v-profile [aria-labelledby="pf-intention-label"] .pill').forEach((p) => {
+      p.setAttribute('aria-pressed', String(p.dataset.intention === profile.intention));
+    });
+  }
+  if (Array.isArray(profile.interests)) {
+    $$('#v-profile [aria-labelledby="pf-interests-label"] .pill').forEach((p) => {
+      const tag = p.getAttribute('data-interest');
+      p.setAttribute('aria-pressed', String(profile.interests.indexOf(tag) !== -1));
+    });
+  }
+  const h = $('#pf-height');
+  if (h && profile.heightCm) h.value = String(profile.heightCm);
+  const bio = $('#pf-bio');
+  if (bio && profile.dailyBio) bio.value = profile.dailyBio;
+  if (profile.mood) state.mood = profile.mood === 'UNSURE' ? 'UNSURE' : profile.mood;
+}
+
+async function restoreIdentityAndRoute() {
+  const SR = typeof WingmanSessionRestore !== 'undefined' ? WingmanSessionRestore : null;
+  if (!SR) {
+    resumeAuthedFunnelIfNeeded();
+    return;
+  }
+  if (isAuthedSession()) {
+    if (!state.cachedProfile && liveApi()) {
+      try {
+        const me = await api.me();
+        applyRestoredMe(me);
+      } catch (e) {
+        if (e && (e.code === 'UNAUTHORIZED' || e.status === 401)) {
+          try { api.clearSession(); } catch (_) { /* ignore */ }
+          show('v-phone');
+          return;
+        }
+      }
+    }
+    const dest = SR.bootView({
+      hasSession: true,
+      profile: state.cachedProfile,
+      consents: state.cachedConsents,
+    });
+    const protocolHold = new Set(['v-signal', 'v-selfie', 'v-ticket', 'v-mission-meet', 'v-mission-mode', 'v-outcome', 'v-cooldown']);
+    if (protocolHold.has(state.viewId)) return;
+    if (dest === 'v-radar') feedback('info', t('t_session_restored'));
+    show(dest);
+    return;
+  }
+  const dest = SR.bootView({
+    hasSession: false,
+    hadStoredTokens: Boolean(api && api.hadBootTokens),
+  });
+  if (dest !== 'v-splash' && dest !== state.viewId) show(dest);
+}
+
 /** After OTP session exists, don't trap the user on splash/phone again. */
 function resumeAuthedFunnelIfNeeded() {
   if (!api || !api.hasSession || !api.userId) return;
@@ -2924,16 +3112,7 @@ function resumeAuthedFunnelIfNeeded() {
   ]);
   const current = state.viewId || 'v-splash';
   if (!funnel.has(current)) return;
-  const saved = readSession();
-  const resumeViews = new Set([
-    'v-radar', 'v-signal', 'v-selfie', 'v-ticket', 'v-mission-meet', 'v-mission-mode', 'v-outcome', 'v-cooldown',
-    'v-profile', 'v-consent',
-  ]);
-  if (saved && saved.viewId && resumeViews.has(saved.viewId)) {
-    show(saved.viewId);
-    return;
-  }
-  show('v-profile');
+  void restoreIdentityAndRoute();
 }
 
 /* boot */
@@ -3202,6 +3381,7 @@ function readProfileForm() {
     interests: interests.length ? interests : undefined,
     mood: state.mood === 'EXPLORING' ? 'UNSURE' : state.mood,
     intention,
+    locale: state.lang,
   };
 }
 
@@ -3220,6 +3400,7 @@ $('#profile-next-btn') && $('#profile-next-btn').addEventListener('click', async
     try {
       await withLoading(t('t_loading'), async () => {
         await api.saveProfile(body);
+        state.cachedProfile = Object.assign({}, state.cachedProfile || {}, body);
       });
     } catch (e) {
       const msg = (e && e.code === 'VALIDATION_REQUIRED')
@@ -3288,6 +3469,7 @@ async function postConsents() {
   for (const g of grants) {
     await api.consent(g);
   }
+  state.cachedConsents = grants.map((g) => g.purpose);
 }
 
 $('#consent-cta-btn') && $('#consent-cta-btn').addEventListener('click', async () => {
@@ -3595,13 +3777,17 @@ $('#otp-verify-btn') && $('#otp-verify-btn').addEventListener('click', async () 
     await withLoading(t('t_loading'), async () => {
       const sess = await api.verifyOtp(phone, code);
       state.meId = sess.userId;
+      try {
+        const me = await api.me();
+        applyRestoredMe(me);
+      } catch (_) { /* route will land on profile */ }
       const ents = await api.entitlements();
       applyEntitlements(ents);
     });
     setApiBanner('live', t('t_api_live'));
     feedback('success', t('t_auth_ok'));
     ensureRealtime();
-    show('v-profile');
+    await restoreIdentityAndRoute();
   } catch (e) {
     const codeErr = e && e.code;
     const msg = codeErr === 'OTP_EXPIRED' ? t('t_otp_expired')
@@ -3638,7 +3824,6 @@ bootApi().then(() => {
   restoreSessionIfAny();
   return refreshAuthMode();
 }).then(async () => {
-  resumeAuthedFunnelIfNeeded();
   try {
     let serverOn;
     if (api && !api.useMock) {
@@ -3649,6 +3834,7 @@ bootApi().then(() => {
     }
     applyLivingMapFlag(serverOn);
   } catch (_) { /* keep last resolved surface */ }
+  await restoreIdentityAndRoute();
   if (/[?&]smoke=1\b/.test(location.search)) runP4Smoke();
 });
 window.__wingmanRunP4Smoke = runP4Smoke;

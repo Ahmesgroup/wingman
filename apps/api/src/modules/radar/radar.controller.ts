@@ -28,6 +28,7 @@ import {
 import {
   GeoIntelligenceEngine,
   isGeoIntelligenceEnabled,
+  publicViewerPlace,
 } from "@wingman/geo-intelligence";
 import {
   DestinyV2Engine,
@@ -387,7 +388,10 @@ export class RadarController {
     @Body(new ZodValidationPipe(ActivateRadarSchema))
     body: { lat: number; lng: number; visibility: string },
   ) {
-    return { presence: await this.radar.activate(userId, body) };
+    return {
+      presence: await this.radar.activate(userId, body),
+      viewerPlace: publicViewerPlace(body.lat, body.lng),
+    };
   }
 
   @Post("deactivate")
@@ -400,7 +404,15 @@ export class RadarController {
     @CurrentUser() userId: string,
     @Body(new ZodValidationPipe(HeartbeatSchema)) body: { lat?: number; lng?: number },
   ) {
-    return { presence: await this.radar.heartbeat(userId, body) };
+    const presence = await this.radar.heartbeat(userId, body);
+    const loc =
+      body.lat !== undefined && body.lng !== undefined
+        ? { lat: body.lat, lng: body.lng }
+        : null;
+    return {
+      presence,
+      viewerPlace: loc ? publicViewerPlace(loc.lat, loc.lng) : null,
+    };
   }
 
   @Get("candidates")

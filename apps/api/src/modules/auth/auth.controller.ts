@@ -92,13 +92,13 @@ export class AuthApiService {
     return session;
   }
 
-  refresh(body: { refreshToken: string; deviceId: string }) {
+  async refresh(body: { refreshToken: string; deviceId: string }) {
     return this.auth.refresh(body.refreshToken, body.deviceId);
   }
 
-  logout(authorization?: string) {
+  async logout(authorization?: string) {
     if (authorization?.startsWith("Bearer ")) {
-      this.auth.revoke(authorization.slice("Bearer ".length));
+      await this.auth.revoke(authorization.slice("Bearer ".length));
     }
     return { ok: true };
   }

@@ -82,6 +82,35 @@ describe("S44 Living Map / Discover / Pulse", () => {
     await app.close();
   });
 
+  it("activate returns viewer city for Luxembourg and never puts city/coords on opportunities", async () => {
+    const clock = new FakeClock(new Date("2026-08-17T18:00:00.000Z"));
+    const engine = new WingmanEngine({ clock });
+    const app = await createNestApp({ engine, ephemeral: new MemoryEphemeralStore(), skipHydrate: true });
+    const server = app.getHttpServer();
+
+    await request(server).post("/dev/seed").send({ id: "v", gender: "MALE", interestedIn: ["WOMEN"] }).expect(201);
+    await request(server).post("/dev/seed").send({ id: "near", gender: "FEMALE", interestedIn: ["MEN"] }).expect(201);
+
+    const lu = await request(server)
+      .post("/radar/activate")
+      .set("x-user-id", "v")
+      .send({ lat: 49.6116, lng: 6.1319 })
+      .expect(201);
+    expect(lu.body.viewerPlace).toEqual({ city: "Luxembourg" });
+    expect(JSON.stringify(lu.body.viewerPlace)).not.toMatch(/lat|lng|address/i);
+
+    await request(server)
+      .post("/radar/activate")
+      .set("x-user-id", "near")
+      .send({ lat: 49.612, lng: 6.132 })
+      .expect(201);
+
+    const opps = await request(server).get("/radar/opportunities").set("x-user-id", "v").expect(200);
+    expect(JSON.stringify(opps.body)).not.toMatch(/"lat"|"lng"|viewerPlace|address/);
+    expect(payloadLeaksCoordinates(opps.body)).toBe(false);
+    await app.close();
+  });
+
   it("blocked / expired / out-of-radius / hidden stay out", async () => {
     const clock = new FakeClock(new Date("2026-08-17T18:00:00.000Z"));
     const engine = new WingmanEngine({ clock });

@@ -76,6 +76,7 @@ export const ProfileUpdateSchema = z.object({
   dailyBio: z.string().max(150).optional(),
   mood: z.enum(["SUPER_READY", "OPEN", "UNSURE"]).optional(),
   intention: z.enum(["AVAILABLE_NOW", "JUST_EXPLORING"]).optional(),
+  locale: z.enum(["en", "fr"]).optional(),
 });
 
 export const ERROR_CATALOG = {

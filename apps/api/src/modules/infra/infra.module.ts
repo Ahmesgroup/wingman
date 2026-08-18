@@ -1,5 +1,6 @@
 import { Global, Module } from "@nestjs/common";
-import { AuthService } from "@wingman/auth";
+import { AuthService, KvAuthPersistence, redisAuthKv } from "@wingman/auth";
+import { Redis } from "ioredis";
 import { createPrismaClient, pingDatabase, type PrismaClient } from "@wingman/database";
 import { MemoryEphemeralStore, RedisEphemeralStore, type EphemeralStore } from "@wingman/ephemeral";
 import { InMemoryPushTransport, NotificationOrchestrator } from "@wingman/notifications";
@@ -95,6 +96,34 @@ async function buildEphemeral(): Promise<EphemeralStore> {
     throw new Error("REDIS_URL is required in public production (no memory ephemeral fallback)");
   }
   return new MemoryEphemeralStore();
+}
+
+async function buildAuth(): Promise<AuthService> {
+  if (sharedInfra.auth) return sharedInfra.auth;
+  const pepper = process.env.AUTH_PEPPER ?? "dev-pepper-change-me";
+  const url = process.env.REDIS_URL;
+  if (url) {
+    try {
+      const redis = new Redis(url, { maxRetriesPerRequest: 1, lazyConnect: true });
+      if (redis.status !== "ready") await redis.connect();
+      sharedInfra.auth = new AuthService(pepper, () => new Date(), {
+        persistence: new KvAuthPersistence(redisAuthKv(redis)),
+      });
+      return sharedInfra.auth;
+    } catch (e) {
+      if (isPublicProd()) {
+        throw new Error(
+          `REDIS_URL unreachable for durable sessions (no memory fallback): ${
+            e instanceof Error ? e.message : String(e)
+          }`,
+        );
+      }
+    }
+  } else if (isPublicProd()) {
+    throw new Error("REDIS_URL is required in public production (no memory session fallback)");
+  }
+  sharedInfra.auth = new AuthService(pepper);
+  return sharedInfra.auth;
 }
 
 function buildSms(): SmsProvider {
@@ -241,8 +270,7 @@ function buildProtocolRepo(): Promise<{ repo: ProtocolRepository; prisma: Prisma
     },
     {
       provide: AUTH_SERVICE_TOKEN,
-      useFactory: () =>
-        sharedInfra.auth ?? new AuthService(process.env.AUTH_PEPPER ?? "dev-pepper-change-me"),
+      useFactory: async () => buildAuth(),
     },
     {
       provide: DEVICE_TOKEN_STORE,

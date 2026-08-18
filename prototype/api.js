@@ -90,14 +90,15 @@
   function createApiClient(opts) {
     opts = opts || {};
     const baseUrl = (opts.baseUrl || DEFAULT_BASE || '').replace(/\/$/, '');
-    let userId = opts.userId || lsGet(AUTH_USER) || null;
+    const seededUserId = opts.userId && opts.userId !== 'proto-alex' ? opts.userId : null;
+    let userId = seededUserId || lsGet(AUTH_USER) || null;
     let accessToken = lsGet(AUTH_ACCESS);
     let refreshToken = lsGet(AUTH_REFRESH);
     let deviceId = ensureDeviceId();
     let useMock = opts.useMock === true;
     let unreachable = false;
+    const hadBootTokens = Boolean(accessToken || refreshToken);
     const preferDevHeader = opts.preferDevHeader === true && allowDevHeader();
-    // Public hosted surface (not localhost, not ?qa=1) — never silent demo / ?api= tooling.
     const productPath = !isLocalHost() && !(params && params.get('qa') === '1');
 
     function persistSession(sess) {
@@ -110,13 +111,20 @@
       }
       lsSet(AUTH_ACCESS, accessToken);
       lsSet(AUTH_REFRESH, refreshToken);
+      if (sess.expiresAt) lsSet('wingman_access_expires', String(sess.expiresAt));
+      if (sess.refreshExpiresAt) lsSet('wingman_refresh_expires', String(sess.refreshExpiresAt));
     }
 
     function clearSession() {
       accessToken = null;
       refreshToken = null;
+      userId = null;
       lsSet(AUTH_ACCESS, null);
       lsSet(AUTH_REFRESH, null);
+      lsSet(AUTH_USER, null);
+      lsSet(AUTH_PHONE, null);
+      lsSet('wingman_access_expires', null);
+      lsSet('wingman_refresh_expires', null);
     }
 
     function setUserId(id) {
@@ -164,7 +172,7 @@
       if (reqOpts.idempotencyKey) headers['idempotency-key'] = reqOpts.idempotencyKey;
 
       let out = await rawFetch(method, path, body, headers);
-      if (out.res.status === 401 && refreshToken && accessToken && !reqOpts._retried) {
+      if (out.res.status === 401 && refreshToken && !reqOpts._retried) {
         try {
           const refreshed = await refreshSession();
           if (refreshed) {
@@ -214,7 +222,8 @@
       get unreachable() { return unreachable; },
       get productPath() { return productPath; },
       get deviceId() { return deviceId; },
-      get hasSession() { return Boolean(accessToken); },
+      get hasSession() { return Boolean(accessToken || refreshToken); },
+      get hadBootTokens() { return hadBootTokens; },
       get preferDevHeader() { return preferDevHeader; },
       setUserId: setUserId,
       setUseMock: function (v) { useMock = Boolean(v); },
@@ -250,7 +259,6 @@
           deviceId: deviceId,
         }, { public: true });
         persistSession(sess);
-        lsSet(AUTH_PHONE, phoneE164);
         return sess;
       },
       logout: async function () {

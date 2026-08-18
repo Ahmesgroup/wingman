@@ -55,15 +55,15 @@ describe("S27A field-test auth helpers", () => {
     expect(getFieldTestOtpCode()).toBe("482913");
   });
 
-  it("verify accepts fixed delivery code with rate-limit still active", () => {
+  it("verify accepts fixed delivery code with rate-limit still active", async () => {
     expect(isFieldTestAuthMode()).toBe(false);
     process.env.AUTH_FIELD_TEST_MODE = "true";
     expect(isFieldTestAuthMode()).toBe(true);
     const auth = new AuthService("pepper");
     auth.requestOtp("+35211111111", { deliveryCode: "482913" });
-    const session = auth.verifyOtp("+35211111111", "482913", "device-a");
+    const session = await auth.verifyOtp("+35211111111", "482913", "device-a");
     expect(session.userId).toBeTruthy();
     expect(session.accessToken).toBeTruthy();
-    expect(() => auth.verifyOtp("+35211111111", "000000", "device-a")).toThrow(AuthError);
+    await expect(auth.verifyOtp("+35211111111", "000000", "device-a")).rejects.toBeInstanceOf(AuthError);
   });
 });

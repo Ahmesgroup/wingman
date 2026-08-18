@@ -211,6 +211,7 @@ describe('living-map P0 actionability', () => {
   const app = readFileSync(join(dir, 'app.js'), 'utf8');
   const css = readFileSync(join(dir, 'styles.css'), 'utf8');
   const html = readFileSync(join(dir, 'index.html'), 'utf8');
+  const apiSrc = readFileSync(join(dir, 'api.js'), 'utf8');
 
   it('empty copy and nearby count are mutually exclusive', () => {
     assert.equal(LM.emptyStateVisible(true, 0), true);
@@ -251,6 +252,8 @@ describe('living-map P0 actionability', () => {
     assert.match(app, /Someone nearby is open to meeting/);
     assert.match(app, /Une personne près de vous est ouverte à une rencontre/);
     assert.match(html, /id="lm-attrib"/);
+    assert.match(html, /id="lm-place"/);
+    assert.match(html, /session-restore\.js/);
   });
 
   it('map chrome sits above the transparent Radar view so markers receive taps', () => {
@@ -267,6 +270,15 @@ describe('living-map P0 actionability', () => {
     assert.match(html, /carto\.com\/attributions/);
     assert.match(html, /leafletjs\.com/);
     assert.match(css, /lm-attrib/);
+    assert.match(ui, /basemaps\.cartocdn\.com\/dark_nolabels/);
+    assert.doesNotMatch(ui, /tile\.openstreetmap\.org/);
+  });
+
+  it('session restore skips phone when profile+consent exist', () => {
+    assert.match(app, /restoreIdentityAndRoute/);
+    assert.match(app, /applyRestoredMe/);
+    assert.match(html, /id="logout-btn"/);
+    assert.doesNotMatch(apiSrc, /lsSet\(AUTH_PHONE, phoneE164\)/);
   });
 
   it('Say hello from the sheet uses the existing Signal API with opaque userId', () => {

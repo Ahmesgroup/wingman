@@ -131,6 +131,7 @@ export class WingmanEngine {
       interests?: string[];
       mood?: "SUPER_READY" | "OPEN" | "UNSURE";
       intention?: "AVAILABLE_NOW" | "JUST_EXPLORING";
+      locale?: "en" | "fr";
     },
   ): UserSeed {
     const user = this.users.get(userId);
@@ -165,6 +166,7 @@ export class WingmanEngine {
       interests: patch.interests ? [...patch.interests] : undefined,
       mood: patch.mood ?? user.profile.mood,
       intention: patch.intention ?? user.profile.intention,
+      locale: patch.locale ?? user.profile.locale,
     };
     const next = { ...user, profile };
     this.users.set(userId, next);

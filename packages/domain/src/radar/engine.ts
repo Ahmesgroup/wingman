@@ -16,6 +16,7 @@ export interface RadarProfile {
   heightCm?: number;
   dailyBio?: string;
   interests?: string[];
+  locale?: "en" | "fr";
 }
 
 /** Calendar age in full years (UTC date parts). */

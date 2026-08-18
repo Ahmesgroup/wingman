@@ -1,4 +1,16 @@
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
+import {
+  MemoryAuthPersistence,
+  type AuthPersistence,
+  type Session,
+} from "./persistence.js";
+
+export type { Session } from "./persistence.js";
+
+/** Access token lifetime — 1 hour. Reopen within this window needs no refresh. */
+export const AUTH_ACCESS_TTL_MS = 60 * 60 * 1000;
+/** Refresh token lifetime — 30 days. Returning users restore without OTP while this is valid. */
+export const AUTH_REFRESH_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
 export class AuthError extends Error {
   constructor(
@@ -31,24 +43,39 @@ export interface OtpChallenge {
   consumedAt?: Date;
 }
 
-export interface Session {
-  id: string;
-  userId: string;
-  tokenHash: string;
-  refreshHash: string;
-  deviceId: string;
-  createdAt: Date;
-  expiresAt: Date;
-  refreshExpiresAt: Date;
-  revokedAt?: Date;
-}
-
 export interface Device {
   id: string;
   userId: string;
   pushToken?: string;
   platform?: string;
 }
+
+export type IssuedSession = {
+  userId: string;
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: Date;
+  refreshExpiresAt: Date;
+  accessTtlMs: number;
+  refreshTtlMs: number;
+};
+
+export type AuthServiceOpts = {
+  otpTtlMs: number;
+  otpMaxPerPhoneWindow: number;
+  otpWindowMs: number;
+  sessionTtlMs: number;
+  refreshTtlMs: number;
+  persistence?: AuthPersistence;
+};
+
+const DEFAULT_OPTS: Omit<AuthServiceOpts, "persistence"> = {
+  otpTtlMs: 5 * 60 * 1000,
+  otpMaxPerPhoneWindow: 5,
+  otpWindowMs: 15 * 60 * 1000,
+  sessionTtlMs: AUTH_ACCESS_TTL_MS,
+  refreshTtlMs: AUTH_REFRESH_TTL_MS,
+};
 
 function hash(value: string, pepper: string): string {
   return createHash("sha256").update(`${pepper}:${value}`).digest("hex");
@@ -61,34 +88,37 @@ function newId(prefix: string): string {
 export class AuthService {
   private otps = new Map<string, OtpChallenge>();
   private otpByPhone = new Map<string, string>();
-  private sessions = new Map<string, Session>();
-  private sessionsByToken = new Map<string, string>();
   private devices = new Map<string, Device>();
   private otpRequests: Array<{ phoneLookup: string; at: number }> = [];
-  private usersByPhone = new Map<string, string>();
+  private readonly persist: AuthPersistence;
+  private readonly opts: Omit<AuthServiceOpts, "persistence">;
 
   constructor(
     private readonly pepper: string,
     private readonly now: () => Date = () => new Date(),
-    private readonly opts = {
-      otpTtlMs: 5 * 60 * 1000,
-      otpMaxPerPhoneWindow: 5,
-      otpWindowMs: 15 * 60 * 1000,
-      sessionTtlMs: 60 * 60 * 1000,
-      refreshTtlMs: 30 * 24 * 60 * 60 * 1000,
-    },
-  ) {}
+    opts: Partial<AuthServiceOpts> = {},
+  ) {
+    this.opts = { ...DEFAULT_OPTS, ...opts };
+    this.persist = opts.persistence ?? new MemoryAuthPersistence();
+  }
+
+  get accessTtlMs(): number {
+    return this.opts.sessionTtlMs;
+  }
+  get refreshTtlMs(): number {
+    return this.opts.refreshTtlMs;
+  }
 
   phoneLookup(e164: string): string {
     return hash(e164, this.pepper);
   }
 
-  ensureUser(phoneE164: string, userId?: string): string {
+  async ensureUser(phoneE164: string, userId?: string): Promise<string> {
     const lookup = this.phoneLookup(phoneE164);
-    const existing = this.usersByPhone.get(lookup);
+    const existing = await this.persist.getUserId(lookup);
     if (existing) return existing;
     const id = userId ?? newId("usr");
-    this.usersByPhone.set(lookup, id);
+    await this.persist.putUserId(lookup, id);
     return id;
   }
 
@@ -126,8 +156,6 @@ export class AuthService {
     return {
       challengeId: challenge.id,
       deliveryCode: code,
-      // Test-only harness aid. A deployed runtime must never disclose an OTP,
-      // even if AUTH_DEBUG_OTP was mistakenly configured.
       debugCode:
         !external && process.env.NODE_ENV === "test" && process.env.AUTH_DEBUG_OTP === "true"
           ? code
@@ -135,12 +163,7 @@ export class AuthService {
     };
   }
 
-  verifyOtp(phoneE164: string, code: string, deviceId: string): {
-    userId: string;
-    accessToken: string;
-    refreshToken: string;
-    expiresAt: Date;
-  } {
+  async verifyOtp(phoneE164: string, code: string, deviceId: string): Promise<IssuedSession> {
     const challenge = this.requireActiveChallenge(phoneE164);
     if (challenge.external) {
       throw new AuthError("OTP_INVALID", "External OTP must be completed via verifier");
@@ -161,12 +184,7 @@ export class AuthService {
    * After an external verifier (Twilio Verify) approved the code.
    * Still enforces local challenge presence + expiry; does not trust client code.
    */
-  completeExternalOtp(phoneE164: string, deviceId: string): {
-    userId: string;
-    accessToken: string;
-    refreshToken: string;
-    expiresAt: Date;
-  } {
+  async completeExternalOtp(phoneE164: string, deviceId: string): Promise<IssuedSession> {
     const challenge = this.requireActiveChallenge(phoneE164);
     if (!challenge.external) {
       throw new AuthError("OTP_INVALID", "Challenge is not external");
@@ -186,23 +204,18 @@ export class AuthService {
     return challenge;
   }
 
-  private consumeChallenge(
+  private async consumeChallenge(
     phoneE164: string,
     challenge: OtpChallenge,
     deviceId: string,
-  ): {
-    userId: string;
-    accessToken: string;
-    refreshToken: string;
-    expiresAt: Date;
-  } {
+  ): Promise<IssuedSession> {
     challenge.consumedAt = this.now();
-    const userId = this.ensureUser(phoneE164);
+    const userId = await this.ensureUser(phoneE164);
     this.devices.set(deviceId, { id: deviceId, userId });
     return this.issueSession(userId, deviceId);
   }
 
-  issueSession(userId: string, deviceId: string) {
+  async issueSession(userId: string, deviceId: string): Promise<IssuedSession> {
     const accessToken = randomBytes(24).toString("hex");
     const refreshToken = randomBytes(32).toString("hex");
     const now = this.now();
@@ -216,21 +229,25 @@ export class AuthService {
       expiresAt: new Date(now.getTime() + this.opts.sessionTtlMs),
       refreshExpiresAt: new Date(now.getTime() + this.opts.refreshTtlMs),
     };
-    this.sessions.set(session.id, session);
-    this.sessionsByToken.set(session.tokenHash, session.id);
+    await this.persist.putSession(
+      session,
+      Math.ceil(this.opts.sessionTtlMs / 1000),
+      Math.ceil(this.opts.refreshTtlMs / 1000),
+    );
     return {
       userId,
       accessToken,
       refreshToken,
       expiresAt: session.expiresAt,
+      refreshExpiresAt: session.refreshExpiresAt,
+      accessTtlMs: this.opts.sessionTtlMs,
+      refreshTtlMs: this.opts.refreshTtlMs,
     };
   }
 
-  authenticate(accessToken: string, deviceId?: string): { userId: string; sessionId: string } {
+  async authenticate(accessToken: string, deviceId?: string): Promise<{ userId: string; sessionId: string }> {
     const tokenHash = hash(accessToken, this.pepper);
-    const sessionId = this.sessionsByToken.get(tokenHash);
-    if (!sessionId) throw new AuthError("SESSION_INVALID", "Unknown session");
-    const session = this.sessions.get(sessionId);
+    const session = await this.persist.getByAccessHash(tokenHash);
     if (!session) throw new AuthError("SESSION_INVALID", "Unknown session");
     if (session.revokedAt) throw new AuthError("SESSION_REVOKED", "Session revoked");
     if (this.now().getTime() >= session.expiresAt.getTime()) {
@@ -242,9 +259,9 @@ export class AuthService {
     return { userId: session.userId, sessionId: session.id };
   }
 
-  refresh(refreshToken: string, deviceId: string) {
+  async refresh(refreshToken: string, deviceId: string): Promise<IssuedSession> {
     const refreshHash = hash(refreshToken, this.pepper);
-    const session = [...this.sessions.values()].find((s) => s.refreshHash === refreshHash);
+    const session = await this.persist.getByRefreshHash(refreshHash);
     if (!session) throw new AuthError("SESSION_INVALID", "Invalid refresh");
     if (session.revokedAt) throw new AuthError("SESSION_REVOKED", "Session revoked");
     if (this.now().getTime() >= session.refreshExpiresAt.getTime()) {
@@ -254,24 +271,22 @@ export class AuthService {
       throw new AuthError("DEVICE_MISMATCH", "Device binding mismatch");
     }
     session.revokedAt = this.now();
-    this.sessionsByToken.delete(session.tokenHash);
+    await this.persist.dropSession(session);
     return this.issueSession(session.userId, deviceId);
   }
 
-  revoke(accessToken: string): void {
+  async revoke(accessToken: string): Promise<void> {
     const tokenHash = hash(accessToken, this.pepper);
-    const sessionId = this.sessionsByToken.get(tokenHash);
-    if (!sessionId) return;
-    const session = this.sessions.get(sessionId);
+    const session = await this.persist.getByAccessHash(tokenHash);
     if (!session) return;
     session.revokedAt = this.now();
-    this.sessionsByToken.delete(tokenHash);
+    await this.persist.dropSession(session);
   }
 
   /** Replay protection: revoked token cannot authenticate */
-  isReplaySafe(accessToken: string): boolean {
+  async isReplaySafe(accessToken: string): Promise<boolean> {
     try {
-      this.authenticate(accessToken);
+      await this.authenticate(accessToken);
       return true;
     } catch {
       return false;

@@ -47,6 +47,30 @@ describe("POST /me/profile", () => {
 
       const me = await request(server).get("/me").set("x-user-id", "a").expect(200);
       expect(me.body.profile.birthDate).toBe("1998-04-12");
+      expect(me.body.consents).toEqual([]);
+
+      await request(server)
+        .post("/privacy/consent")
+        .set("x-user-id", "a")
+        .send({ purpose: "CORE_MATCHING", policyVersion: "v1" })
+        .expect(201);
+
+      const again = await request(server)
+        .post("/me/profile")
+        .set("x-user-id", "a")
+        .send({
+          gender: "MALE",
+          interestedIn: ["WOMEN"],
+          firstName: "Alex",
+          birthDate: "1998-04-12",
+          locale: "fr",
+        })
+        .expect(201);
+      expect(again.body.profile.locale).toBe("fr");
+
+      const me2 = await request(server).get("/me").set("x-user-id", "a").expect(200);
+      expect(me2.body.profile.locale).toBe("fr");
+      expect(me2.body.consents).toContain("CORE_MATCHING");
 
       await request(server)
         .post("/me/profile")
