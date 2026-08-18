@@ -5,9 +5,10 @@ location.
 
 | Event | Payload (minimal) | When |
 |---|---|---|
-| `radar.candidate.updated` | anonymized dot deltas | nearby set changes |
-| `signal.received` | signalId, source | a Signal arrives |
-| `signal.expired` | signalId | silent 10-min expiry (informational to receiver only) |
+| `radar.changed` | `{ zone, reason }` (`presence` / `leave` / `move` / `block`) | nearby set should refetch; **not** replayed |
+| `radar.candidate.updated` | (sketch alias — transport uses `radar.changed`) | nearby set changes |
+| `signal.received` | signalId, senderId, status | a Signal arrives |
+| `signal.expired` | signalId | silent 10-min expiry (informational to receiver only)
 | `selfie.received` | connectionId, expiresAt | peer selfie available |
 | `selfie.window.expiring` | connectionId, expiresAt | client-derived warning; server does not need to fire at exactly 30s |
 | `connection.confirmed` | connectionId | mutual validation |

@@ -263,7 +263,9 @@ describe("two-session test-harness protocol", () => {
         useDevAuth: false,
         skipHydrate: true,
       });
+      await app.listen(0);
       const server = app.getHttpServer();
+      const port = (server.address() as { port: number }).port;
 
       const deviceA = "block-browser-a";
       const deviceB = "block-browser-b";
@@ -289,6 +291,9 @@ describe("two-session test-harness protocol", () => {
         sessionB.userId,
       ]);
 
+      const socketA = await connectSessionSocket(port, sessionA, deviceA);
+      const socketB = await connectSessionSocket(port, sessionB, deviceB);
+
       const signal = await request(server)
         .post("/signals")
         .set(a)
@@ -304,7 +309,11 @@ describe("two-session test-harness protocol", () => {
         .set(a)
         .send({ userId: sessionB.userId, category: "HARASSMENT", connectionId })
         .expect(201);
+      const radarA = waitForEvent(socketA, "radar.changed");
+      const radarB = waitForEvent(socketB, "radar.changed");
       await request(server).post("/safety/block").set(a).send({ userId: sessionB.userId }).expect(201);
+      expect((await radarA).payload.reason).toBe("block");
+      expect((await radarB).payload.reason).toBe("block");
 
       const afterBlockA = await request(server).get("/radar/candidates").set(a).expect(200);
       const afterBlockB = await request(server).get("/radar/candidates").set(b).expect(200);
@@ -317,6 +326,8 @@ describe("two-session test-harness protocol", () => {
         .send({ receiverId: sessionB.userId, source: "RADAR" })
         .expect(403);
 
+      socketA.close();
+      socketB.close();
       await app.close();
     },
     25_000,

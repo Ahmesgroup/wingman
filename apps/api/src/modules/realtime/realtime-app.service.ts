@@ -16,6 +16,8 @@ import {
 import { WINGMAN_ENGINE } from "../../engine/engine.tokens.js";
 import { REALTIME_HUB } from "./realtime.tokens.js";
 
+type RoomListener = (userId: string, rooms: string[]) => void | Promise<void>;
+
 /**
  * Application-layer realtime facade.
  * Gateway and HTTP services publish through this — WS handlers must not call the domain.
@@ -25,6 +27,7 @@ export class RealtimeAppService implements OnModuleInit, OnModuleDestroy {
   private readonly ids = new EventIdFactory();
   /** userId -> current radar zone (ephemeral subscription aid). */
   private radarZones = new Map<string, string>();
+  private readonly roomListeners = new Set<RoomListener>();
 
   constructor(
     @Inject(REALTIME_HUB) private readonly hub: RealtimeHub,
@@ -41,6 +44,12 @@ export class RealtimeAppService implements OnModuleInit, OnModuleDestroy {
 
   onEnvelope(handler: (envelope: RealtimeEnvelope) => void): () => void {
     return this.hub.onLocal(handler);
+  }
+
+  /** Gateway joins/leaves radar rooms when presence zone changes (after WS already connected). */
+  onUserRoomsChanged(handler: RoomListener): () => void {
+    this.roomListeners.add(handler);
+    return () => this.roomListeners.delete(handler);
   }
 
   async publish(input: {
@@ -62,21 +71,60 @@ export class RealtimeAppService implements OnModuleInit, OnModuleDestroy {
     return rooms;
   }
 
+  private async notifyRoomsChanged(userId: string): Promise<void> {
+    const rooms = this.defaultRoomsForUser(userId);
+    await Promise.all([...this.roomListeners].map((handler) => Promise.resolve(handler(userId, rooms))));
+  }
+
+  /**
+   * Presence join/leave/move. Same-zone heartbeats do not broadcast — that would
+   * force every nearby client to refetch candidates every ~40s.
+   */
   async noteRadarPresence(userId: string, lat: number, lng: number, online: boolean): Promise<void> {
     const zone = radarZoneFromCoords(lat, lng);
+    const prevZone = this.radarZones.get(userId);
+    const nextZone = online ? zone : undefined;
+    const zoneChanged = prevZone !== nextZone;
     if (online) this.radarZones.set(userId, zone);
     else this.radarZones.delete(userId);
+    if (zoneChanged) await this.notifyRoomsChanged(userId);
+    if (!zoneChanged && online) return;
+
+    const rooms = new Set<string>([userRoom(userId), radarRoom(zone)]);
+    if (prevZone && prevZone !== zone) rooms.add(radarRoom(prevZone));
+    const reason = !online ? "leave" : prevZone && prevZone !== zone ? "move" : "presence";
     await this.publish({
       type: "presence.changed",
       aggregateId: userId,
-      rooms: [userRoom(userId), radarRoom(zone)],
-      payload: { userId, online, zone },
+      rooms: [...rooms],
+      payload: { userId, online, zone, reason },
     });
     await this.publish({
       type: "radar.changed",
       aggregateId: zone,
-      rooms: [radarRoom(zone)],
-      payload: { zone, reason: online ? "presence" : "leave" },
+      rooms: [...rooms],
+      payload: { zone, reason },
+    });
+  }
+
+  /** Safety block (and similar) must drop markers without waiting for the next poll. */
+  async publishRadarChanged(input: { reason: string; userIds: string[] }): Promise<RealtimeEnvelope> {
+    const rooms = new Set<string>();
+    const zones = new Set<string>();
+    for (const uid of input.userIds) {
+      rooms.add(userRoom(uid));
+      const z = this.radarZones.get(uid);
+      if (z) {
+        rooms.add(radarRoom(z));
+        zones.add(z);
+      }
+    }
+    const zone = [...zones][0] ?? "block";
+    return this.publish({
+      type: "radar.changed",
+      aggregateId: zone,
+      rooms: [...rooms],
+      payload: { zone, reason: input.reason },
     });
   }
 
@@ -137,4 +185,5 @@ export class RealtimeAppService implements OnModuleInit, OnModuleDestroy {
   connectionRoom = connectionRoom;
   missionRoom = missionRoom;
   userRoom = userRoom;
+  radarRoom = radarRoom;
 }

@@ -1100,6 +1100,8 @@ $('#mood-select').addEventListener('click', e => {
 /* ------------------------------------------------------------- Living Map */
 let livingMapCtl = null;
 let livingMapRefreshTimer = null;
+let radarRefreshTimer = null;
+const RADAR_REFRESH_DEBOUNCE_MS = 280;
 const lmFilterState = { proximity: [], presence: [], intention: [], interests: [] };
 
 function livingMapOn() {
@@ -1427,8 +1429,18 @@ async function refreshLivingMap() {
 }
 
 function scheduleLivingMapRefresh() {
+  scheduleRadarRefresh();
+}
+
+/** Debounced Radar refetch from realtime — canvas and Living Map share this so heartbeats do not spam GET. */
+function scheduleRadarRefresh() {
+  clearTimeout(radarRefreshTimer);
   clearTimeout(livingMapRefreshTimer);
-  livingMapRefreshTimer = setTimeout(function () { void refreshLivingMap(); }, 280);
+  radarRefreshTimer = setTimeout(function () {
+    if (!liveApi() || !state.radarActive) return;
+    if (state.livingMap) void refreshLivingMap();
+    else api.radarCandidates().then(applyRadarCandidates).catch(function () { /* keep last dots */ });
+  }, RADAR_REFRESH_DEBOUNCE_MS);
 }
 
 function humanInterest(tag) {
@@ -1939,9 +1951,7 @@ function applyLocalBlock(userId) {
   setNearbyCount(typeof WingmanRadarDots !== 'undefined' ? WingmanRadarDots.nearbyCountFromDots(dots) : dots.length);
   syncRadarEmpty();
   renderDiscoverFromDots();
-  if (liveApi()) {
-    api.radarCandidates().then(applyRadarCandidates).catch(function () { /* keep local removal */ });
-  }
+  if (liveApi()) scheduleRadarRefresh();
 }
 
 function openReportFor(userId) {
@@ -2838,22 +2848,22 @@ function handleRealtimeEvent(env) {
   if (!env || !env.type) return;
   const p = env.payload || {};
   if (env.type === 'signal.received') {
-    state.signalId = p.signalId || env.aggregateId;
+    const id = p.signalId || env.aggregateId;
+    if (id && state.signalId === id && state.hasIncomingSignal) return;
+    state.signalId = id;
     if (p.senderId) state.peerId = p.senderId;
     state.hasIncomingSignal = true;
     syncSignalEmpty();
     markSignalArrive();
     setPhase('signal', t('t_phase_signal'));
     feedback('signal', t('t_signal_received'));
+    announce(t('t_signal_received'));
     haptic('signalSent');
     syncInboxChrome();
     return;
   }
   if (env.type === 'radar.changed' || env.type === 'presence.changed') {
-    if (liveApi() && state.radarActive) {
-      if (state.livingMap) scheduleLivingMapRefresh();
-      else api.radarCandidates().then(applyRadarCandidates).catch(() => {});
-    }
+    if (liveApi() && state.radarActive) scheduleRadarRefresh();
     return;
   }
   if (env.type === 'validation.updated' || env.type === 'mission.updated' || env.type === 'match.created') {
@@ -2892,6 +2902,7 @@ function handleRealtimeEvent(env) {
       state.hasIncomingSignal = false;
       syncSignalEmpty();
       show('v-radar');
+      scheduleRadarRefresh();
     }
   }
 }

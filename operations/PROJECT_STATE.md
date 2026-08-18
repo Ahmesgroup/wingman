@@ -10,6 +10,7 @@
 facilitates the first real-world interaction between people who are already near each other — or who repeatedly cross
 paths through Destiny Connection.
 **S28:** [`S28_PRODUCTION_PERSISTENCE.md`](./S28_PRODUCTION_PERSISTENCE.md) — Neon + Upstash live; `/internal/ready` = prisma/redis/postgres; durability cert passed  
+**S29:** [`S29_REALTIME.md`](./S29_REALTIME.md) — Signal/Radar/chat/block over existing WS; block emits `radar.changed`; Evidence Pack still open  
 **S31:** [`S31_PRIVATE_SELFIE_MEDIA.md`](./S31_PRIVATE_SELFIE_MEDIA.md) — Vercel Blob private + camera→upload→opaque id + server `capturedAt`; Evidence Pack still open  
 **Related:** [`S26_MEASUREMENT.md`](./S26_MEASUREMENT.md), [`CLIENT_MOBILE_PAYMENT_READINESS.md`](./CLIENT_MOBILE_PAYMENT_READINESS.md), [`FIELD_TEST.md`](./FIELD_TEST.md)
 
@@ -30,7 +31,7 @@ S27A                                OPEN — Evidence Pack NOT STARTED
 S27B                                OPEN — Twilio Verify configured; SMS evidence later
 S27A verdict                        OPEN — never “almost”
 S28                                 GO (infra) — Neon+Upstash; fail-closed; durability cert passed
-S29                                 PARTIAL wire (WS + Redis live); multi-phone later
+S29                                 WIRED (realtime); Evidence Pack later (two phones)
 Gate C profile                      WIRED POST /me/profile — durable GO (infra)
 S35 V2                              EXPERIMENT SPEC ONLY — flag false; no domain merge
 S36–S43 native                      DEFERRED — entry after V1 Evidence Pack GREEN
@@ -42,7 +43,7 @@ S36–S43 native                      DEFERRED — entry after V1 Evidence Pack 
 S27A Field-Test Identity                       OPEN (Evidence Pack NOT STARTED)
 S27B Production SMS OTP                        OPEN (Twilio Verify; evidence later)
 S28  Production Persistence Certification      GO (infra)
-S29  Real Multi-user Realtime                  PARTIAL wire
+S29  Real Multi-user Realtime                  WIRED (realtime)
 S30  Real Radar & Geo Field Test               WIRED (client) — geo + heartbeat; Evidence Pack later
 S31  Real Selfie Exchange                      WIRED (infra) — Evidence Pack NOT STARTED
 S32  Push & Closed-app Protocol                PARTIAL wire (web reconnect) / BLOCKED (push credentials)

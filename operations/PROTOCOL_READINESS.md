@@ -57,14 +57,14 @@ still required. **PRODUCT PROTOCOL READY = NO.**
 |------|--------------|---------|-------|----------|-------------------|------------|---------|
 | REAL OTP | `api.js` Bearer + device | `POST /auth/otp/*` Twilio Verify | Auth sessions | n/a | Session tokens in LS | No SMS claim when field-test; prod claims SMS via Twilio | **PASS wire** / Evidence Pack **NOT STARTED** |
 | REAL PROFILE | `#profile-next-btn` → `POST /me/profile` | `GET/POST /me` | Engine + mirror (`ProtocolIdentity`) | none | **Durability GO (infra)** | Removed `data-go` skip | **PASS wire** / durable **GO (infra)** |
-| REAL RADAR | `radarActivate` + geolocation + heartbeat + `candidatesToDots` | `/radar/*` | Presence ephemeral (Redis target) | `radar.changed` | Heartbeat while tab foreground | Ghost dots removed | **PASS wire** / Evidence Pack NOT STARTED |
+| REAL RADAR | `radarActivate` + geolocation + heartbeat + `candidatesToDots` | `/radar/*` | Presence ephemeral (Redis target) | `radar.changed` (appear/leave/block; heartbeat does not rebroadcast) | Heartbeat while tab foreground | Ghost dots removed | **PASS wire** / Evidence Pack NOT STARTED |
 | REAL SIGNAL | send as self; receive via WS | `/signals` | Engine + mirror | `signal.received` | Durability IN PROGRESS | Sender no longer fakes incoming | **PASS wire** / Evidence Pack NOT STARTED |
 | REAL SELFIE A/B | camera → private upload → opaque `mediaId` + server `capturedAt` | `POST .../media` + `POST .../selfie` + authorized `GET .../media/:id` (authz, wrong connection, expired, third party) | private Blob + Connection | `validation.updated` | Connection id | Peer impersonation gated to lab; camera denied blocking; slow net honest fail | **WIRED (infra)** / Evidence Pack **NOT STARTED** |
 | REAL MUTUAL | approve as initiator | `POST .../approve` | Connection | `validation.updated` | if durable | — | **PASS wire** |
 | REAL MISSION CHAT | `message` + WS + `GET .../messages` | messages + `mission.message` | Redis ephemeral target | `mission.message` | Durability IN PROGRESS | No fake chat states on product | **PASS wire** / durable IN PROGRESS |
 | REAL MISSION MODE | meet-now / lets-meet / finish | connection transitions | Connection | `mission.updated` | if durable | — | **PASS wire** |
 | REAL OUTCOME | own outcome only | `POST .../outcome` | Connection | `mission.updated` | if durable | Peer sim lab-only | **PASS wire** |
-| REAL BLOCK / REPORT | Radar / Discover / Signal / Selfie / Mission / Me → Safety → category | `POST /safety/report` + `POST /safety/block` | Engine + mirror | `connection.closed` | block durable | Admin preview hidden on public field-test | **PASS wire** / Evidence Pack **NOT STARTED** |
+| REAL BLOCK / REPORT | Radar / Discover / Signal / Selfie / Mission / Me → Safety → category | `POST /safety/report` + `POST /safety/block` | Engine + mirror | `connection.closed` + `radar.changed` | block durable | Admin preview hidden on public field-test | **PASS wire** / Evidence Pack **NOT STARTED** |
 | REAL COOLDOWN → RADAR | cooldown UI + deactivate/activate | connection + presence | Presence ephemeral | — | presence no | — | **PASS wire** |
 
 ## Gate A / B / C
@@ -82,7 +82,7 @@ still required. **PRODUCT PROTOCOL READY = NO.**
 | S27A | **OPEN** — Evidence Pack **NOT STARTED** (waiting for two human phones) |
 | S27B | **OPEN** — Twilio configured; SMS evidence later |
 | S28 | **GO (infra)** — Neon + Upstash; fail-closed; ready=prisma/redis/postgres; durability cert passed |
-| S29 | **PARTIAL wire** — Redis live; multi-phone Evidence Pack later |
+| S29 | **WIRED (realtime)** — Signal/`radar.changed`/chat/block without refresh; multi-phone Evidence Pack later |
 | S30 | **WIRED (client)** — browser geolocation (fail closed) + `/radar/heartbeat` while tab foreground; Evidence Pack later |
 | S31 | **WIRED (infra)** — `@wingman/media` + Vercel Blob private; server `capturedAt`; authz tests; Evidence Pack NOT STARTED |
 | S32 | **PARTIAL wire (web)** — reconnect/restore; push **BLOCKED** on VAPID/FCM credentials. See [`S32_WEB_BACKGROUND.md`](./S32_WEB_BACKGROUND.md) |

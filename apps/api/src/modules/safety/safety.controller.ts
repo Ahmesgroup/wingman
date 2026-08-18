@@ -51,6 +51,7 @@ export class SafetyService {
         });
       }
     }
+    await this.realtime.publishRadarChanged({ reason: "block", userIds: [actorId, targetId] });
     return block;
   }
 

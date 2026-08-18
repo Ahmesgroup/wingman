@@ -31,6 +31,7 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
   server!: Server;
 
   private offHub: (() => void) | null = null;
+  private offRooms: (() => void) | null = null;
 
   constructor(
     @Inject(RealtimeAppService) private readonly realtime: RealtimeAppService,
@@ -48,6 +49,7 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
       return;
     }
     this.offHub = this.realtime.onEnvelope((envelope) => this.fanOut(envelope));
+    this.offRooms = this.realtime.onUserRoomsChanged((userId, rooms) => this.syncUserRooms(userId, rooms));
   }
 
   handleDisconnect(_client: AuthedSocket): void {
@@ -156,6 +158,27 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
     if (!this.server) return;
     for (const room of envelope.rooms) {
       this.server.to(room).emit("event", envelope);
+    }
+  }
+
+  /** Join radar zone after activate even if the socket connected first (product order). */
+  private async syncUserRooms(userId: string, rooms: string[]): Promise<void> {
+    if (!this.server) return;
+    const wantRadar = new Set(rooms.filter((room) => room.startsWith("radar:")));
+    for (const sock of this.server.sockets.sockets.values()) {
+      const client = sock as AuthedSocket;
+      if (client.data.userId !== userId || !client.data.rooms) continue;
+      for (const existing of [...client.data.rooms]) {
+        if (existing.startsWith("radar:") && !wantRadar.has(existing)) {
+          await client.leave(existing);
+          client.data.rooms.delete(existing);
+        }
+      }
+      for (const room of rooms) {
+        if (client.data.rooms.has(room)) continue;
+        await client.join(room);
+        client.data.rooms.add(room);
+      }
     }
   }
 }

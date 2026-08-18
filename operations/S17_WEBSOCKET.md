@@ -46,6 +46,9 @@ Types: `presence.changed`, `radar.changed`, `signal.received`, `signal.updated`,
 - Short in-memory `ReplayBuffer` per room
 - Client `resume { lastEventId }` → missing durable events only
 - `presence.changed` / `radar.changed` are **not** replayed; client gets a `snapshot` instead
+- Same-zone heartbeat does **not** re-publish `radar.changed` (avoids refetch spam)
+- After radar activate, existing sockets are joined to `radar:{zone}` so peers who connected at login still receive appear/leave
+- `POST /safety/block` publishes `radar.changed` with `reason: "block"` to both user rooms (and zones) so markers drop without polling
 
 ## Multi-instance
 
