@@ -1,9 +1,12 @@
 # Wingman Live Field Test — S27–S34
 
-**Status:** LOCKED 2026-08-14 · Protocol matrix refresh 2026-08-17  
+**Status:** LOCKED 2026-08-14 · **public-protocol freeze 2026-08-18**  
 **Surface:** https://wingman-prototype.vercel.app/  
 **API:** https://wingman-api-three.vercel.app/  
-**PRODUCT PROTOCOL READY:** **NO** — see [`PROTOCOL_READINESS.md`](./PROTOCOL_READINESS.md)  
+**PRODUCT PROTOCOL READY:** **NO**  
+**Next gate:** TWO-PHONE EVIDENCE PACK only — [`EVIDENCE_PACK_TWO_PHONE.md`](./EVIDENCE_PACK_TWO_PHONE.md)  
+**SoT freeze:** [`PROJECT_STATE.md`](./PROJECT_STATE.md) · [`PROTOCOL_READINESS.md`](./PROTOCOL_READINESS.md)  
+**Live Production SHA:** `a3615bf` (S34). No new product feature until the first two-phone verdict.  
 **This track ≠** advanced-engine / learning sprints (still blocked until S26 Review).  
 **This track =** productionize the **real multi-user protocol**.
 **Positioning:** Category = **Social Interaction Facilitation Technology**; primary tagline =
@@ -16,7 +19,7 @@ already near each other — or who repeatedly cross paths through Destiny Connec
 - **S28 GO (infra):** Neon Postgres (`wingman-pg`) + Upstash Redis (`wingman-redis`) on `wingman-api` Production; Prisma migrations applied; public prod **fail-closed**; `/internal/ready` = prisma/redis/postgres; durability cert passed after redeploy. See [`S28_PRODUCTION_PERSISTENCE.md`](./S28_PRODUCTION_PERSISTENCE.md).
 - Selfie media: **WIRED (infra)** — Vercel Blob private + camera upload path; Evidence Pack **NOT STARTED**.
 - Two-phone Evidence Pack: **NOT STARTED / BLOCKED** (next human gate after S28 infra). [`EVIDENCE_PACK_TWO_PHONE.md`](./EVIDENCE_PACK_TWO_PHONE.md).
-- Mission Meet **Report & block** now posts `/safety/report` then `/safety/block` (was a local screen only). That does not fill Evidence Pack row 19.
+- Mission Meet **Report & block** now posts `/safety/report` then `/safety/block` (was a local screen only). That does not fill Evidence Pack appendix A5.
 - **S33 product path (2026-08-18):** two-tap Report & block from Radar sheet, Discover, Incoming Signal, Selfie/ticket, Mission Meet, and Me → Safety. Duplicate block is idempotent. See [`S33_SAFETY.md`](./S33_SAFETY.md).
 - **S34 certification prep (2026-08-18):** public Radar path hides QA chrome / fake Pulse / Destiny card; ticket and cooldown remaining come from `GET /connections/:id` `remainingMs`; anti-contact shows human copy; each person records their own outcome. Two-phone Evidence Pack still **NOT STARTED**. See [`S34_CERTIFICATION_PREP.md`](./S34_CERTIFICATION_PREP.md).
 
@@ -71,7 +74,7 @@ REAL USERS → REAL PHONES → REAL OTP → REAL RADAR → REAL SIGNAL
 | **S30** | Real Radar & Geo Field Test | No simulated nearby users; coarse location + real presence + visibility; near/far/moving/offline/invisible/permission denied; **no precise coordinates exposed** |
 | **S31** | Real Selfie Exchange | Real camera iOS/Android; permissions; direct capture; private opaque media; correct recipient only; expiry/delete; mid-exchange leave; refuse camera / bad net; **no public file / durable URL leak** |
 | **S32** | Push & Closed-app Protocol | **PARTIAL wire (web)** — hide/show restore + fail-closed push stub; Evidence Pack (closed-app delivery) later |
-| **S33** | Safety & Field-test Controls | **WIRED (product path)** — Real Block/Report from the journey; blocked user gone from protocol (server); anti-abuse still applies; no raw keys on Me → Safety; Destiny stays out of public test. Evidence Pack row 19 later. |
+| **S33** | Safety & Field-test Controls | **WIRED (product path)** — Real Block/Report from the journey; blocked user gone from protocol (server); anti-abuse still applies; no raw keys on Me → Safety; Destiny stays out of public test. Evidence Pack appendix A5 later. |
 | **S34** | Live Field Test Certification | **WIRED (prep)** — public URL hygiene, server ticket remaining, human anti-contact, own-outcome + cooldown remaining. 5–10 tester cohort and Evidence Pack still **OPEN**. |
 
 ## Definition of Done — Wingman Field Test Ready

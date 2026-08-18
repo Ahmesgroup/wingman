@@ -1,6 +1,6 @@
 # S33 — Safety on the real user path
 
-**Status:** WIRED (product path) · Evidence Pack row 19 **NOT STARTED**  
+**Status:** WIRED (product path) · Evidence Pack appendix A5 **NOT STARTED**  
 **Date:** 2026-08-18  
 **Surfaces:** https://wingman-prototype.vercel.app/ · https://wingman-api-three.vercel.app/  
 **PRODUCT PROTOCOL READY:** **NO**  
@@ -69,7 +69,7 @@ Covered: block removes from Radar/Discover; cannot Signal a blocked user; report
 | Item | Status |
 |------|--------|
 | Product path wire | **WIRED** |
-| Evidence Pack row 19 (two human phones) | **NOT STARTED** |
+| Evidence Pack appendix A5 (two human phones) | **NOT STARTED** |
 | PRODUCT PROTOCOL READY | **NO** |
 | Web push | **BLOCKED** (credentials — S32) |
 | Native / TestFlight | **not started** |
@@ -80,7 +80,7 @@ Covered: block removes from Radar/Discover; cannot Signal a blocked user; report
 |------|--------|
 | GREEN | no — Evidence Pack not run |
 | FIXED | product-path gaps (entry points, idempotent block, human Me → Safety, S33 tests) |
-| OPEN | two-phone Evidence Pack row 19 |
+| OPEN | two-phone Evidence Pack appendix A5 |
 | BLOCKED | human phones (same as the rest of the field track) |
 | PRODUCTION | wiring only until Evidence Pack |
 | FINAL VERDICT | **NO** |

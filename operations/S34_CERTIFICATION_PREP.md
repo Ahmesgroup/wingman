@@ -24,8 +24,8 @@ tester who receives **only** the public URL.
    (`t_blocked`). GET messages redacts `[filtered]`.
 4. **Outcome + cooldown** — each person records only their own outcome. Cooldown starts when **both** have answered
    (server). Remaining cooldown is server `remainingMs`. Human waiting copy while the other person has not answered.
-5. **Evidence Pack labels** aligned with current UI (Radar / Discover / Pulse / Me, **Report & block**, approximate
-   location, foreground heartbeat).
+5. **Evidence Pack** is the 12-step public-path matrix in [`EVIDENCE_PACK_TWO_PHONE.md`](./EVIDENCE_PACK_TWO_PHONE.md)
+   (block / kill-reopen / location deny are appendix only).
 
 Do **not** rewrite engines. Do **not** set PRODUCT PROTOCOL READY = YES.
 
@@ -66,7 +66,8 @@ pnpm --filter @wingman/api test -- src/s34.certification-prep.test.ts
 | Ticket remaining from server | **WIRED** |
 | Anti-contact human copy | **WIRED** |
 | Own outcome + durable cooldown | **WIRED** |
-| Evidence Pack labels | **ALIGNED** (rows still blank) |
-| Two-phone Evidence Pack | **NOT STARTED / BLOCKED** (human phones) |
+| Evidence Pack 12-step matrix | **LOCKED** (rows still blank) |
+| Two-phone Evidence Pack | **NOT STARTED** (human phones) |
 | PRODUCT PROTOCOL READY | **NO** |
+| Next gate | TWO-PHONE EVIDENCE PACK only — no new product feature |
 | S34 live certification (5–10 testers) | **OPEN** |

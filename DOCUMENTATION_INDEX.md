@@ -187,8 +187,10 @@ Start with `README.md`, then `docs/PRD.md`, `architecture/STATE_MACHINES.md`, `d
 - [`operations/CLIENT_POLISH_REVIEW.md`](operations/CLIENT_POLISH_REVIEW.md) — UI review residual (does not replace Live Field Test)
 - [`operations/FIELD_TEST.md`](operations/FIELD_TEST.md) — surface UI field test (`078d308` / Vercel)
 - [`operations/LIVE_FIELD_TEST.md`](operations/LIVE_FIELD_TEST.md) — **active** S27–S34 real multi-user protocol track
+- [`operations/PROJECT_STATE.md`](operations/PROJECT_STATE.md) — **SoT freeze** 2026-08-18: two-phone Evidence Pack is the only next gate
+- [`operations/PROTOCOL_READINESS.md`](operations/PROTOCOL_READINESS.md) — **SoT** PRODUCT PROTOCOL READY = NO; 12-step matrix
+- [`operations/EVIDENCE_PACK_TWO_PHONE.md`](operations/EVIDENCE_PACK_TWO_PHONE.md) — **SoT** two-phone 12-step run sheet (NOT STARTED)
 - [`operations/S27_IDENTITY_OTP.md`](operations/S27_IDENTITY_OTP.md) — S27 binary gate + impl status (OPEN until phone proof)
-- [`operations/PROJECT_STATE.md`](operations/PROJECT_STATE.md) — board: Live Field Test S27 next; engines stopped
 - [`operations/S20_PRODUCTION_CERTIFICATION.md`](operations/S20_PRODUCTION_CERTIFICATION.md) — **Backend V1 certification GO**
 - [`operations/V1.1_ADVANCED_ENGINE.md`](operations/V1.1_ADVANCED_ENGINE.md) — V1.1 advanced engines roadmap
 - [`operations/S21_RADAR_INTELLIGENCE.md`](operations/S21_RADAR_INTELLIGENCE.md) — Radar Intelligence (flagged ranking)
@@ -202,7 +204,7 @@ Start with `README.md`, then `docs/PRD.md`, `architecture/STATE_MACHINES.md`, `d
 - [`operations/S32_WEB_BACKGROUND.md`](operations/S32_WEB_BACKGROUND.md) — S32 web hide/show restore + fail-closed push
 - [`operations/S33_SAFETY.md`](operations/S33_SAFETY.md) — S33 two-tap report/block on the real user path
 - [`operations/S34_CERTIFICATION_PREP.md`](operations/S34_CERTIFICATION_PREP.md) — S34 public-surface prep; Evidence Pack still open
-- [`operations/PROJECT_STATE.md`](operations/PROJECT_STATE.md) — locked board: baseline collection → S26 Review · client track DONE
+- [`operations/PROJECT_STATE.md`](operations/PROJECT_STATE.md) — locked board (see freeze at top of that file)
 - [`operations/STAGING_LOAD_CERTIFICATION.md`](operations/STAGING_LOAD_CERTIFICATION.md) — Staging Redis/Postgres load cert (infra)
 - [`apps/BACKEND_README.md`](apps/BACKEND_README.md) — developer quick start for the executable API
 - [`operations/PRODUCTION_READINESS.md`](operations/PRODUCTION_READINESS.md) — S12–S20 readiness gates
