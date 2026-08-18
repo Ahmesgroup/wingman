@@ -11,12 +11,18 @@ const LM = require('./living-map.js');
 const viewer = { lat: 49.6116, lng: 6.1319 };
 
 describe('living-map production invariant', () => {
-  it('flag resolver defaults off', () => {
-    assert.equal(LM.resolveEnabled({}), false);
-    assert.equal(LM.resolveEnabled({ search: '' }), false);
+  it('flag resolver defaults on; canvas query is rollback', () => {
+    assert.equal(LM.resolveEnabled({}), true);
+    assert.equal(LM.resolveEnabled({ search: '' }), true);
     assert.equal(LM.resolveEnabled({ search: '?livingMap=1' }), true);
+    assert.equal(LM.resolveEnabled({ search: '?radar=canvas' }), false);
+    assert.equal(LM.resolveEnabled({ search: '?livingMap=0' }), false);
     assert.equal(LM.resolveEnabled({ configEnabled: true }), true);
     assert.equal(LM.resolveEnabled({ serverEnabled: true }), true);
+    assert.equal(LM.resolveEnabled({ serverEnabled: false }), false);
+    assert.equal(LM.resolveEnabled({ configEnabled: false }), false);
+    assert.equal(LM.resolveEnabled({ configEnabled: false, serverEnabled: true }), true);
+    assert.equal(LM.resolveEnabled({ search: '?radar=canvas', serverEnabled: true }), false);
   });
 
   it('0 opportunities → 0 markers', () => {
@@ -99,19 +105,47 @@ describe('living-map production invariant', () => {
     const b = LM.displayPosition(viewer, opp);
     assert.deepEqual(a, b);
   });
+
+  it('Pulse zones stay empty below threshold and never use peer coordinates', () => {
+    const one = [{ opportunityId: 'a', userId: 'p', distanceBand: 'NEARBY', bearingBucket: 'N', moodState: 'OPEN' }];
+    assert.equal(LM.pulseZones(one, viewer).length, 0);
+    const many = [];
+    for (let i = 0; i < LM.PULSE_MIN_THRESHOLD; i++) {
+      many.push({
+        opportunityId: 'z' + i,
+        userId: 'u' + i,
+        distanceBand: 'NEARBY',
+        bearingBucket: 'N',
+        moodState: 'OPEN',
+      });
+    }
+    const zones = LM.pulseZones(many, viewer);
+    assert.equal(zones.length, 1);
+    assert.ok(zones[0].count >= LM.PULSE_MIN_THRESHOLD);
+    assert.equal(LM.payloadLeaksCoordinates(many), false);
+    const leaked = LM.pulseZones(
+      many.map((o, i) => Object.assign({}, o, { lat: 49.61, lng: 6.13, opportunityId: 'leak' + i })),
+      viewer,
+    );
+    assert.equal(leaked.length, 0);
+  });
 });
 
 describe('living-map mobile chrome', () => {
-  it('HTML keeps rollback Radar canvas and feature-flagged map root', () => {
+  it('HTML keeps rollback Radar canvas and default Living Map root', () => {
     const html = readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'index.html'), 'utf8');
     const css = readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'styles.css'), 'utf8');
     assert.match(html, /id="radar-canvas"/);
     assert.match(html, /id="living-map-root"/);
     assert.match(html, /id="v-discover"/);
     assert.match(html, /id="lm-filter-sheet"/);
+    assert.match(html, /id="lm-discover-tray"/);
+    assert.match(html, /id="lm-pulse-panel"/);
+    assert.match(html, /id="lm-destiny-banner"/);
     assert.match(html, /RADAR \| DISCOVER|nav_discover|v-discover/);
     assert.match(css, /safe-area-inset-bottom/);
     assert.match(css, /body\.living-map #v-radar/);
-    assert.match(css, /lm-fabs/);
+    assert.match(css, /lm-dock/);
+    assert.match(css, /data-lm-world/);
   });
 });

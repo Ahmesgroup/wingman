@@ -66,7 +66,7 @@ export function captureFlagSnapshot(env: NodeJS.ProcessEnv = process.env): FlagS
     GEO_ADAPTIVE_RADIUS_ENABLED: env.GEO_ADAPTIVE_RADIUS_ENABLED === "true",
     MEASUREMENT_ENABLED: env.MEASUREMENT_ENABLED === "true",
     MEASUREMENT_LEARNING_ENABLED: env.MEASUREMENT_LEARNING_ENABLED === "true",
-    WINGMAN_LIVING_MAP_V1: env.WINGMAN_LIVING_MAP_V1 === "true",
+    WINGMAN_LIVING_MAP_V1: env.WINGMAN_LIVING_MAP_V1 !== "false",
   };
 }
 

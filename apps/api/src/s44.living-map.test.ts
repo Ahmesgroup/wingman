@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import request from "supertest";
 import { FakeClock, WingmanEngine } from "@wingman/domain";
 import { MemoryEphemeralStore } from "@wingman/ephemeral";
@@ -6,21 +6,30 @@ import { payloadLeaksCoordinates } from "@wingman/radar-intelligence";
 import { createNestApp } from "./testing/create-nest-app.js";
 
 describe("S44 Living Map / Discover / Pulse", () => {
+  beforeEach(() => {
+    delete process.env.WINGMAN_LIVING_MAP_V1;
+  });
   afterEach(() => {
     delete process.env.WINGMAN_LIVING_MAP_V1;
   });
 
-  it("flag defaults off and /radar/candidates rollback remains", async () => {
+  it("flag defaults on; false rolls back to canvas while /radar/candidates remains", async () => {
     const clock = new FakeClock(new Date("2026-08-17T18:00:00.000Z"));
     const engine = new WingmanEngine({ clock });
     const app = await createNestApp({ engine, ephemeral: new MemoryEphemeralStore(), skipHydrate: true });
     const server = app.getHttpServer();
 
     const live = await request(server).get("/internal/live").expect(200);
-    expect(live.body.livingMap).toBe(false);
+    expect(live.body.livingMap).toBe(true);
 
     const status = await request(server).get("/radar/living-map").set("x-user-id", "v").expect(200);
-    expect(status.body.enabled).toBe(false);
+    expect(status.body.enabled).toBe(true);
+
+    process.env.WINGMAN_LIVING_MAP_V1 = "false";
+    const rolled = await request(server).get("/internal/live").expect(200);
+    expect(rolled.body.livingMap).toBe(false);
+    const rolledStatus = await request(server).get("/radar/living-map").set("x-user-id", "v").expect(200);
+    expect(rolledStatus.body.enabled).toBe(false);
 
     await request(server).post("/dev/seed").send({ id: "v", gender: "MALE", interestedIn: ["WOMEN"] }).expect(201);
     await request(server).post("/radar/activate").set("x-user-id", "v").send({ lat: 48.8566, lng: 2.3522 }).expect(201);

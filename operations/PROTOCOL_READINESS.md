@@ -1,7 +1,7 @@
 # Protocol readiness — PRODUCT PROTOCOL READY
 
 **Status:** **NO**  
-**Updated:** 2026-08-18 (public-protocol freeze)  
+**Updated:** 2026-08-18 (Living Map primary surface — owner override for this sprint only)  
 **Public URL only:** https://wingman-prototype.vercel.app/  
 **API (not a tester URL):** https://wingman-api-three.vercel.app/
 
@@ -55,7 +55,9 @@ PASS = complete protocol works beginning to end on BOTH phones
 FAIL = record exact boundary: device, browser, step, expected, observed, timestamp.
 Then fix ONLY the proven boundary and replay the same matrix from the start.
 
-NO NEW PRODUCT FEATURE UNTIL FIRST TWO-PHONE VERDICT.
+NO NEW PRODUCT FEATURE UNTIL FIRST TWO-PHONE VERDICT
+(except Living Map as primary surface — owner override, this sprint only).
+Evidence Pack remains NOT STARTED. PRODUCT PROTOCOL READY = NO.
 ```
 
 ## Locked status (honest)
@@ -95,9 +97,9 @@ used or recorded.
 |-------|--------|
 | Auth mode | **PASS** — `otpProvider=twilio_verify`, `fieldTest=false`, `authAllowDev=false`, `publicProd=true` |
 | Readiness | **PASS** — `ready=true`; ephemeral=`redis`; persistence=`prisma`; database=`postgres`; media=`vercel_blob`; Destiny false |
-| Living Map default | **PASS (wire)** — `/internal/live` `livingMap=false`; public `config.js` `livingMap=false`; HTML default is `#radar-canvas` with `#living-map-root` hidden |
+| Living Map default | **ON (this sprint)** — public surface is Living Map; canvas Radar is rollback (`WINGMAN_LIVING_MAP_V1=false` or `?radar=canvas`). See [`S44_LIVING_MAP.md`](./S44_LIVING_MAP.md) |
 | In-memory fallback | **PASS** — public-production boot tests refuse missing Redis, database, or private media configuration |
-| Public demo leakage | **PASS (wire)** — public client fails visibly rather than silently entering mock mode; public production rejects developer headers; default Radar is canvas, not Living Map |
+| Public demo leakage | **PASS (wire)** — public client fails visibly rather than silently entering mock mode; public production rejects developer headers; Living Map is the default surface, canvas Radar remains rollback |
 | Two-session automated flow | **PASS (test harness only)** — not Evidence Pack; does not change READY |
 
 This is production wiring and a local CI-style simulation, not an Evidence Pack row. Real SMS and two human phones are

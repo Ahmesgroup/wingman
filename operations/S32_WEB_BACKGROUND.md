@@ -15,7 +15,7 @@ S32 on native (app killed / lock screen / FCM+APNs) remains a later Evidence Pac
 3. Transient network errors do **not** look like logout (“Not authenticated”) when tokens are still valid.
 4. Web push: permission UX + fail-closed server hook. No invented keys. No fake SENT.
 
-Living Map stays **off** by default. Hidden DOM leftover `"0 opportunities nearby"` is i18n’d (`lm_count_zero`) so FR/EN never show that raw English string if someone opts in with `?livingMap=1`.
+Living Map is the **default** public surface (owner override, this sprint). Canvas Radar remains rollback (`WINGMAN_LIVING_MAP_V1=false` or `?radar=canvas`). Hidden DOM leftover `"0 opportunities nearby"` is i18n’d (`lm_count_zero`).
 
 ## Push audit (honest)
 

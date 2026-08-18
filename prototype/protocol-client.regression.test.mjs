@@ -86,6 +86,7 @@ assert(src.includes('WingmanPresenceReconnect'), 'reconnect policy missing');
 assert(src.includes('isHardAuthFailure'), 'auth-failure distinction missing');
 assert(fs.readFileSync(path.join(__dirname, 'realtime.js'), 'utf8').includes('reconnect:'), 'realtime.reconnect missing');
 assert(fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8').includes('registerPushToken'), 'push token client missing');
+assert(fs.readFileSync(path.join(__dirname, 'living-map.js'), 'utf8').includes("radar') === 'canvas'"), 'canvas Radar rollback query missing');
 assert(fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8').includes('data-i18n="lm_count_zero"'), 'living map leftover English count');
 assert(!fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8').includes('0 opportunities nearby'), 'raw English leftover in hidden Living Map');
 assert(src.includes('requestViewerLocation'), 'browser geolocation wire missing');

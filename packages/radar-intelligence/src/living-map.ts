@@ -1,8 +1,11 @@
 import { createHash } from "node:crypto";
 
-/** Master switch — false keeps certifiable canvas Radar as the public product. */
+/**
+ * Living Map is the default public surface.
+ * Rollback to canvas Radar: WINGMAN_LIVING_MAP_V1=false (or client ?radar=canvas).
+ */
 export function isLivingMapEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
-  return env.WINGMAN_LIVING_MAP_V1 === "true";
+  return env.WINGMAN_LIVING_MAP_V1 !== "false";
 }
 
 export const LIVING_MAP_VERSION = "1.0.0";

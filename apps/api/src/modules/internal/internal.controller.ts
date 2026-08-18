@@ -14,6 +14,7 @@ import { RealtimeAppService } from "../realtime/realtime-app.service.js";
 import { MeasurementGate } from "../measurement/measurement.module.js";
 import type { MediaStore } from "@wingman/media";
 import { webPushCapabilityFromEnv } from "@wingman/providers";
+import { isLivingMapEnabled } from "@wingman/radar-intelligence";
 
 @Injectable()
 export class InternalService {
@@ -188,7 +189,7 @@ export class InternalController {
     return {
       live: true,
       utc: new Date().toISOString(),
-      livingMap: process.env.WINGMAN_LIVING_MAP_V1 === "true",
+      livingMap: isLivingMapEnabled(),
       webPush: {
         enabled: webPush.enabled,
         provider: webPush.provider,

@@ -49,7 +49,9 @@ PASS = complete protocol works beginning to end on BOTH phones
 FAIL = record exact boundary: device, browser, step, expected, observed, timestamp.
 Then fix ONLY the proven boundary and replay the same matrix from the start.
 
-NO NEW PRODUCT FEATURE UNTIL FIRST TWO-PHONE VERDICT.
+NO NEW PRODUCT FEATURE UNTIL FIRST TWO-PHONE VERDICT
+(except Living Map as primary surface — owner override, this sprint only).
+Evidence Pack remains NOT STARTED. PRODUCT PROTOCOL READY = NO.
 ```
 
 **Positioning:** **Social Interaction Facilitation Technology** · **Make the first acquaintance easy.** Wingman
@@ -116,7 +118,7 @@ OTP → PROFILE → RADAR → SIGNAL → SELFIE A → SELFIE B
 
 ## Locks (immediate)
 
-- **No new product feature until the first two-phone verdict**
+- **No new product feature until the first two-phone verdict** (Living Map primary surface is the owner override for this sprint only; Evidence Pack still NOT STARTED)
 - No payments now · no public Destiny · no new intelligent engine · no general redesign · no native
 - One **active connection per person** enforced in persistence, not only UI
 - Labs (`?qa=1`, Smoke, Offline) internal only
@@ -148,6 +150,7 @@ Two real phones, two real numbers, the 12-step matrix PASS on both, using only t
 | `AUTH_ALLOW_DEV` | local/dev only | Must be off on public production (S27) |
 | `WINGMAN_API_URL` | prototype Vercel | Bakes API origin into public client (`config.js`); testers never set |
 | `PRODUCT_PROTOCOL_V2_ENABLED` | `false` | S35 experiment only; no Production-default V2 |
+| `WINGMAN_LIVING_MAP_V1` | unset = on | Living Map default; set `false` to restore canvas Radar |
 
 ## Deferred native track
 

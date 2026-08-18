@@ -34,9 +34,10 @@ function opp(partial: Partial<OpportunityPublic> & { userId: string }): Opportun
 }
 
 describe("Living Map privacy projection", () => {
-  it("feature flag defaults off", () => {
-    expect(isLivingMapEnabled({})).toBe(false);
+  it("feature flag defaults on; false is canvas rollback", () => {
+    expect(isLivingMapEnabled({})).toBe(true);
     expect(isLivingMapEnabled({ WINGMAN_LIVING_MAP_V1: "true" })).toBe(true);
+    expect(isLivingMapEnabled({ WINGMAN_LIVING_MAP_V1: "false" })).toBe(false);
   });
 
   it("0 candidates → 0 opportunities", () => {

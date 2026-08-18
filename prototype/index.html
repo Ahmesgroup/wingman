@@ -52,6 +52,54 @@
         <span id="loading-text">Loading…</span>
       </div>
 
+      <!-- Living Map — permanent terrain behind Radar / Discover / Pulse -->
+      <div id="living-map-root" class="living-map-root hidden" hidden>
+        <div id="living-map-el" class="living-map-el" role="application" aria-label="Around you"></div>
+        <div class="lm-overlay lm-top">
+          <div class="lm-brand">WING<b>MAN</b></div>
+          <div class="lm-presence" id="lm-presence">
+            <span class="lm-presence-dot" aria-hidden="true"></span>
+            <span id="lm-presence-label" data-i18n="lm_available">Available now</span>
+          </div>
+        </div>
+        <p class="lm-count" id="lm-count" aria-live="polite" data-i18n="lm_count_zero">0 nearby</p>
+        <div class="lm-meta" id="lm-meta">
+          <span class="lm-chip" id="lm-signals"><b id="lm-signals-n">2</b> <span data-i18n="stat_signals">Signals left</span></span>
+        </div>
+        <div class="lm-mood" id="lm-mood-select" role="group" aria-labelledby="lm-mood-label">
+          <span id="lm-mood-label" class="sr-only" data-i18n="mood_title">Your mood</span>
+          <button type="button" class="lm-mood-btn" data-mood="SUPER_READY" aria-pressed="false" data-i18n="mood_ready">Super ready</button>
+          <button type="button" class="lm-mood-btn" data-mood="OPEN" aria-pressed="true" data-i18n="mood_open">Open</button>
+          <button type="button" class="lm-mood-btn" data-mood="UNSURE" aria-pressed="false" data-i18n="mood_explore">Unsure</button>
+        </div>
+        <button type="button" class="lm-inbox hidden" id="lm-inbox" data-go="v-signal">
+          <span class="inbox-dot" aria-hidden="true"></span>
+          <b data-i18n="inbox_title">Someone nearby wants to meet you.</b>
+        </button>
+        <div class="lm-destiny-banner hidden" id="lm-destiny-banner" role="button" tabindex="0" hidden>
+          <span class="eyebrow" data-i18n="destiny_eyebrow">Your paths crossed again</span>
+          <b data-i18n="destiny_card_t">You keep crossing paths</b>
+        </div>
+        <div class="lm-discover-tray hidden" id="lm-discover-tray" hidden></div>
+        <div class="lm-pulse-panel hidden" id="lm-pulse-panel" hidden>
+          <p class="lead" id="lm-pulse-title" data-i18n="lm_quiet">Quiet around here</p>
+          <p class="small muted" id="lm-pulse-detail" data-i18n="lm_quiet_d">We’ll show you when a real opportunity appears nearby.</p>
+          <div id="lm-pulse-stats"></div>
+        </div>
+        <div class="lm-empty hidden" id="lm-empty" role="status">
+          <b data-i18n="lm_quiet">Quiet around here</b>
+          <p data-i18n="lm_quiet_d">We’ll show you when a real opportunity appears nearby.</p>
+        </div>
+        <div class="lm-loc hidden" id="lm-loc" role="status"></div>
+        <div class="lm-dock">
+          <button type="button" class="radar-toggle off lm-toggle" id="lm-radar-toggle" aria-pressed="false" data-i18n="radar_activate">Go active</button>
+          <div class="lm-fabs">
+            <button type="button" class="lm-fab" id="lm-filters-btn" aria-haspopup="dialog" data-i18n="lm_filters">Filters</button>
+            <button type="button" class="lm-fab" id="lm-recenter-btn" data-i18n="lm_recenter">Recenter</button>
+          </div>
+        </div>
+      </div>
+
       <!-- 1. SPLASH -->
       <section class="view active" id="v-splash" data-noflow aria-hidden="false" aria-label="Splash">
         <div class="mission-mode splash-hero">
@@ -219,35 +267,10 @@
         </div>
       </section>
 
-      <!-- 6/7. RADAR (invisible + active share one canvas). Living Map overlays when flagged. -->
+      <!-- 6/7. RADAR (canvas rollback). Living Map is the default terrain behind this view. -->
       <section class="view" id="v-radar" data-nav="radar">
         <div class="statusbar"><span class="time">21:49</span><span>Wingman</span></div>
         <div class="topbar"><div class="logo">WING<b>MAN</b></div><div class="subtitle" data-i18n="radar_sub">Around you</div></div>
-        <div id="living-map-root" class="living-map-root hidden" hidden>
-          <div id="living-map-el" class="living-map-el" role="application" aria-label="Living Map"></div>
-          <div class="lm-overlay lm-top">
-            <div class="lm-brand">WING<b>MAN</b></div>
-            <div class="lm-presence" id="lm-presence">
-              <span class="lm-presence-dot" aria-hidden="true"></span>
-              <span id="lm-presence-label" data-i18n="lm_available">Available now</span>
-            </div>
-          </div>
-          <p class="lm-count" id="lm-count" aria-live="polite" data-i18n="lm_count_zero">0 nearby</p>
-          <button type="button" class="lm-inbox hidden" id="lm-inbox" data-go="v-signal">
-            <span class="inbox-dot" aria-hidden="true"></span>
-            <b data-i18n="inbox_title">Someone nearby wants to meet you.</b>
-          </button>
-          <div class="lm-fabs">
-            <button type="button" class="lm-fab" id="lm-filters-btn" aria-haspopup="dialog" data-i18n="lm_filters">Filters</button>
-            <button type="button" class="lm-fab" id="lm-recenter-btn" data-i18n="lm_recenter">Recenter</button>
-          </div>
-          <div class="lm-empty hidden" id="lm-empty" role="status">
-            <b data-i18n="lm_quiet">Quiet around here</b>
-            <p data-i18n="lm_quiet_d">We’ll show you when a real opportunity appears nearby.</p>
-          </div>
-          <div class="lm-loc hidden" id="lm-loc" role="status"></div>
-          <button type="button" class="radar-toggle off lm-toggle" id="lm-radar-toggle" aria-pressed="false" data-i18n="radar_activate">Go active</button>
-        </div>
         <div class="body radar-body" style="padding-bottom:96px">
           <div class="radar-shell">
             <canvas id="radar-canvas" width="400" height="340" role="img" tabindex="0" aria-label="Radar showing anonymous nearby mood dots. Press Enter when active to open the nearest person."></canvas>
@@ -291,56 +314,6 @@
               <b data-i18n="destiny_card_t">You keep crossing paths</b>
               <p class="small muted mt-s" data-i18n="destiny_card_d">Wingman noticed repeated crossings — never where they happened.</p>
             </div>
-          </div>
-        </div>
-        <!-- 9. anonymous profile card -->
-        <div class="sheet" id="dot-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-age" aria-hidden="true">
-          <div class="sheet-inner">
-            <div class="sheet-grab" aria-hidden="true"></div>
-            <div class="mood-tag" id="sheet-mood" style="color:var(--mood-ready)">● Super ready</div>
-            <div class="age" id="sheet-age">26 · 168cm</div>
-            <div class="bio" id="sheet-bio">Fun night out ✨</div>
-            <div class="tags" id="sheet-tags"><span>🎵</span><span>🍷</span><span>🌍</span></div>
-            <button type="button" class="btn btn-primary" id="send-signal-btn" data-i18n="send_signal">Send a Signal</button>
-            <button type="button" class="btn btn-ghost mt-s" id="sheet-report-btn" data-i18n="report_sub">Report & block</button>
-            <button type="button" class="btn btn-ghost mt-s" id="close-sheet" data-i18n="close">Close</button>
-          </div>
-        </div>
-        <div class="sheet" id="lm-filter-sheet" role="dialog" aria-modal="true" aria-labelledby="lm-filter-title" aria-hidden="true">
-          <div class="sheet-inner">
-            <div class="sheet-grab" aria-hidden="true"></div>
-            <h2 class="head" id="lm-filter-title" data-i18n="lm_filters">Filters</h2>
-            <p class="small muted mb" data-i18n="lm_filters_d">Narrow opportunities already allowed for you. Filters never bypass privacy.</p>
-            <div class="field"><label data-i18n="lm_prox">Proximity</label>
-              <div class="pillset pillset-wrap" id="lm-f-prox" role="group">
-                <button type="button" class="pill" data-prox="VERY_CLOSE" data-i18n="lm_prox_close">Very close</button>
-                <button type="button" class="pill" data-prox="NEARBY" data-i18n="lm_prox_near">Nearby</button>
-                <button type="button" class="pill" data-prox="AROUND_ME" data-i18n="lm_prox_around">Around me</button>
-              </div>
-            </div>
-            <div class="field"><label data-i18n="lm_presence">Presence</label>
-              <div class="pillset pillset-wrap" id="lm-f-mood" role="group">
-                <button type="button" class="pill" data-mood="SUPER_READY" data-i18n="mood_ready">Super ready</button>
-                <button type="button" class="pill" data-mood="OPEN" data-i18n="mood_open">Open</button>
-                <button type="button" class="pill" data-mood="EXPLORING" data-i18n="mood_explore">Exploring</button>
-              </div>
-            </div>
-            <div class="field"><label data-i18n="lm_intention">Intention</label>
-              <div class="pillset" id="lm-f-intent" role="group">
-                <button type="button" class="pill" data-intent="AVAILABLE_NOW" data-i18n="intention_available">Available now</button>
-              </div>
-            </div>
-            <div class="field"><label data-i18n="lm_interests">Interests</label>
-              <div class="pillset pillset-wrap" id="lm-f-interests" role="group">
-                <button type="button" class="pill" data-interest="Music" data-i18n="interest_music">Music</button>
-                <button type="button" class="pill" data-interest="Travel" data-i18n="interest_travel">Travel</button>
-                <button type="button" class="pill" data-interest="Food" data-i18n="interest_food">Food</button>
-                <button type="button" class="pill" data-interest="Fitness" data-i18n="interest_fitness">Fitness</button>
-                <button type="button" class="pill" data-interest="Art" data-i18n="interest_art">Art</button>
-              </div>
-            </div>
-            <button type="button" class="btn btn-primary" id="lm-filter-apply" data-i18n="lm_apply">Apply filters</button>
-            <button type="button" class="btn btn-ghost mt-s" id="lm-filter-clear" data-i18n="lm_clear">Clear</button>
           </div>
         </div>
         <nav class="nav" data-navbar></nav>
@@ -652,6 +625,58 @@
           <button class="btn btn-ghost mt" data-go="v-settings" data-i18n="admin_back">← Back to app</button>
         </div>
       </section>
+
+      <!-- Opportunity + filter sheets live on the screen so they work above the map and canvas rollback -->
+      <div class="sheet" id="dot-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-age" aria-hidden="true">
+        <div class="sheet-inner">
+          <div class="sheet-grab" aria-hidden="true"></div>
+          <div class="mood-tag" id="sheet-mood" style="color:var(--mood-ready)">● Super ready</div>
+          <div class="age" id="sheet-age">26 · 168cm</div>
+          <div class="bio" id="sheet-bio">Fun night out ✨</div>
+          <div class="tags" id="sheet-tags"><span>🎵</span><span>🍷</span><span>🌍</span></div>
+          <button type="button" class="btn btn-primary" id="send-signal-btn" data-i18n="send_signal">Send a Signal</button>
+          <button type="button" class="btn btn-ghost mt-s" id="sheet-report-btn" data-i18n="report_sub">Report & block</button>
+          <button type="button" class="btn btn-ghost mt-s" id="close-sheet" data-i18n="close">Close</button>
+        </div>
+      </div>
+      <div class="sheet" id="lm-filter-sheet" role="dialog" aria-modal="true" aria-labelledby="lm-filter-title" aria-hidden="true">
+        <div class="sheet-inner">
+          <div class="sheet-grab" aria-hidden="true"></div>
+          <h2 class="head" id="lm-filter-title" data-i18n="lm_filters">Filters</h2>
+          <p class="small muted mb" data-i18n="lm_filters_d">Narrow opportunities already allowed for you. Filters never bypass privacy.</p>
+          <div class="field"><label data-i18n="lm_prox">Proximity</label>
+            <div class="pillset pillset-wrap" id="lm-f-prox" role="group">
+              <button type="button" class="pill" data-prox="VERY_CLOSE" data-i18n="lm_prox_close">Very close</button>
+              <button type="button" class="pill" data-prox="NEARBY" data-i18n="lm_prox_near">Nearby</button>
+              <button type="button" class="pill" data-prox="AROUND_ME" data-i18n="lm_prox_around">Around me</button>
+            </div>
+          </div>
+          <div class="field"><label data-i18n="lm_presence">Presence</label>
+            <div class="pillset pillset-wrap" id="lm-f-mood" role="group">
+              <button type="button" class="pill" data-mood="SUPER_READY" data-i18n="mood_ready">Super ready</button>
+              <button type="button" class="pill" data-mood="OPEN" data-i18n="mood_open">Open</button>
+              <button type="button" class="pill" data-mood="EXPLORING" data-i18n="mood_explore">Exploring</button>
+            </div>
+          </div>
+          <div class="field"><label data-i18n="lm_intention">Intention</label>
+            <div class="pillset" id="lm-f-intent" role="group">
+              <button type="button" class="pill" data-intent="AVAILABLE_NOW" data-i18n="intention_available">Available now</button>
+              <button type="button" class="pill" data-intent="JUST_EXPLORING" data-i18n="intention_exploring">Just exploring</button>
+            </div>
+          </div>
+          <div class="field"><label data-i18n="lm_interests">Interests</label>
+            <div class="pillset pillset-wrap" id="lm-f-interests" role="group">
+              <button type="button" class="pill" data-interest="Music" data-i18n="interest_music">Music</button>
+              <button type="button" class="pill" data-interest="Travel" data-i18n="interest_travel">Travel</button>
+              <button type="button" class="pill" data-interest="Food" data-i18n="interest_food">Food</button>
+              <button type="button" class="pill" data-interest="Fitness" data-i18n="interest_fitness">Fitness</button>
+              <button type="button" class="pill" data-interest="Art" data-i18n="interest_art">Art</button>
+            </div>
+          </div>
+          <button type="button" class="btn btn-primary" id="lm-filter-apply" data-i18n="lm_apply">Apply filters</button>
+          <button type="button" class="btn btn-ghost mt-s" id="lm-filter-clear" data-i18n="lm_clear">Clear</button>
+        </div>
+      </div>
 
     </div>
   </div>

@@ -26,7 +26,7 @@ already near each other — or who repeatedly cross paths through Destiny Connec
 ### 2026-08-18 engineering note (honest)
 
 - **S30 client wire:** public Radar **Go active** requests coarse browser geolocation (`enableHighAccuracy: false`) and **fails closed** if denied/unavailable — no Luxembourg fallback, no fake nearby. Presence **heartbeat** posts `POST /radar/heartbeat` about every 40s while the tab is foreground (Redis/domain TTL remains 120s).
-- Living Map remains **off** by default (`WINGMAN_LIVING_MAP_V1` false). **PRODUCT PROTOCOL READY = NO** until the two-phone Evidence Pack.
+- Living Map is the **default** public surface. Rollback: `WINGMAN_LIVING_MAP_V1=false` or `?radar=canvas`. **PRODUCT PROTOCOL READY = NO** until the two-phone Evidence Pack. See [`S44_LIVING_MAP.md`](./S44_LIVING_MAP.md).
 - **S32 web wire:** tab hide/show restores session, WebSocket, Radar, Mission chat from the server. Web push is **fail-closed** without VAPID/FCM credentials (no fake SENT). See [`S32_WEB_BACKGROUND.md`](./S32_WEB_BACKGROUND.md).
 - **S29 realtime wire (2026-08-18):** Signal, Radar appear/disappear, Mission chat both ways, and block notify the other session over existing WebSocket. Safety block now emits `radar.changed` so canvas (and Living Map if enabled) drop the marker without waiting for the next poll. Same-zone heartbeat does not rebroadcast. Two-phone Evidence Pack still **NOT STARTED**. See [`S29_REALTIME.md`](./S29_REALTIME.md).
 

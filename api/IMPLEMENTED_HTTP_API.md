@@ -40,6 +40,10 @@ This document lists **routes that exist in code today**. Product API docs under 
 | POST | `/radar/deactivate` | — |
 | POST | `/radar/heartbeat` | `{ lat?, lng? }` |
 | GET | `/radar/candidates` | Query `nearRadiusM`, `aroundRadiusM` |
+| GET | `/radar/living-map` | `{ enabled, version }` — Living Map flag |
+| GET | `/radar/opportunities` | Privacy-safe nearby set. Query `nearRadiusM`, `aroundRadiusM`, `proximity`, `presence`, `intention`, `interests`. Never peer lat/lng |
+| GET | `/radar/discover` | Same authorized set as opportunities (exploration layer) |
+| GET | `/radar/pulse` | Aggregates with k-anonymity threshold (quiet below 5) |
 | POST | `/signals` | `{ receiverId, source? }` |
 | POST | `/signals/:id/open` | Recipient |
 | POST | `/signals/:id/refuse` | Recipient (silent to sender) |

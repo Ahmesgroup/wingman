@@ -13,6 +13,7 @@
   'use strict';
 
   var MAX_MARKERS = 100;
+  var PULSE_MIN_THRESHOLD = 5;
   var RING_METERS = { VERY_CLOSE: 40, NEARBY: 95, AROUND_ME: 175 };
   var BEARING_DEG = { N: 0, NE: 45, E: 90, SE: 135, S: 180, SW: 225, W: 270, NW: 315 };
   var COORD_KEY = /"(lat|lng|latitude|longitude|exactMeters|meters|coordinates|path)"\s*:/i;
@@ -152,19 +153,65 @@
   }
 
   /**
-   * Living Map UI is off by default.
-   * Testers: ?livingMap=1. Production default stays canvas Radar.
+   * Pulse map zones — only buckets that meet the privacy threshold.
+   * Never emits a 1-person blob. Display positions are coarse rings, not peer GPS.
+   */
+  function pulseZones(opportunities, viewer, threshold) {
+    var min = threshold == null ? PULSE_MIN_THRESHOLD : threshold;
+    var list = Array.isArray(opportunities) ? opportunities : [];
+    if (list.length < min) return [];
+    if (!viewer || !Number.isFinite(viewer.lat) || !Number.isFinite(viewer.lng)) return [];
+    var buckets = Object.create(null);
+    for (var i = 0; i < list.length; i++) {
+      var o = list[i];
+      if (!o || typeof o !== 'object') continue;
+      if (o.lat != null || o.lng != null || o.latitude != null || o.longitude != null) continue;
+      var band = o.distanceBand || 'NEARBY';
+      var sector = o.bearingBucket || 'N';
+      var key = band + ':' + sector;
+      if (!buckets[key]) buckets[key] = { distanceBand: band, bearingBucket: sector, count: 0 };
+      buckets[key].count += 1;
+    }
+    var zones = [];
+    Object.keys(buckets).forEach(function (key) {
+      var b = buckets[key];
+      if (b.count < min) return;
+      var pos = displayPosition(viewer, {
+        opportunityId: 'pulse:' + key,
+        distanceBand: b.distanceBand,
+        bearingBucket: b.bearingBucket,
+      });
+      if (!pos) return;
+      zones.push({
+        lat: pos.lat,
+        lng: pos.lng,
+        count: b.count,
+        distanceBand: b.distanceBand,
+        bearingBucket: b.bearingBucket,
+      });
+    });
+    return zones;
+  }
+
+  /**
+   * Living Map is the default public surface.
+   * Rollback: ?radar=canvas, livingMap=0, serverEnabled/configEnabled === false.
+   * Legacy ?livingMap=1 still forces the map on.
    */
   function resolveEnabled(opts) {
     opts = opts || {};
-    if (opts.serverEnabled === true) return true;
-    if (opts.configEnabled === true) return true;
     var search = opts.search || '';
     try {
       var params = typeof search === 'string' ? new URLSearchParams(search.replace(/^\?/, '')) : search;
-      if (params && params.get && params.get('livingMap') === '1') return true;
+      if (params && params.get) {
+        if (params.get('radar') === 'canvas') return false;
+        if (params.get('livingMap') === '0') return false;
+        if (params.get('livingMap') === '1') return true;
+      }
     } catch (_) { /* ignore */ }
-    return false;
+    if (opts.serverEnabled === false) return false;
+    if (opts.configEnabled === false && opts.serverEnabled !== true) return false;
+    return true;
   }
 
   function nearbyCount(markers) {
@@ -173,6 +220,7 @@
 
   return {
     MAX_MARKERS: MAX_MARKERS,
+    PULSE_MIN_THRESHOLD: PULSE_MIN_THRESHOLD,
     RING_METERS: RING_METERS,
     hash32: hash32,
     normalizeMood: normalizeMood,
@@ -181,6 +229,7 @@
     payloadLeaksCoordinates: payloadLeaksCoordinates,
     opportunitiesToMarkers: opportunitiesToMarkers,
     clusterByGrid: clusterByGrid,
+    pulseZones: pulseZones,
     isVisuallyEmpty: isVisuallyEmpty,
     resolveEnabled: resolveEnabled,
     nearbyCount: nearbyCount,
