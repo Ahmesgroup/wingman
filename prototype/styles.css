@@ -816,11 +816,21 @@ body.field-test .brand-tag{letter-spacing:1.2px}
 .living-map-el .leaflet-tile-pane{
   filter:saturate(.55) brightness(.72) contrast(1.08)
 }
-.living-map-el .leaflet-control-attribution{
-  background:rgba(11,16,32,.45)!important;color:var(--t-muted)!important;font-size:10px;
-  margin:0!important;padding:2px 6px
+.living-map-el .leaflet-control-attribution,
+.living-map-el .leaflet-control-container .leaflet-bottom{
+  display:none!important
 }
-.living-map-el .leaflet-bottom{bottom:calc(118px + var(--safe-bottom));left:8px}
+.lm-attrib{
+  position:absolute;left:12px;right:auto;top:auto;
+  bottom:calc(120px + var(--safe-bottom));
+  z-index:4;pointer-events:auto;
+  font-size:9px;line-height:1.35;font-weight:500;
+  max-width:min(168px,40vw);
+  margin:0;padding:3px 7px;border-radius:6px;
+  background:rgba(11,16,32,.48);color:var(--t-muted);
+  text-shadow:0 1px 6px rgba(0,0,0,.7)
+}
+.lm-attrib a{color:inherit;text-decoration:underline;text-underline-offset:2px}
 .lm-overlay,.lm-count,.lm-mood,.lm-empty,.lm-loc,.lm-dock,.lm-destiny-banner,.lm-discover-tray,.lm-pulse-panel,.lm-inbox{
   pointer-events:auto;z-index:3
 }
@@ -839,9 +849,9 @@ body.field-test .brand-tag{letter-spacing:1.2px}
 .lm-presence.is-exploring .lm-presence-dot{background:var(--mood-explore);box-shadow:none}
 .lm-presence.is-off .lm-presence-dot{background:var(--t-muted);box-shadow:none}
 .lm-count{
-  position:absolute;left:12px;right:12px;bottom:calc(128px + var(--safe-bottom));
+  position:absolute;left:12px;right:12px;bottom:calc(142px + var(--safe-bottom));
   font-size:13px;font-weight:600;color:var(--t-secondary);text-align:center;
-  text-shadow:0 1px 8px rgba(0,0,0,.75);pointer-events:none
+  text-shadow:0 1px 8px rgba(0,0,0,.75);pointer-events:none!important
 }
 .lm-mood{
   position:absolute;top:calc(56px + var(--safe-top));left:12px;right:12px;
@@ -867,7 +877,8 @@ body.field-test .brand-tag{letter-spacing:1.2px}
 .lm-toggle{position:static;left:auto;bottom:auto;z-index:4}
 .lm-empty{
   position:absolute;left:24px;right:24px;top:38%;transform:translateY(-50%);
-  text-align:center;padding:0;background:none;border:none
+  text-align:center;padding:0;background:none;border:none;
+  pointer-events:none!important;z-index:2
 }
 .lm-empty b{display:block;font-size:20px;font-family:var(--font-serif);margin-bottom:6px;text-shadow:0 2px 18px rgba(0,0,0,.85)}
 .lm-empty p{font-size:13px;color:var(--t-secondary);line-height:1.45;text-shadow:0 1px 12px rgba(0,0,0,.8)}
@@ -890,16 +901,20 @@ body.field-test .brand-tag{letter-spacing:1.2px}
   .lm-user{animation:none!important;box-shadow:0 0 0 6px rgba(124,92,252,.22)}
 }
 .lm-opp{
-  width:28px;height:28px;border-radius:50%;border:0;padding:0;display:flex;align-items:center;justify-content:center;
-  background:transparent;position:relative
+  width:44px;height:44px;min-width:44px;min-height:44px;border-radius:50%;border:0;padding:0;
+  display:flex;align-items:center;justify-content:center;
+  background:transparent;position:relative;touch-action:manipulation;-webkit-tap-highlight-color:transparent
 }
-.lm-opp-core{width:10px;height:10px;border-radius:50%;background:var(--mood-open);display:block}
+.lm-opp-core{width:10px;height:10px;border-radius:50%;background:var(--mood-open);display:block;pointer-events:none}
 .lm-opp.lm-mood-open{box-shadow:0 0 0 5px rgba(255,200,87,.28)}
 .lm-opp.lm-mood-ready{box-shadow:0 0 0 4px #0B1020, 0 0 0 7px var(--mood-ready)}
 .lm-opp.lm-mood-ready .lm-opp-core{background:var(--mood-ready)}
 .lm-opp.lm-mood-explore{box-shadow:none;border:2px solid rgba(244,245,247,.4)}
 .lm-opp.lm-mood-explore .lm-opp-core{background:var(--mood-explore);opacity:.9}
 .lm-opp.lm-destiny{box-shadow:0 0 0 5px rgba(185,167,255,.45), 0 0 14px rgba(124,92,252,.35)}
+.lm-opp.is-selected{
+  box-shadow:0 0 0 3px #fff, 0 0 0 6px var(--wingman)
+}
 .lm-cluster,.lm-pulse-blob{
   width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;
   background:rgba(124,92,252,.82);color:#fff;font-size:12px;font-weight:800
@@ -932,7 +947,8 @@ body.field-test .brand-tag{letter-spacing:1.2px}
   display:flex;align-items:center
 }
 body.living-map #living-map-root{display:block!important;visibility:visible}
-body.living-map.lm-preauth #living-map-root{visibility:hidden;pointer-events:none}
+body.living-map.lm-map-chrome #living-map-root{z-index:2;pointer-events:auto}
+body.living-map.lm-preauth #living-map-root{visibility:hidden;pointer-events:none;z-index:0}
 body.living-map #radar-canvas,
 body.living-map .radar-shell,
 body.living-map #v-radar > .statusbar,
@@ -971,7 +987,8 @@ body.living-map:not(.lm-map-chrome) .lm-discover-tray,
 body.living-map:not(.lm-map-chrome) .lm-pulse-panel,
 body.living-map:not(.lm-map-chrome) .lm-inbox,
 body.living-map:not(.lm-map-chrome) .lm-destiny-banner,
-body.living-map:not(.lm-map-chrome) .lm-loc{display:none!important}
+body.living-map:not(.lm-map-chrome) .lm-loc,
+body.living-map:not(.lm-map-chrome) .lm-attrib{display:none!important}
 body.living-map #dot-sheet,body.living-map #lm-filter-sheet{z-index:8}
 body.living-map[data-lm-layer="radar"] #lm-discover-tray,
 body.living-map[data-lm-layer="radar"] #lm-pulse-panel,
@@ -982,6 +999,7 @@ body.living-map[data-lm-layer="discover"] #lm-pulse-panel{display:none!important
 body.living-map[data-lm-layer="pulse"] #lm-pulse-panel{display:block!important}
 body.living-map[data-lm-layer="pulse"] #lm-empty{display:none!important}
 body.living-map[data-lm-layer="discover"] #lm-empty{display:none!important}
+body.living-map:not([data-lm-count="0"]) #lm-empty{display:none!important}
 .discover-row{
   display:flex;gap:10px;align-items:stretch;
   background:rgba(11,16,32,.72);
@@ -1006,12 +1024,12 @@ body.living-map[data-lm-layer="discover"] #lm-empty{display:none!important}
 .discover-row p{font-size:12px;color:var(--t-muted)}
 @media (max-width:430px){
   .lm-dock{bottom:calc(64px + var(--safe-bottom))}
-  .lm-count{bottom:calc(116px + var(--safe-bottom))}
+  .lm-count{bottom:calc(132px + var(--safe-bottom))}
   .lm-inbox{bottom:calc(116px + var(--safe-bottom))}
   .lm-loc{bottom:calc(156px + var(--safe-bottom))}
   .lm-discover-tray,.lm-pulse-panel{bottom:calc(148px + var(--safe-bottom));max-height:22vh}
   .lm-destiny-banner{bottom:calc(148px + var(--safe-bottom))}
-  .living-map-el .leaflet-bottom{bottom:calc(110px + var(--safe-bottom))}
+  .lm-attrib{bottom:calc(112px + var(--safe-bottom));top:auto;max-width:min(150px,38vw)}
   body.living-map .nav{z-index:5}
   body.living-map .sheet{z-index:8}
 }
@@ -1026,6 +1044,10 @@ body.keyboard-open .lm-dock,body.keyboard-open .lm-inbox,body.keyboard-open .lm-
 }
 
 /* ---- Human product chrome ---- */
+#dot-sheet.lm-compact #sheet-mood,
+#dot-sheet.lm-compact #sheet-tags{display:none!important}
+#dot-sheet.lm-compact .age{font-size:18px;margin-top:2px}
+#dot-sheet.lm-compact .bio{margin-bottom:16px}
 .sheet-inner{
   background:rgba(23,31,53,.92);
   border-top:1px solid var(--glass-border)

@@ -55,6 +55,11 @@
       <!-- Living Map — permanent terrain behind Radar / Discover / Pulse -->
       <div id="living-map-root" class="living-map-root hidden" hidden>
         <div id="living-map-el" class="living-map-el" role="application" aria-label="Around you"></div>
+        <p class="lm-attrib" id="lm-attrib">
+          <a href="https://leafletjs.com" title="A JavaScript library for interactive maps" rel="noopener">Leaflet</a>
+          · <a href="https://www.openstreetmap.org/copyright" rel="noopener">OpenStreetMap</a>
+          · <a href="https://carto.com/attributions" rel="noopener">CARTO</a>
+        </p>
         <div class="lm-overlay lm-top">
           <div class="lm-brand">WING<b>MAN</b></div>
           <button type="button" class="lm-presence" id="lm-presence" aria-expanded="false" aria-controls="lm-mood-select">
@@ -62,7 +67,7 @@
             <span id="lm-presence-label" data-i18n="lm_available">Available now</span>
           </button>
         </div>
-        <p class="lm-count" id="lm-count" aria-live="polite" data-i18n="lm_count_zero">0 nearby</p>
+        <p class="lm-count hidden" id="lm-count" aria-live="polite"></p>
         <span class="sr-only" id="lm-signals"><b id="lm-signals-n">2</b> <span data-i18n="stat_signals">Signals left</span></span>
         <div class="lm-mood" id="lm-mood-select" role="group" aria-labelledby="lm-mood-label" hidden>
           <span id="lm-mood-label" class="sr-only" data-i18n="mood_title">Your mood</span>
@@ -646,10 +651,10 @@
         <div class="sheet-inner">
           <div class="sheet-grab" aria-hidden="true"></div>
           <div class="mood-tag" id="sheet-mood" style="color:var(--mood-ready)">● Super ready</div>
-          <div class="age" id="sheet-age">26 · 168cm</div>
-          <div class="bio" id="sheet-bio">Fun night out ✨</div>
+          <div class="age" id="sheet-age" data-i18n="lm_sheet_title">Someone nearby</div>
+          <div class="bio" id="sheet-bio" data-i18n="lm_sheet_body">Someone nearby is open to meeting.</div>
           <div class="tags" id="sheet-tags"><span>🎵</span><span>🍷</span><span>🌍</span></div>
-          <button type="button" class="btn btn-primary" id="send-signal-btn" data-i18n="send_signal">Send a Signal</button>
+          <button type="button" class="btn btn-primary" id="send-signal-btn" data-i18n="send_signal">Say hello</button>
           <button type="button" class="btn btn-ghost mt-s" id="sheet-report-btn" data-i18n="report_sub">Report & block</button>
           <button type="button" class="btn btn-ghost mt-s" id="close-sheet" data-i18n="close">Close</button>
         </div>

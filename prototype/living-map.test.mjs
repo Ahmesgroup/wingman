@@ -54,12 +54,19 @@ describe('living-map production invariant', () => {
     const markers = LM.opportunitiesToMarkers([opp], viewer, 'me');
     assert.equal(markers.length, 1);
     assert.equal(markers[0].userId, 'peer');
+    assert.equal(markers[0].candidateId, 'deadbeefdeadbeef');
     const pos = LM.displayPosition(viewer, opp);
     assert.ok(pos);
     assert.notEqual(pos.lat, viewer.lat);
     assert.notEqual(pos.lng, viewer.lng);
     assert.equal(markers[0].lat, pos.lat);
     assert.equal(LM.payloadLeaksCoordinates(opp), false);
+    const sel = LM.selectionFromMarker(markers[0]);
+    assert.equal(sel.candidateId, 'deadbeefdeadbeef');
+    assert.equal(sel.userId, 'peer');
+    assert.equal(sel.lat, undefined);
+    assert.equal(sel.lng, undefined);
+    assert.equal(LM.payloadLeaksCoordinates(sel), false);
   });
 
   it('drops payloads that include exact peer coordinates', () => {
@@ -195,5 +202,80 @@ describe('living-map mobile chrome', () => {
     const boot = app.slice(app.indexOf('state.lang = readStoredLang()'));
     assert.ok(boot.indexOf('applyLivingMapFlag()') < boot.indexOf('startRadar()'));
     assert.match(app, /configEnabled: cfg\.livingMap !== false/);
+  });
+});
+
+describe('living-map P0 actionability', () => {
+  const dir = dirname(fileURLToPath(import.meta.url));
+  const ui = readFileSync(join(dir, 'living-map-ui.js'), 'utf8');
+  const app = readFileSync(join(dir, 'app.js'), 'utf8');
+  const css = readFileSync(join(dir, 'styles.css'), 'utf8');
+  const html = readFileSync(join(dir, 'index.html'), 'utf8');
+
+  it('empty copy and nearby count are mutually exclusive', () => {
+    assert.equal(LM.emptyStateVisible(true, 0), true);
+    assert.equal(LM.emptyStateVisible(true, 1), false);
+    assert.equal(LM.emptyStateVisible(false, 0), false);
+    assert.equal(LM.countChromeVisible(true, 1), true);
+    assert.equal(LM.countChromeVisible(true, 0), false);
+    assert.equal(LM.emptyCountMutuallyExclusive(true, 1), false);
+    assert.equal(LM.emptyCountMutuallyExclusive(false, 1), true);
+    assert.equal(LM.emptyCountMutuallyExclusive(true, 0), true);
+    const sync = app.slice(app.indexOf('function syncLivingMapEmpty'), app.indexOf('function setLocBanner'));
+    assert.match(sync, /emptyStateVisible/);
+    assert.match(sync, /countChromeVisible/);
+    assert.doesNotMatch(sync, /lm_quiet/);
+    assert.match(css, /lm-empty\{[^}]*pointer-events:none/);
+  });
+
+  it('nearby count equals actionable markers, never list.length fallback', () => {
+    const refresh = app.slice(app.indexOf('async function refreshLivingMap'), app.indexOf('function scheduleLivingMapRefresh'));
+    assert.match(refresh, /syncLivingMapEmpty\(markers && markers\.length \? markers\.length : 0\)/);
+    assert.doesNotMatch(refresh, /markers\.length\) \|\| list\.length/);
+  });
+
+  it('marker tap binds a large hit target without an inner button and keeps candidateId', () => {
+    const render = ui.slice(ui.indexOf('function renderMarkers'), ui.indexOf('function renderPulse'));
+    assert.doesNotMatch(render, /<button type="button"/);
+    assert.match(render, /role="button"/);
+    assert.match(render, /data-candidate-id/);
+    assert.match(render, /iconSize: \[HIT, HIT\]/);
+    assert.match(ui, /var HIT = 44/);
+    assert.match(ui, /bubblingMouseEvents: false/);
+    assert.match(ui, /disableClickPropagation/);
+    assert.match(ui, /emitSelect/);
+    assert.match(css, /min-width:44px/);
+    assert.match(css, /lm-opp\.is-selected/);
+    assert.match(app, /data-candidate-id/);
+    assert.match(app, /lm_sheet_title/);
+    assert.match(app, /Someone nearby is open to meeting/);
+    assert.match(app, /Une personne près de vous est ouverte à une rencontre/);
+    assert.match(html, /id="lm-attrib"/);
+  });
+
+  it('map chrome sits above the transparent Radar view so markers receive taps', () => {
+    assert.match(css, /body\.living-map\.lm-map-chrome #living-map-root\{z-index:2;pointer-events:auto\}/);
+  });
+
+  it('attribution has Leaflet + OSM + CARTO and no Ukraine flag', () => {
+    assert.match(ui, /attributionControl: false/);
+    assert.match(ui, /LEAFLET_PREFIX/);
+    assert.doesNotMatch(ui, /leaflet-attribution-flag/);
+    assert.doesNotMatch(html, /leaflet-attribution-flag/);
+    assert.doesNotMatch(html, /#4C7BE1/);
+    assert.match(html, /openstreetmap\.org\/copyright/);
+    assert.match(html, /carto\.com\/attributions/);
+    assert.match(html, /leafletjs\.com/);
+    assert.match(css, /lm-attrib/);
+  });
+
+  it('Say hello from the sheet uses the existing Signal API with opaque userId', () => {
+    const send = app.slice(app.indexOf("$('#send-signal-btn')"), app.indexOf("/* ------------------------------------------------------- radar toggle/mood"));
+    assert.match(send, /api\.sendSignal/);
+    assert.match(send, /receiverId: targetId/);
+    assert.match(send, /currentDot && currentDot\.userId/);
+    assert.match(send, /source: 'RADAR'/);
+    assert.doesNotMatch(send, /sendSignal\([\s\S]*lat:/);
+    assert.match(app, /selectionFromMarker/);
   });
 });

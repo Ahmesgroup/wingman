@@ -93,6 +93,7 @@
       seen[id] = true;
       out.push({
         opportunityId: o.opportunityId || id,
+        candidateId: o.opportunityId || id,
         userId: o.userId,
         lat: pos.lat,
         lng: pos.lng,
@@ -218,6 +219,43 @@
     return Array.isArray(markers) ? markers.length : 0;
   }
 
+  /** Canonical empty copy is shown only when Radar is on and there are 0 actionable markers. */
+  function emptyStateVisible(radarActive, candidateCount) {
+    return Boolean(radarActive) && (candidateCount | 0) === 0;
+  }
+
+  /** Nearby count chrome is shown only when there is at least one actionable marker. */
+  function countChromeVisible(radarActive, candidateCount) {
+    return Boolean(radarActive) && (candidateCount | 0) > 0;
+  }
+
+  function emptyCountMutuallyExclusive(emptyVisible, nearbyCountValue) {
+    return !((nearbyCountValue | 0) > 0 && emptyVisible);
+  }
+
+  /**
+   * Protocol selection — opaque ids only. Display lat/lng are never sent onward.
+   */
+  function selectionFromMarker(marker) {
+    if (!marker || typeof marker !== 'object') return null;
+    var candidateId = marker.candidateId || marker.opportunityId || marker.userId;
+    if (!candidateId && !marker.userId) return null;
+    var out = {
+      candidateId: candidateId || marker.userId,
+      opportunityId: marker.opportunityId || candidateId || marker.userId,
+      userId: marker.userId,
+      distanceBand: marker.distanceBand || 'NEARBY',
+      bearingBucket: marker.bearingBucket,
+      moodState: normalizeMood(marker.moodState || marker.mood),
+      intention: marker.intention,
+      presenceState: marker.presenceState || 'AVAILABLE',
+      contextTags: Array.isArray(marker.contextTags) ? marker.contextTags.slice(0, 5) : [],
+      destiny: marker.destiny === true,
+    };
+    if (marker.expiresAt) out.expiresAt = marker.expiresAt;
+    return out;
+  }
+
   return {
     MAX_MARKERS: MAX_MARKERS,
     PULSE_MIN_THRESHOLD: PULSE_MIN_THRESHOLD,
@@ -233,5 +271,9 @@
     isVisuallyEmpty: isVisuallyEmpty,
     resolveEnabled: resolveEnabled,
     nearbyCount: nearbyCount,
+    emptyStateVisible: emptyStateVisible,
+    countChromeVisible: countChromeVisible,
+    emptyCountMutuallyExclusive: emptyCountMutuallyExclusive,
+    selectionFromMarker: selectionFromMarker,
   };
 });

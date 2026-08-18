@@ -602,6 +602,8 @@ const I18N = {
     lm_prox: 'How close', lm_prox_close: 'Very close', lm_prox_near: 'Nearby', lm_prox_around: 'Around me',
     lm_presence: 'Mood', lm_intention: 'Intention', lm_interests: 'Interests', lm_apply: 'Apply filters', lm_clear: 'Clear',
     lm_someone: 'Someone nearby', lm_new: 'Nearby now', lm_destiny: 'Your paths crossed again.',
+    lm_sheet_title: 'Someone nearby',
+    lm_sheet_body: 'Someone nearby is open to meeting.',
     lm_count: 'nearby', lm_count_one: 'nearby', lm_count_zero: '0 nearby',
     lm_loc_denied: 'Location is off. Allow approximate location to see who’s nearby.',
     lm_loc_off: 'Location unavailable. Opportunities appear when we can place you.',
@@ -700,6 +702,8 @@ const I18N = {
     lm_prox: 'Distance', lm_prox_close: 'Très proche', lm_prox_near: 'À proximité', lm_prox_around: 'Autour de moi',
     lm_presence: 'Humeur', lm_intention: 'Intention', lm_interests: 'Intérêts', lm_apply: 'Appliquer', lm_clear: 'Effacer',
     lm_someone: 'Quelqu’un à proximité', lm_new: 'Tout près, maintenant', lm_destiny: 'Vos chemins se sont recroisés.',
+    lm_sheet_title: 'Quelqu’un près de vous',
+    lm_sheet_body: 'Une personne près de vous est ouverte à une rencontre.',
     lm_count: 'à proximité', lm_count_one: 'à proximité', lm_count_zero: '0 à proximité',
     lm_loc_denied: 'La localisation est désactivée. Autorisez une position approximative pour voir qui est près de vous.',
     lm_loc_off: 'Localisation indisponible. Les opportunités apparaîtront quand nous pourrons vous situer.',
@@ -1021,23 +1025,29 @@ if (canvas) canvas.addEventListener('click', e => {
 function openSheet(d) {
   if (!d || !d.userId) return;
   currentDot = d;
+  const sheet = $('#dot-sheet');
+  if (sheet) sheet.classList.remove('lm-compact');
+  $('#sheet-mood').classList.remove('hidden');
+  $('#sheet-tags').classList.remove('hidden');
   $('#sheet-mood').textContent = '● ' + t('mood_' + (d.mood === 'SUPER_READY' ? 'ready' : d.mood === 'OPEN' ? 'open' : 'explore'));
   $('#sheet-mood').style.color = MOOD_COLORS[d.mood];
   const band = d.band === 'NEAR' ? t('lm_prox_close') : t('lm_prox_near');
   $('#sheet-age').textContent = band;
   $('#sheet-bio').textContent = (state.lang === 'fr' ? d.bioFr : d.bio) || t('t_anon_profile');
   $('#sheet-tags').innerHTML = (d.tags || []).map(x => `<span>${x}</span>`).join('');
-  const sheet = $('#dot-sheet');
   sheet.classList.add('open');
   sheet.setAttribute('aria-hidden', 'false');
+  sheet.removeAttribute('data-candidate-id');
   announce($('#sheet-age').textContent + ' · ' + $('#sheet-mood').textContent);
   requestAnimationFrame(() => { const b = $('#send-signal-btn'); if (b) b.focus(); });
 }
 function closeOpportunitySheet() {
   const sheet = $('#dot-sheet');
   if (!sheet) return;
-  sheet.classList.remove('open');
+  sheet.classList.remove('open', 'lm-compact');
   sheet.setAttribute('aria-hidden', 'true');
+  sheet.removeAttribute('data-candidate-id');
+  if (livingMapCtl && typeof livingMapCtl.clearSelected === 'function') livingMapCtl.clearSelected();
 }
 function closeFilterSheet() {
   const sh = $('#lm-filter-sheet');
@@ -1228,7 +1238,7 @@ function enableLivingMapUi() {
       el: mapEl,
       t: t,
       onSelect: function (m) { closeLivingMapMood(); openLivingMapSheet(m); },
-      onMapIdle: function () { closeLivingMapMood(); },
+      onMapIdle: function () { closeLivingMapMood(); closeOpportunitySheet(); },
     });
     livingMapCtl.init();
   }
@@ -1246,6 +1256,7 @@ function disableLivingMapUi() {
   document.body.classList.remove('living-map', 'lm-preauth', 'lm-shell-nav', 'lm-map-chrome', 'lm-me');
   document.body.removeAttribute('data-lm-world');
   document.body.removeAttribute('data-lm-layer');
+  document.body.removeAttribute('data-lm-count');
   const root = $('#living-map-root');
   if (root) {
     root.classList.add('hidden');
@@ -1340,20 +1351,35 @@ function syncLivingMapPresence() {
 }
 
 function syncLivingMapEmpty(count) {
-  const empty = $('#lm-empty');
   const n = Math.max(0, count | 0);
-  if (empty) empty.classList.toggle('hidden', !state.radarActive || n > 0);
+  const LM = typeof WingmanLivingMap !== 'undefined' ? WingmanLivingMap : null;
+  const emptyOn = LM && LM.emptyStateVisible
+    ? LM.emptyStateVisible(state.radarActive, n)
+    : Boolean(state.radarActive) && n === 0;
+  const countOn = LM && LM.countChromeVisible
+    ? LM.countChromeVisible(state.radarActive, n)
+    : Boolean(state.radarActive) && n > 0;
+  const empty = $('#lm-empty');
+  if (empty) {
+    empty.classList.toggle('hidden', !emptyOn);
+    empty.hidden = !emptyOn;
+    empty.setAttribute('aria-hidden', emptyOn ? 'false' : 'true');
+  }
   const countEl = $('#lm-count');
   if (countEl) {
     if (!state.radarActive) {
+      countEl.classList.remove('hidden');
       countEl.textContent = t('empty_radar');
-    } else if (n === 0) {
-      countEl.textContent = t('lm_quiet');
-    } else {
+    } else if (countOn) {
+      countEl.classList.remove('hidden');
       countEl.textContent = n + ' ' + (n === 1 ? t('lm_count_one') : t('lm_count'));
+    } else {
+      countEl.classList.add('hidden');
+      countEl.textContent = '';
     }
   }
   setNearbyCount(n);
+  if (document.body) document.body.dataset.lmCount = String(n);
 }
 
 function setLocBanner(msg) {
@@ -1558,30 +1584,36 @@ async function restoreForeground(opts) {
 }
 
 function openLivingMapSheet(m) {
-  if (!m) return;
+  const LM = typeof WingmanLivingMap !== 'undefined' ? WingmanLivingMap : null;
+  const sel = LM && typeof LM.selectionFromMarker === 'function' ? LM.selectionFromMarker(m) : m;
+  if (!sel || !sel.userId) return;
   currentDot = {
-    userId: m.userId,
-    mood: m.moodState,
-    band: m.distanceBand === 'VERY_CLOSE' ? 'NEAR' : 'AROUND',
-    bio: m.destiny ? t('lm_destiny') : t('lm_new'),
-    bioFr: m.destiny ? t('lm_destiny') : t('lm_new'),
-    tags: m.contextTags || [],
+    userId: sel.userId,
+    candidateId: sel.candidateId,
+    mood: sel.moodState,
+    band: sel.distanceBand === 'VERY_CLOSE' ? 'NEAR' : 'AROUND',
+    tags: sel.contextTags || [],
   };
-  const moodLabel = m.moodState === 'SUPER_READY' ? t('mood_ready')
-    : m.moodState === 'EXPLORING' ? t('mood_explore') : t('mood_open');
-  const bandLabel = m.distanceBand === 'VERY_CLOSE' ? t('lm_prox_close')
-    : m.distanceBand === 'AROUND_ME' ? t('lm_prox_around') : t('lm_prox_near');
-  $('#sheet-mood').textContent = '● ' + moodLabel;
-  $('#sheet-mood').style.color = MOOD_COLORS[m.moodState] || MOOD_COLORS.OPEN;
-  $('#sheet-age').textContent = t('lm_someone') + ' · ' + bandLabel;
-  $('#sheet-bio').textContent = m.destiny ? t('lm_destiny') : t('lm_new');
-  const tags = (m.contextTags || []).slice();
-  if (m.intention === 'AVAILABLE_NOW') tags.unshift(t('intention_available'));
-  $('#sheet-tags').innerHTML = tags.map(function (x) { return '<span>' + x + '</span>'; }).join('');
   const sheet = $('#dot-sheet');
+  if (!sheet) return;
+  sheet.classList.add('lm-compact');
+  const mood = $('#sheet-mood');
+  const tags = $('#sheet-tags');
+  if (mood) {
+    mood.textContent = '';
+    mood.classList.add('hidden');
+  }
+  if (tags) {
+    tags.innerHTML = '';
+    tags.classList.add('hidden');
+  }
+  $('#sheet-age').textContent = t('lm_sheet_title');
+  $('#sheet-bio').textContent = t('lm_sheet_body');
   sheet.classList.add('open');
   sheet.setAttribute('aria-hidden', 'false');
-  announce($('#sheet-age').textContent);
+  sheet.setAttribute('data-candidate-id', sel.candidateId);
+  announce(t('lm_sheet_title'));
+  requestAnimationFrame(() => { const b = $('#send-signal-btn'); if (b) b.focus(); });
 }
 
 async function refreshLivingMap() {
@@ -1606,7 +1638,7 @@ async function refreshLivingMap() {
     }
     state.lmOpportunities = list;
     const markers = livingMapCtl ? livingMapCtl.setOpportunities(list, state.meId) : [];
-    syncLivingMapEmpty((markers && markers.length) || list.length);
+    syncLivingMapEmpty(markers && markers.length ? markers.length : 0);
     renderDiscoverList(list);
     syncDestinyCard(list);
   } catch (_) {

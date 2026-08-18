@@ -7,8 +7,20 @@
   'use strict';
 
   var TILE = 'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png';
-  var ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; CARTO';
+  /* OSM + CARTO are license-required for these tiles. Leaflet link is customary.
+     Leaflet 1.9 default prefix injects a Ukraine-flag SVG — NOT a license requirement. */
+  var TILE_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>';
+  var LEAFLET_PREFIX = '<a href="https://leafletjs.com" title="A JavaScript library for interactive maps">Leaflet</a>';
+  var HIT = 44;
   var LAYER_ZOOM = { radar: 15, discover: 14, pulse: 14 };
+
+  function escAttr(s) {
+    return String(s || '')
+      .replace(/&/g, '&amp;')
+      .replace(/"/g, '&quot;')
+      .replace(/</g, '&lt;')
+      .replace(/'/g, '&#39;');
+  }
 
   function moodClass(mood) {
     if (mood === 'SUPER_READY') return 'lm-mood-ready';
@@ -30,6 +42,8 @@
     var selectedId = null;
     var lastZoom = 15;
     var layer = 'radar';
+    var ignoreIdleUntil = 0;
+    var selectLock = false;
 
     function t(key) {
       if (typeof opts.t === 'function') return opts.t(key);
@@ -61,12 +75,14 @@
       instanceId += 1;
       map = global.L.map(opts.el, {
         zoomControl: false,
-        attributionControl: true,
+        attributionControl: false,
         tap: true,
       });
-      global.L.tileLayer(TILE, { attribution: ATTR, maxZoom: 18 }).addTo(map);
-      if (map.attributionControl) map.attributionControl.setPosition('bottomleft');
+      global.L.tileLayer(TILE, { attribution: TILE_ATTR, maxZoom: 18 }).addTo(map);
       map.on('click', function () {
+        if (Date.now() < ignoreIdleUntil) return;
+        selectedId = null;
+        paintSelected();
         if (opts.onMapIdle) opts.onMapIdle();
       });
       layerGroup = global.L.layerGroup().addTo(map);
@@ -113,6 +129,31 @@
       if (pulseGroup) pulseGroup.clearLayers();
     }
 
+    function paintSelected() {
+      if (!layerGroup || !layerGroup.eachLayer) return;
+      layerGroup.eachLayer(function (layer) {
+        var el = layer.getElement && layer.getElement();
+        if (!el) return;
+        var hit = el.querySelector('.lm-opp');
+        if (!hit) return;
+        var on = Boolean(selectedId) && hit.getAttribute('data-candidate-id') === selectedId;
+        hit.classList.toggle('is-selected', on);
+        hit.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+    }
+
+    function emitSelect(payload, e) {
+      if (!payload || !payload.candidateId) return;
+      if (e && global.L && global.L.DomEvent) global.L.DomEvent.stop(e);
+      if (selectLock) return;
+      selectLock = true;
+      setTimeout(function () { selectLock = false; }, 80);
+      ignoreIdleUntil = Date.now() + 450;
+      selectedId = payload.candidateId;
+      paintSelected();
+      if (opts.onSelect) opts.onSelect(payload);
+    }
+
     function renderMarkers() {
       if (!map || !layerGroup || !LM) return;
       clearPeople();
@@ -120,30 +161,46 @@
       var zoom = map.getZoom();
       var clustered = LM.clusterByGrid(markers, zoom);
       clustered.markers.forEach(function (m) {
-        var cls = 'lm-opp ' + moodClass(m.moodState) + (m.destiny ? ' lm-destiny' : '');
+        var payload = LM.selectionFromMarker(m);
+        if (!payload) return;
+        var selected = selectedId && selectedId === payload.candidateId;
+        var cls = 'lm-opp ' + moodClass(m.moodState) + (m.destiny ? ' lm-destiny' : '') + (selected ? ' is-selected' : '');
         var label = (m.destiny ? t('lm_destiny') + ' ' : '') + t('lm_someone') + '. ' + moodLabel(m.moodState);
         var icon = global.L.divIcon({
           className: 'lm-opp-wrap',
-          html: '<button type="button" class="' + cls + '" aria-label="' + label + '"><span class="lm-opp-core" aria-hidden="true"></span></button>',
-          iconSize: [28, 28],
-          iconAnchor: [14, 14],
+          html: '<div class="' + cls + '" role="button" tabindex="-1" aria-pressed="' + (selected ? 'true' : 'false') +
+            '" aria-label="' + escAttr(label) + '" data-candidate-id="' + escAttr(payload.candidateId) +
+            '"><span class="lm-opp-core" aria-hidden="true"></span></div>',
+          iconSize: [HIT, HIT],
+          iconAnchor: [HIT / 2, HIT / 2],
         });
-        var mk = global.L.marker([m.lat, m.lng], { icon: icon, keyboard: true });
-        mk.on('click', function () {
-          selectedId = m.opportunityId;
-          if (opts.onSelect) opts.onSelect(m);
+        var mk = global.L.marker([m.lat, m.lng], {
+          icon: icon,
+          keyboard: true,
+          bubblingMouseEvents: false,
+          zIndexOffset: selected ? 600 : 200,
         });
+        mk.on('click', function (e) { emitSelect(payload, e); });
         mk.addTo(layerGroup);
+        var el = mk.getElement && mk.getElement();
+        if (el && global.L && global.L.DomEvent) {
+          global.L.DomEvent.disableClickPropagation(el);
+          global.L.DomEvent.on(el, 'click', function (ev) { emitSelect(payload, ev); });
+          global.L.DomEvent.on(el, 'keydown', function (ev) {
+            if (ev.key === 'Enter' || ev.key === ' ') emitSelect(payload, ev);
+          });
+        }
       });
       clustered.clusters.forEach(function (c) {
         var icon = global.L.divIcon({
           className: 'lm-cluster-wrap',
-          html: '<div class="lm-cluster" aria-label="' + c.count + ' ' + t('lm_count') + '">' + c.count + '</div>',
-          iconSize: [36, 36],
-          iconAnchor: [18, 18],
+          html: '<div class="lm-cluster" role="button" tabindex="-1" aria-label="' + escAttr(c.count + ' ' + t('lm_count')) + '">' + c.count + '</div>',
+          iconSize: [HIT, HIT],
+          iconAnchor: [HIT / 2, HIT / 2],
         });
-        var mk = global.L.marker([c.lat, c.lng], { icon: icon, keyboard: true });
-        mk.on('click', function () {
+        var mk = global.L.marker([c.lat, c.lng], { icon: icon, keyboard: true, bubblingMouseEvents: false });
+        mk.on('click', function (e) {
+          if (global.L && global.L.DomEvent) global.L.DomEvent.stop(e);
           map.setView([c.lat, c.lng], Math.min(18, map.getZoom() + 2));
         });
         mk.addTo(layerGroup);
@@ -240,6 +297,10 @@
       getLayer: function () { return layer; },
       getInstanceId: function () { return instanceId; },
       getSelectedId: function () { return selectedId; },
+      clearSelected: function () {
+        selectedId = null;
+        paintSelected();
+      },
       moodLabel: moodLabel,
       bandLabel: bandLabel,
       lang: lang,
@@ -249,5 +310,8 @@
   global.WingmanLivingMapUi = {
     createMapController: createMapController,
     moodClass: moodClass,
+    TILE_ATTR: TILE_ATTR,
+    LEAFLET_PREFIX: LEAFLET_PREFIX,
+    HIT: HIT,
   };
 })(typeof window !== 'undefined' ? window : globalThis);

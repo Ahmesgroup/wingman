@@ -22,6 +22,22 @@ The map is a **new representation of server truth**. Eligibility, presence, rank
 
 Privacy: payloads never include peer `lat`/`lng`. Markers are coarse `distanceBand` + `bearingBucket` around the viewer. Pulse does not reveal precise movement history.
 
+## Map attribution (what must remain)
+
+Visible control is `#lm-attrib` (Leaflet default prefix is **disabled**).
+
+| Credit | Required? | Why |
+|--------|-----------|-----|
+| OpenStreetMap | **YES** | ODbL — required for any OSM-derived basemap |
+| CARTO | **YES** | Carto basemap terms for `basemaps.cartocdn.com` (dark_nolabels) |
+| Leaflet | Customary | BSD-2-Clause is satisfied in docs; a text link is kept. **Not** the Ukraine-flag SVG Leaflet 1.9 injects in `Control.Attribution` prefix (`leaflet-attribution-flag`, blue/yellow bars). That flag is **not** a license condition and is omitted. |
+
+Do not re-enable Leaflet's default `attributionControl` prefix. Keep the three text links tappable and clear of the presence CTA / nav / safe-area.
+
+## P0 actionability (marker → sheet → Signal)
+
+Radar opportunities → privacy-safe markers (`candidateId` / `userId` opaque) → 44px hit target → compact sheet → existing `POST /signals`. Selfie remains the next protocol artefact after Signal/Connection — not merged into Signal.
+
 ## Visual language (global polish)
 
 Dark desaturated Carto `dark_nolabels` terrain, translucent (not frosted) overlays, progressive disclosure. Mood is behind presence tap. Discover tray is two rows. Pulse privacy sits in `<details>`. Canvas Radar remains rollback until real-device review — not a second product.
