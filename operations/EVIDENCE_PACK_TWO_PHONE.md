@@ -15,8 +15,11 @@ locations, or selfies.
 2. Put both people in the same safe public place, roughly 10–50 metres apart. Turn on mobile data/Wi-Fi. When the
    browser asks for location, **allow approximate location**. If location is denied, **Go active** stays off and nobody
    appears nearby — that is expected (fail closed), not a Radar defect. Keep the page **in the foreground** for the
-   entire run unless a row says to close it (presence lasts about two minutes without a foreground heartbeat).
+   entire run unless a row says to close it (Radar presence uses a foreground heartbeat; it lasts about two minutes
+   without one).
 3. Each person opens the public URL above, then records their device model, OS, and browser/PWA in the table.
+   Bottom tabs are **Radar**, **Discover**, **Pulse**, and **Me**. Incoming hello is an inbox on Radar — not a fifth tab.
+   **Report & block** is the safety control (Radar card, Discover, Signal, Selfie, ticket, Mission Meet, Me → Safety).
 4. Agree on neutral test profile names (for example, “A” and “B”). Do not enter contact details, real addresses, or
    sensitive information in profile or chat.
 5. One observer records short, factual observations. A failure is a result, not a reason to retry with developer help.
@@ -31,8 +34,8 @@ locations, or selfies.
 | 2 | B repeats step 1 with their own number. | B reaches the profile screen; B is not signed in as A. | | | | |
 | 3 | A completes and saves a minimal profile, closes the browser/PWA completely, then opens the public URL again. | A is still signed in and the saved profile is still present. | | | | |
 | 4 | B repeats step 3. | B is still signed in and the saved profile is still present. | | | | |
-| 5 | Each accepts the displayed consent and continues to Radar. With the keyboard open on any form, use the visible next/save control. | The control is visible and works; neither person is blocked by the keyboard. Default Radar is the canvas (not Living Map). | | | | |
-| 6 | Keep B out of Radar (do not tap Go active). A allows location if asked, taps **Go active**, and waits up to one minute. | A sees the empty-state wording and **0 nearby people**; no invented person appears. If A denied location, A stays invisible and still sees 0 nearby. | | | | |
+| 5 | Each accepts the displayed consent and continues to **Radar**. Confirm bottom tabs **Radar / Discover / Pulse / Me**. With the keyboard open on any form, use the visible next/save control. | The control is visible and works; neither person is blocked by the keyboard. Default Radar is the canvas (not Living Map). Pulse is quiet unless real nearby activity exists — no invented city names. | | | | |
+| 6 | Keep B out of Radar (do not tap **Go active**). A allows **approximate location** if asked, taps **Go active**, and waits up to one minute with the page in the foreground. | A sees the empty-state wording and **0 nearby**; no invented person appears. If A denied location, A stays invisible and still sees 0 nearby. | | | | |
 | 7 | B taps **Go active** at the agreed nearby location. A and B each wait up to one minute without refreshing. | Each sees only the other eligible participant (1 nearby); no extra or stale person appears. | | | | |
 | 8 | B taps **Go invisible**. A does not refresh. | A returns to empty-state / **0 nearby**; B has disappeared. | | | | |
 | 9 | B taps **Go active** again. A and B wait up to one minute without refreshing. | Each sees only the other again (1 nearby). | | | | |
@@ -41,10 +44,10 @@ locations, or selfies.
 | 12 | A takes and sends a new camera selfie. B tries to view it only through the connection. | The camera flow works; B can view it only in this connection. | | | | |
 | 13 | B takes and sends a new camera selfie. A tries to view it only through the connection. | Same result for B’s selfie. | | | | |
 | 14 | A performs the displayed mutual-approval action. Neither person refreshes. | Both advance to the Mission step promptly. | | | | |
-| 15 | In Mission Meet chat, A sends “At the agreed spot”; B replies “On my way.” Do not send contact details. Then try a fake number or @handle. | Both real messages appear live on the other phone. A contact-detail attempt is safely blocked or filtered. Chat starts empty (no demo line). | | | | |
-| 16 | While still in Mission, B fully closes the browser/PWA, reopens the public URL, and returns to the connection. | B can return and sees the existing chat history. | | | | |
-| 17 | Follow Mission through its visible finish/outcome screens. Each person records only their own outcome. | Both can record an outcome; neither can choose for the other. | | | | |
-| 18 | Wait for the displayed cooldown to end, then return to Radar. | The connection is not shown during cooldown; Radar can be used again afterwards. | | | | |
+| 15 | In Mission Meet chat, A sends “At the agreed spot”; B replies “On my way.” Do not send contact details. Then try a fake number or @handle. | Both real messages appear live on the other phone. A contact-detail attempt is blocked with human copy (not `[filtered]` or an engine code). Chat starts empty (no demo line). | | | | |
+| 16 | While still in Mission, B fully closes the browser/PWA, reopens the public URL, and returns to the connection. | B can return and sees the existing chat history. Held-connection remaining time, if shown, comes back from the server (not a reset local timer). | | | | |
+| 17 | Follow Mission through its visible finish/outcome screens. Each person records only their own outcome (**Yes, we met** / **Not this time**). | Both can record an outcome; neither can choose for the other. After one answers, that person waits until the other answers — they do not see the other’s choice. | | | | |
+| 18 | Wait for the displayed cooldown (server remaining time) to end, then return to **Radar**. | The connection is not shown during cooldown; **Radar** can be used again afterwards. | | | | |
 | 19 | After cooldown, complete a **new** Signal → Selfie → Mutual → Mission Meet (same two people). In Mission Meet, A taps **Report & block**, chooses one category, and returns to Radar. B stays on the page. | A sees the blocked confirmation. B is **not** notified. After both are active on Radar, A no longer sees B. Do not record the report text beyond the category name. | | | | |
 | 20 | Optional observer note only if a third consenting adult is present: that person must not be able to open A↔B selfie or chat. Skip if no third person. | Third person is denied; no private media or chat leaks. | | | | |
 

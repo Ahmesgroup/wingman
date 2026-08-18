@@ -12,6 +12,7 @@ paths through Destiny Connection.
 **S28:** [`S28_PRODUCTION_PERSISTENCE.md`](./S28_PRODUCTION_PERSISTENCE.md) — Neon + Upstash live; `/internal/ready` = prisma/redis/postgres; durability cert passed  
 **S29:** [`S29_REALTIME.md`](./S29_REALTIME.md) — Signal/Radar/chat/block over existing WS; block emits `radar.changed`; Evidence Pack still open  
 **S31:** [`S31_PRIVATE_SELFIE_MEDIA.md`](./S31_PRIVATE_SELFIE_MEDIA.md) — Vercel Blob private + camera→upload→opaque id + server `capturedAt`; Evidence Pack still open  
+**S34:** [`S34_CERTIFICATION_PREP.md`](./S34_CERTIFICATION_PREP.md) — public-surface hygiene + ticket remainingMs + anti-contact copy + own-outcome; Evidence Pack still open  
 **Related:** [`S26_MEASUREMENT.md`](./S26_MEASUREMENT.md), [`CLIENT_MOBILE_PAYMENT_READINESS.md`](./CLIENT_MOBILE_PAYMENT_READINESS.md), [`FIELD_TEST.md`](./FIELD_TEST.md)
 
 ```text
@@ -48,7 +49,7 @@ S30  Real Radar & Geo Field Test               WIRED (client) — geo + heartbea
 S31  Real Selfie Exchange                      WIRED (infra) — Evidence Pack NOT STARTED
 S32  Push & Closed-app Protocol                PARTIAL wire (web reconnect) / BLOCKED (push credentials)
 S33  Safety & Field-test Controls              WIRED (product path) — Evidence Pack row 19 later
-S34  Live Field Test Certification             QUEUED
+S34  Live Field Test Certification             WIRED (prep) — Evidence Pack NOT STARTED; READY = NO
 S35  Product Protocol V2                       EXPERIMENT SPEC ONLY (flag false)
      → GO PILOT | FIX LIST CLOSED | NO-GO
 ```

@@ -42,7 +42,12 @@ export class ConnectionsService {
 
   get(id: string, userId: string) {
     const connection = this.requireParticipant(id, userId);
-    return { connection, serverTime: this.engine.clock.now().toISOString() };
+    const now = this.engine.clock.now();
+    const expiresAt = connection.expiresAt instanceof Date ? connection.expiresAt : new Date(connection.expiresAt);
+    const remainingMs = Number.isFinite(expiresAt.getTime())
+      ? Math.max(0, expiresAt.getTime() - now.getTime())
+      : 0;
+    return { connection, serverTime: now.toISOString(), remainingMs };
   }
 
   private requireParticipant(id: string, userId: string) {
@@ -263,12 +268,17 @@ export class ConnectionsService {
     }
     const messages = this.engine.missionMessages
       .filter((m) => m.connectionId === id)
-      .map((m) => ({
-        connectionId: m.connectionId,
-        senderId: m.senderId,
-        text: m.text,
-        at: m.at.toISOString(),
-      }));
+      .map((m) => {
+        const raw = typeof m.text === "string" ? m.text : "";
+        const filtered = raw.includes("[filtered]");
+        return {
+          connectionId: m.connectionId,
+          senderId: m.senderId,
+          text: filtered ? "" : raw,
+          filtered,
+          at: m.at.toISOString(),
+        };
+      });
     return { messages, serverTime: this.engine.clock.now().toISOString() };
   }
 

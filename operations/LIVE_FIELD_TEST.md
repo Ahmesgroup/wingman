@@ -18,6 +18,7 @@ already near each other — or who repeatedly cross paths through Destiny Connec
 - Two-phone Evidence Pack: **NOT STARTED / BLOCKED** (next human gate after S28 infra). [`EVIDENCE_PACK_TWO_PHONE.md`](./EVIDENCE_PACK_TWO_PHONE.md).
 - Mission Meet **Report & block** now posts `/safety/report` then `/safety/block` (was a local screen only). That does not fill Evidence Pack row 19.
 - **S33 product path (2026-08-18):** two-tap Report & block from Radar sheet, Discover, Incoming Signal, Selfie/ticket, Mission Meet, and Me → Safety. Duplicate block is idempotent. See [`S33_SAFETY.md`](./S33_SAFETY.md).
+- **S34 certification prep (2026-08-18):** public Radar path hides QA chrome / fake Pulse / Destiny card; ticket and cooldown remaining come from `GET /connections/:id` `remainingMs`; anti-contact shows human copy; each person records their own outcome. Two-phone Evidence Pack still **NOT STARTED**. See [`S34_CERTIFICATION_PREP.md`](./S34_CERTIFICATION_PREP.md).
 
 ### 2026-08-18 engineering note (honest)
 
@@ -71,7 +72,7 @@ REAL USERS → REAL PHONES → REAL OTP → REAL RADAR → REAL SIGNAL
 | **S31** | Real Selfie Exchange | Real camera iOS/Android; permissions; direct capture; private opaque media; correct recipient only; expiry/delete; mid-exchange leave; refuse camera / bad net; **no public file / durable URL leak** |
 | **S32** | Push & Closed-app Protocol | **PARTIAL wire (web)** — hide/show restore + fail-closed push stub; Evidence Pack (closed-app delivery) later |
 | **S33** | Safety & Field-test Controls | **WIRED (product path)** — Real Block/Report from the journey; blocked user gone from protocol (server); anti-abuse still applies; no raw keys on Me → Safety; Destiny stays out of public test. Evidence Pack row 19 later. |
-| **S34** | Live Field Test Certification | 5–10 testers, multi-day; measure OTP, Radar, Signal path, Mission completion, errors, disconnects, time-to-first-Signal, abandons, reports, per-device issues → **GO PILOT** / **FIX LIST CLOSED** / **NO-GO** — no redesign from impressions |
+| **S34** | Live Field Test Certification | **WIRED (prep)** — public URL hygiene, server ticket remaining, human anti-contact, own-outcome + cooldown remaining. 5–10 tester cohort and Evidence Pack still **OPEN**. |
 
 ## Definition of Done — Wingman Field Test Ready
 

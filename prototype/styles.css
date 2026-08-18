@@ -393,6 +393,10 @@ p.lead{color:var(--t-secondary);font-size:14px;line-height:1.55;font-weight:500}
 }
 body.keyboard-open .form-footer{box-shadow:0 -8px 24px rgba(0,0,0,.35)}
 body.field-test .phase-strip{display:none!important}
+body.field-test .statusbar .time{display:none!important}
+body.field-test .shape-hint{display:none!important}
+body.field-test #pulse-legacy{display:none!important}
+body.field-test #destiny-card{display:none!important}
 
 @media (max-width:375px){
   .otp{gap:5px}

@@ -201,6 +201,7 @@ Start with `README.md`, then `docs/PRD.md`, `architecture/STATE_MACHINES.md`, `d
 - [`operations/S29_REALTIME.md`](operations/S29_REALTIME.md) — S29 Signal/Radar/chat/block without refresh
 - [`operations/S32_WEB_BACKGROUND.md`](operations/S32_WEB_BACKGROUND.md) — S32 web hide/show restore + fail-closed push
 - [`operations/S33_SAFETY.md`](operations/S33_SAFETY.md) — S33 two-tap report/block on the real user path
+- [`operations/S34_CERTIFICATION_PREP.md`](operations/S34_CERTIFICATION_PREP.md) — S34 public-surface prep; Evidence Pack still open
 - [`operations/PROJECT_STATE.md`](operations/PROJECT_STATE.md) — locked board: baseline collection → S26 Review · client track DONE
 - [`operations/STAGING_LOAD_CERTIFICATION.md`](operations/STAGING_LOAD_CERTIFICATION.md) — Staging Redis/Postgres load cert (infra)
 - [`apps/BACKEND_README.md`](apps/BACKEND_README.md) — developer quick start for the executable API

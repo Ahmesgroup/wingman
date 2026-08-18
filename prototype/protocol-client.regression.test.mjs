@@ -90,5 +90,18 @@ assert(fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8').includes('dat
 assert(!fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8').includes('0 opportunities nearby'), 'raw English leftover in hidden Living Map');
 assert(src.includes('requestViewerLocation'), 'browser geolocation wire missing');
 assert(!/\$\('#radar-toggle'\)[\s\S]*?49\.6116/.test(src), 'Go active still hardcodes Luxembourg');
+assert(src.includes('rememberExpires'), 'ticket/cooldown must bind server expiresAt');
+assert(src.includes('remainingMs'), 'client reads GET remainingMs');
+assert(src.includes('t_outcome_saved'), 'own-outcome waiting copy missing');
+assert(src.includes('showBlockedChat'), 'human anti-contact bubble missing');
+assert(src.includes('[filtered]'), 'client must detect filtered engine marker');
+assert(src.includes('ticket_body_free'), 'FREE ticket copy missing');
+assert(src.includes('ticket_body_plus'), 'Plus ticket copy missing');
+assert(src.includes('pulse_few'), 'Pulse must not dump peopleActive codes');
+assert(src.includes("Public tabs: Radar / Discover / Pulse / Me"), 'nav hygiene comment missing');
+assert(!/navItems\(\)[\s\S]*?\['v-signal', 'signal'/.test(src), 'Signal must not be a permanent tab');
+assert(html.includes('id="outcome-wait"'), 'outcome waiting copy missing in HTML');
+assert(html.includes('id="pulse-legacy"') && html.includes('qa-only'), 'fake Pulse legacy must stay qa-only');
+assert(html.includes('id="destiny-card"') && html.includes('hidden'), 'Destiny card must stay hidden by default');
 
 console.log('protocol-client.regression.test.mjs: ok');

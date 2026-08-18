@@ -25,6 +25,7 @@ const state = {
   signalId: null,
   connectionId: null,
   connectionState: null,
+  connectionExpiresAt: null,
   phase: 'idle',
   viewId: 'v-splash',
   busy: false,
@@ -225,14 +226,28 @@ async function withLoading(label, fn) {
   try {
     return await fn();
   } catch (e) {
-    const msg = (e && e.message) || String(e);
-    setApiBanner('error', msg);
-    feedback('error', msg);
+    const mapped = humanApiCopy(e);
+    setApiBanner('error', mapped);
+    feedback('error', mapped);
     haptic('error');
     throw e;
   } finally {
     setLoading(false);
   }
+}
+
+function humanApiCopy(e) {
+  const code = e && e.code;
+  if (code === 'UNAUTHORIZED') return t('t_auth_required');
+  if (code === 'OTP_EXPIRED') return t('t_otp_expired');
+  if (code === 'OTP_RATE_LIMITED') return t('t_otp_rate');
+  if (code === 'PHONE_NOT_ALLOWED') return t('t_otp_not_allowed');
+  if (code === 'VALIDATION_REQUIRED' && e && e.details && e.details.partial) return t('t_outcome_saved');
+  if (code === 'CAMERA_DENIED') return t('t_cam_required');
+  const raw = String((e && e.message) || '');
+  if (/\[filtered\]|anti.?contact|contact detail/i.test(raw)) return t('t_blocked');
+  if (api && api.productPath) return t('t_api_unreachable');
+  return raw || t('t_api_unreachable');
 }
 
 function liveApi() {
@@ -246,6 +261,7 @@ function persistSession() {
       signalId: state.signalId,
       connectionId: state.connectionId,
       connectionState: state.connectionState,
+      connectionExpiresAt: state.connectionExpiresAt,
       phase: state.phase,
       radarActive: state.radarActive,
       signalsLeft: state.signalsLeft,
@@ -433,6 +449,11 @@ function syncSignalEmpty() {
 function syncDestinyCard(list) {
   const card = $('#destiny-card');
   if (!card) return;
+  if (api && api.productPath) {
+    card.classList.add('hidden');
+    card.hidden = true;
+    return;
+  }
   const rows = Array.isArray(list) ? list : (state.lmOpportunities || []);
   const real = rows.some((o) => o && o.destiny === true);
   card.classList.toggle('hidden', !real);
@@ -529,13 +550,15 @@ const I18N = {
     s_send: 'Send a live selfie', s_letexpire: 'Let it expire', s_approve: 'Approve',
     s_note: 'Visible only for this Wingman.',
     confirmed: 'You’re connected',
-    ticket_sub: 'Hold this moment', ticket_badge: 'Held for you', ticket_title: "Can't meet right now?", ticket_body: 'Hold this moment — up to 2 hours on Free. You can chat only when you both decide to meet.', ticket_open: "I'm available now", ticket_later: 'Later',
+    ticket_sub: 'Hold this moment', ticket_badge: 'Held for you', ticket_title: "Can't meet right now?", ticket_body: 'Hold this moment — up to 2 hours. You can chat only when you both decide to meet.', ticket_body_free: 'Hold this moment — up to 2 hours. You can chat only when you both decide to meet.', ticket_body_plus: 'Hold this moment — up to 24 hours. You can chat only when you both decide to meet.', ticket_open: "I'm available now", ticket_later: 'Later',
     mm_sub: 'Decide where to meet', mm_obj: 'Decide where to meet', mm_ph: 'Terrace side sounds good…', mm_note: 'Phone numbers and social handles stay blocked.', mm_meet: "Let's meet", mm_not: 'Not this time',
     mode_eyebrow: 'This meeting', mode_title: 'Focus on this connection', mode_body: 'Great meetings deserve your full attention.', mode_invisible: 'You’re quietly invisible nearby', mode_cta: 'We met — continue',
     outcome_title: 'Did you meet?', outcome_body: 'Your answer stays private. The other person never sees it.', outcome_yes: 'Yes, we met', outcome_no: 'Not this time',
+    t_outcome_saved: 'Your answer is saved. Waiting for the other person.',
     cd_eyebrow: 'A quiet pause', cd_min: 'minutes', cd_title: 'Take your time.', cd_body: 'Great conversations don’t need another hello immediately.', cd_ok: 'Back nearby',
     destiny_title: 'You keep crossing paths.', destiny_body: 'Wingman noticed you keep crossing paths — without showing where, when, or the route.', destiny_try: 'Say hello', destiny_ignore: 'Not now', destiny_off: 'You can turn this off anytime in Me.',
     pulse_sub: 'What’s happening around you', pulse_title: 'What’s happening around you', pulse_anon: 'Places stay approximate — never exact.',
+    pulse_few: 'A few people nearby', pulse_some: 'Some people nearby', pulse_busy: 'It’s lively nearby',
     pulse_privacy: 'How Pulse protects your privacy', pulse_privacy_d: 'Wingman never shows your exact location. What’s around you stays approximate, and no one sees who you are from Pulse.',
     pz1: 'Strong energy nearby', pz2: 'A lively moment nearby', pz3: 'A quieter pocket nearby', pulse_note: 'Places stay approximate — never exact.',
     settings_sub: 'Me', set_account: 'Account', set_plan: 'Your plan', set_plan_name: 'Plan', set_plan_signals: 'Signals each day', set_plan_tickets: 'Held connections', set_plan_note: 'Payments aren’t available yet.',
@@ -622,13 +645,15 @@ const I18N = {
     s_send: 'Envoyer une photo en direct', s_letexpire: 'Laisser expirer', s_approve: 'Approuver',
     s_note: 'Visible uniquement pour cette rencontre.',
     confirmed: 'Vous êtes connectés',
-    ticket_sub: 'Garder ce moment', ticket_badge: 'Gardé pour vous', ticket_title: 'Pas dispo maintenant ?', ticket_body: 'Gardez ce moment — jusqu’à 2 h en Gratuit. Le chat s’ouvre seulement quand vous décidez tous les deux de vous voir.', ticket_open: 'Je suis dispo', ticket_later: 'Plus tard',
+    ticket_sub: 'Garder ce moment', ticket_badge: 'Gardé pour vous', ticket_title: 'Pas dispo maintenant ?', ticket_body: 'Gardez ce moment — jusqu’à 2 h. Le chat s’ouvre seulement quand vous décidez tous les deux de vous voir.', ticket_body_free: 'Gardez ce moment — jusqu’à 2 h. Le chat s’ouvre seulement quand vous décidez tous les deux de vous voir.', ticket_body_plus: 'Gardez ce moment — jusqu’à 24 h. Le chat s’ouvre seulement quand vous décidez tous les deux de vous voir.', ticket_open: 'Je suis dispo', ticket_later: 'Plus tard',
     mm_sub: 'Décidez d’un lieu', mm_obj: 'Décidez d’un lieu', mm_ph: 'Côté terrasse, ça marche…', mm_note: 'Numéros et réseaux sociaux restent bloqués.', mm_meet: 'On se retrouve', mm_not: 'Pas cette fois',
     mode_eyebrow: 'Cette rencontre', mode_title: 'Concentrez-vous sur cette connexion', mode_body: 'Les vraies rencontres méritent toute votre attention.', mode_invisible: 'Vous êtes discrètement invisible autour de vous', mode_cta: 'On s’est vus — continuer',
     outcome_title: 'Vous êtes-vous rencontrés ?', outcome_body: 'Votre réponse reste privée. L’autre ne la voit jamais.', outcome_yes: 'Oui, on s’est vus', outcome_no: 'Pas cette fois',
+    t_outcome_saved: 'Votre réponse est enregistrée. En attente de l’autre personne.',
     cd_eyebrow: 'Une pause discrète', cd_min: 'minutes', cd_title: 'Prenez le temps.', cd_body: 'Les bonnes conversations n’ont pas besoin d’un autre bonjour tout de suite.', cd_ok: 'Retour autour de moi',
     destiny_title: 'Vous continuez de vous croiser.', destiny_body: 'Wingman a remarqué que vos chemins se recroisent — sans montrer où, quand, ni l’itinéraire.', destiny_try: 'Dire bonjour', destiny_ignore: 'Pas maintenant', destiny_off: 'Vous pouvez désactiver cela à tout moment dans Moi.',
     pulse_sub: 'Ce qui se passe autour de vous', pulse_title: 'Ce qui se passe autour de vous', pulse_anon: 'Les lieux restent approximatifs — jamais exacts.',
+    pulse_few: 'Quelques personnes à proximité', pulse_some: 'Du monde à proximité', pulse_busy: 'Ça bouge autour de vous',
     pulse_privacy: 'Comment Pulse protège votre vie privée', pulse_privacy_d: 'Votre position exacte n’est jamais montrée. Ce qui se passe autour de vous reste approximatif, et Pulse ne révèle pas qui vous êtes.',
     pz1: 'Une belle énergie tout près', pz2: 'Un moment vivant à proximité', pz3: 'Un coin plus calme tout près', pulse_note: 'Les lieux restent approximatifs — jamais exacts.',
     settings_sub: 'Moi', set_account: 'Compte', set_plan: 'Votre offre', set_plan_name: 'Offre', set_plan_signals: 'Signaux par jour', set_plan_tickets: 'Rencontres en attente', set_plan_note: 'Les paiements ne sont pas encore disponibles.',
@@ -727,6 +752,7 @@ function applyLang() {
   if (typeof syncLivingMapPresence === 'function') syncLivingMapPresence();
   if (typeof syncInboxChrome === 'function') syncInboxChrome();
   if (typeof syncRadarEmpty === 'function') syncRadarEmpty();
+  if (typeof syncTicketCopy === 'function') syncTicketCopy();
   if (state.livingMap && typeof refreshLivingMap === 'function') void refreshLivingMap();
   else if (typeof renderDiscoverFromDots === 'function') renderDiscoverFromDots();
   const pushSw = $('#set-push');
@@ -819,6 +845,7 @@ function show(id) {
   requestAnimationFrame(() => focusActiveView(id));
 }
 function navItems() {
+  // Public tabs: Radar / Discover / Pulse / Me. Signal is inbox overlay, not a tab.
   return [
     ['v-radar', 'radar', 'M12 12m-2 0a2 2 0 104 0 2 2 0 10-4 0 M12 12m-6 0a6 6 0 1012 0 6 6 0 10-12 0'],
     ['v-discover', 'discover', 'M4 6h16M4 12h10M4 18h7'],
@@ -1359,7 +1386,7 @@ async function restoreForeground(opts) {
       clearRadarDots();
     }
     if (plan.restoreMission) {
-      try { await refreshConnectionUi(); } catch (_) { /* keep last known */ }
+      try { await refreshConnectionUi({ route: true }); } catch (_) { /* keep last known */ }
     }
     if (plan.restoreChat) {
       try { await restoreChatLog(); } catch (_) { /* keep last known */ }
@@ -1532,16 +1559,21 @@ async function refreshPulseLive() {
   try {
     const p = await api.radarPulse();
     if (!p || p.quiet) {
-      title.textContent = (p && p.message) || t('lm_quiet');
+      title.textContent = t('lm_quiet');
       if (detail) detail.textContent = t('lm_quiet_d');
       if (stats) stats.innerHTML = '';
       return;
     }
-    title.textContent = p.message || t('pulse_title');
-    if (detail) detail.textContent = '';
+    const crowd = p.peopleActive === 'busy' ? t('pulse_busy')
+      : p.peopleActive === 'some' ? t('pulse_some')
+      : p.peopleActive === 'few' ? t('pulse_few')
+      : t('pulse_title');
+    title.textContent = crowd;
+    if (detail) detail.textContent = t('pulse_anon');
     const bits = [];
-    if (p.peopleActive) bits.push('<div class="pulse-stat"><b>' + p.peopleActive + '</b><p class="small muted">' + t('stat_nearby') + '</p></div>');
-    if (p.opportunityCount != null && p.opportunityCount > 0) bits.push('<div class="pulse-stat"><b>' + p.opportunityCount + '</b><p class="small muted">' + t('lm_count') + '</p></div>');
+    if (p.opportunityCount != null && p.opportunityCount > 0) {
+      bits.push('<div class="pulse-stat"><b>' + p.opportunityCount + '</b><p class="small muted">' + t('stat_nearby') + '</p></div>');
+    }
     if (p.context && p.context.length) {
       const human = p.context.map(humanInterest).join(' · ');
       bits.push('<div class="pulse-stat"><b>' + human + '</b><p class="small muted">' + t('lm_interests') + '</p></div>');
@@ -1550,6 +1582,7 @@ async function refreshPulseLive() {
   } catch (_) {
     title.textContent = t('lm_quiet');
     if (detail) detail.textContent = t('lm_quiet_d');
+    if (stats) stats.innerHTML = '';
   }
 }
 
@@ -1608,19 +1641,32 @@ $('#lm-radar-toggle') && $('#lm-radar-toggle').addEventListener('click', functio
 });
 
 /* ------------------------------------------------- server-authoritative timers
-   A timer is defined by an absolute expiresAt from the (simulated) server.
-   The client renders remaining = expiresAt - serverNow(). Going offline does
-   NOT pause it. The 30s warning is derived locally from server time, so no
-   exact server event is needed. */
-function makeTimer({ durationSec, textEl, barEl, onWarn, onExpire }) {
-  const expiresAt = state.serverNow() + durationSec * 1000;
+   Remaining = expiresAt - serverNow() (from GET remainingMs / expiresAt).
+   Going offline does NOT pause it. The 30s warning is derived locally. */
+function formatRemain(remainingSec) {
+  const s = Math.max(0, remainingSec | 0);
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const ss = String(s % 60).padStart(2, '0');
+  if (h > 0) return h + ':' + String(m).padStart(2, '0') + ':' + ss;
+  return m + ':' + ss;
+}
+function makeTimer({ durationSec, expiresAtMs, textEl, barEl, onWarn, onExpire, asMinutes }) {
+  const end = Number.isFinite(expiresAtMs)
+    ? expiresAtMs
+    : (state.serverNow() + (Number(durationSec) || 0) * 1000);
+  const total = Math.max(1, Number.isFinite(durationSec) && durationSec > 0
+    ? durationSec
+    : Math.round((end - state.serverNow()) / 1000));
   let warned = false, iv;
   const tick = () => {
-    const remaining = Math.max(0, Math.round((expiresAt - state.serverNow()) / 1000));
-    const mm = Math.floor(remaining / 60), ss = String(remaining % 60).padStart(2, '0');
-    if (textEl) textEl.textContent = `${mm}:${ss}`;
+    const remaining = Math.max(0, Math.round((end - state.serverNow()) / 1000));
+    if (textEl) {
+      if (asMinutes) textEl.textContent = String(Math.max(1, Math.ceil(remaining / 60)));
+      else textEl.textContent = formatRemain(remaining);
+    }
     if (barEl) {
-      const pct = (remaining / durationSec) * 100;
+      const pct = (remaining / total) * 100;
       barEl.style.width = pct + '%';
       barEl.style.background = remaining <= 30 ? '#FF4D67' : remaining <= 120 ? '#FFC857' : '#F4F5F7';
     }
@@ -1631,8 +1677,84 @@ function makeTimer({ durationSec, textEl, barEl, onWarn, onExpire }) {
   return () => clearInterval(iv);
 }
 
+function rememberExpires(conn, remainingMs) {
+  if (typeof remainingMs === 'number' && Number.isFinite(remainingMs)) {
+    state.connectionExpiresAt = state.serverNow() + remainingMs;
+    return state.connectionExpiresAt;
+  }
+  if (conn && conn.expiresAt) {
+    const ms = Date.parse(conn.expiresAt);
+    if (Number.isFinite(ms)) {
+      state.connectionExpiresAt = ms;
+      return ms;
+    }
+  }
+  return state.connectionExpiresAt;
+}
+
+function syncTicketCopy() {
+  const el = $('#v-ticket [data-i18n="ticket_body"]');
+  if (!el) return;
+  el.textContent = t(state.plan === 'WINGMAN_PLUS' ? 'ticket_body_plus' : 'ticket_body_free');
+}
+
 /* -------------------------------------------------------------- per-screen */
-let stopSelfie, stopMM, sigStop;
+let stopSelfie, stopMM, stopTicket, stopCd, sigStop;
+
+function bindTicketTimer(expiresAtMs) {
+  if (stopTicket) stopTicket();
+  const end = Number.isFinite(expiresAtMs) ? expiresAtMs : state.connectionExpiresAt;
+  if (!Number.isFinite(end)) return;
+  stopTicket = makeTimer({
+    expiresAtMs: end,
+    textEl: $('#ticket-time'),
+    onExpire: () => { feedback('busy', t('t_silently_expired')); show('v-radar'); },
+  });
+}
+
+function bindCooldownTimer(expiresAtMs) {
+  if (stopCd) stopCd();
+  const end = Number.isFinite(expiresAtMs) ? expiresAtMs : state.connectionExpiresAt;
+  if (!Number.isFinite(end)) return;
+  stopCd = makeTimer({
+    expiresAtMs: end,
+    textEl: $('#cd-num'),
+    asMinutes: true,
+    onExpire: () => { show('v-radar'); },
+  });
+}
+
+function ownOutcomeOf(conn) {
+  if (!conn) return null;
+  if (state.meId === conn.initiatorId) return conn.initiatorOutcome;
+  if (state.meId === conn.recipientId) return conn.recipientOutcome;
+  return null;
+}
+
+function syncOutcomeWaiting(conn) {
+  const wait = $('#outcome-wait');
+  const yes = $('#outcome-yes-btn');
+  const no = $('#outcome-no-btn');
+  const own = ownOutcomeOf(conn);
+  const waiting = Boolean(conn && conn.state === 'OUTCOME_PENDING' && own && own !== 'PENDING');
+  if (wait) {
+    wait.classList.toggle('hidden', !waiting);
+    if (waiting) wait.textContent = t('t_outcome_saved');
+  }
+  if (yes) yes.disabled = waiting;
+  if (no) no.disabled = waiting;
+}
+
+function viewForConnectionState(st) {
+  if (st === 'WAITING_FOR_INITIATOR_SELFIE' || st === 'WAITING_FOR_RECIPIENT_SELFIE' || st === 'WAITING_FOR_INITIATOR_APPROVAL') return 'v-selfie';
+  if (st === 'MUTUALLY_VALIDATED' || st === 'TICKET_ACTIVE' || st === 'WAITING_FOR_TICKET_CONFIRMATION') return 'v-ticket';
+  if (st === 'MISSION_MEET_ACTIVE') return 'v-mission-meet';
+  if (st === 'MISSION_CONFIRMED') return 'v-mission-mode';
+  if (st === 'OUTCOME_PENDING') return 'v-outcome';
+  if (st === 'COOLDOWN_ACTIVE') return 'v-cooldown';
+  if (st === 'COMPLETED' || st === 'EXPIRED' || st === 'CANCELLED' || st === 'BLOCKED' || st === 'FAILED') return 'v-radar';
+  return null;
+}
 function onEnter(id) {
   if (id === 'v-radar') {
     sizeCanvas(); startRadar(); syncRadarEmpty();
@@ -1701,7 +1823,14 @@ function onEnter(id) {
   }
   if (id === 'v-ticket') {
     setPhase('match', t('t_phase_match'));
+    syncTicketCopy();
     if (realtime && state.connectionId) realtime.subscribeConnection(state.connectionId);
+    bindTicketTimer(state.connectionExpiresAt);
+    void (async function () {
+      const conn = await refreshConnectionUi();
+      if (state.viewId !== 'v-ticket') return;
+      bindTicketTimer(rememberExpires(conn));
+    })();
   }
   if (id === 'v-mission-meet') {
     setPhase('mission', t('t_phase_mission'));
@@ -1710,11 +1839,28 @@ function onEnter(id) {
     const modeInner = modeView && modeView.querySelector('.mission-mode');
     if (modeInner) modeInner.classList.remove('is-active');
     if (stopMM) stopMM();
-    stopMM = makeTimer({ durationSec: 900, textEl: $('#mm-timer'), barEl: $('#mm-bar'),
-      onExpire: () => { feedback('busy', t('t_chat_expired')); show('v-outcome'); } });
+    stopMM = makeTimer({
+      durationSec: 900,
+      expiresAtMs: state.connectionExpiresAt,
+      textEl: $('#mm-timer'),
+      barEl: $('#mm-bar'),
+      onExpire: () => { feedback('busy', t('t_chat_expired')); show('v-outcome'); },
+    });
     feedback('mission', t('t_mission_active'));
     if (realtime && state.connectionId) realtime.subscribeConnection(state.connectionId);
     void restoreChatLog();
+    void (async function () {
+      const conn = await refreshConnectionUi();
+      if (state.viewId !== 'v-mission-meet') return;
+      const end = rememberExpires(conn);
+      if (stopMM) stopMM();
+      stopMM = makeTimer({
+        expiresAtMs: end,
+        textEl: $('#mm-timer'),
+        barEl: $('#mm-bar'),
+        onExpire: () => { feedback('busy', t('t_chat_expired')); show('v-outcome'); },
+      });
+    })();
   }
   if (id === 'v-mission-mode') {
     setPhase('mission', t('t_phase_mission'));
@@ -1723,20 +1869,34 @@ function onEnter(id) {
     const modeInner = modeView && modeView.querySelector('.mission-mode');
     if (modeInner) modeInner.classList.add('is-active');
   }
-  if (id === 'v-outcome') setPhase('busy', t('t_phase_busy'));
+  if (id === 'v-outcome') {
+    setPhase('busy', t('t_phase_busy'));
+    void (async function () {
+      const conn = await refreshConnectionUi();
+      if (state.viewId === 'v-outcome') syncOutcomeWaiting(conn);
+    })();
+  }
   if (id === 'v-cooldown') {
     setPhase('cooldown', t('t_phase_cooldown'));
     feedback('busy', t('t_cooldown_on'));
+    bindCooldownTimer(state.connectionExpiresAt);
+    void (async function () {
+      const conn = await refreshConnectionUi();
+      if (state.viewId !== 'v-cooldown') return;
+      bindCooldownTimer(rememberExpires(conn));
+    })();
   }
 }
 
-async function refreshConnectionUi() {
+async function refreshConnectionUi(opts) {
+  opts = opts || {};
   if (!liveApi() || !state.connectionId) return null;
   const c = await api.connection(state.connectionId);
   const conn = c && c.connection;
   if (!conn) return null;
   noteServerTime(c.serverTime);
   state.connectionState = conn.state;
+  rememberExpires(conn, c.remainingMs);
   if (conn.initiatorId && conn.recipientId) {
     state.peerId = state.meId === conn.initiatorId ? conn.recipientId : conn.initiatorId;
   }
@@ -1750,6 +1910,17 @@ async function refreshConnectionUi() {
   if (st === 'MUTUALLY_VALIDATED' && state.viewId === 'v-selfie') {
     show('v-confirmed');
   }
+  if (state.viewId === 'v-ticket') bindTicketTimer(state.connectionExpiresAt);
+  if (state.viewId === 'v-cooldown') bindCooldownTimer(state.connectionExpiresAt);
+  if (state.viewId === 'v-outcome') syncOutcomeWaiting(conn);
+  if (opts.route) {
+    const target = viewForConnectionState(st);
+    const protocol = ['v-selfie', 'v-confirmed', 'v-ticket', 'v-mission-meet', 'v-mission-mode', 'v-outcome', 'v-cooldown'];
+    if (target && target !== state.viewId && protocol.indexOf(state.viewId) !== -1 && state.viewId !== 'v-confirmed') {
+      show(target);
+    }
+  }
+  persistSession();
   return conn;
 }
 
@@ -1880,6 +2051,7 @@ $('#ticket-open-btn').addEventListener('click', async () => {
       await withLoading(t('t_meet'), async () => {
         const res = await api.meetNow(state.connectionId);
         state.connectionState = res.connection && res.connection.state;
+        rememberExpires(res.connection);
       });
     } catch (_) { return; }
   }
@@ -1894,6 +2066,7 @@ $('#ticket-later-btn').addEventListener('click', async () => {
       await withLoading(t('t_ticket'), async () => {
         const res = await api.ticket(state.connectionId);
         state.connectionState = res.connection && res.connection.state;
+        rememberExpires(res.connection);
       });
     } catch (_) { /* still leave */ }
   }
@@ -2058,9 +2231,28 @@ $('#mode-continue-btn').addEventListener('click', async () => {
 const CONTACT_RE = /(\+?\d[\d\s().-]{6,}\d)|(@[A-Za-z0-9_.]{2,})|(\b\w+\.(com|net|io|fr|be|lu)\b)|(snap|insta|whatsapp|tiktok|telegram)/i;
 const chatSeen = new Set();
 
+function isFilteredText(text) {
+  return typeof text === 'string' && text.indexOf('[filtered]') !== -1;
+}
+
+function showBlockedChat() {
+  const log = $('#chat-log');
+  if (!log) return;
+  const b = document.createElement('div');
+  b.className = 'msg blocked';
+  b.textContent = t('t_blocked');
+  log.appendChild(b);
+  haptic('error');
+  log.scrollTop = log.scrollHeight;
+}
+
 function appendChatMessage(msg, mine) {
   const log = $('#chat-log');
   if (!log || !msg) return;
+  if (msg.filtered || isFilteredText(msg.text)) {
+    if (mine) showBlockedChat();
+    return;
+  }
   const key = (msg.at || '') + '|' + (msg.senderId || '') + '|' + (msg.text || '');
   if (chatSeen.has(key)) return;
   chatSeen.add(key);
@@ -2088,27 +2280,32 @@ async function sendChat() {
   const f = $('#chat-field'), v = f.value.trim(); if (!v) return;
   const log = $('#chat-log');
   if (CONTACT_RE.test(v)) {
-    const b = document.createElement('div'); b.className = 'msg blocked'; b.textContent = t('t_blocked');
-    log.appendChild(b); haptic('error'); f.value = ''; log.scrollTop = log.scrollHeight; return;
+    showBlockedChat();
+    f.value = ''; return;
   }
   if (liveApi() && state.connectionId) {
     try {
       await withLoading(t('t_chat'), async () => {
         const res = await api.message(state.connectionId, { text: v });
-        if (res && res.message && res.message.filtered) {
-          const b = document.createElement('div'); b.className = 'msg blocked'; b.textContent = t('t_blocked');
-          log.appendChild(b); haptic('error');
+        if (res && res.message && (res.message.filtered || isFilteredText(res.message.text))) {
+          showBlockedChat();
           return;
         }
         appendChatMessage({
           text: (res && res.message && res.message.text) || v,
           senderId: state.meId,
           at: (res && res.message && res.message.at) || new Date().toISOString(),
+          filtered: false,
         }, true);
       });
-      f.value = ''; log.scrollTop = log.scrollHeight;
+      f.value = '';
+      const logEl = $('#chat-log');
+      if (logEl) logEl.scrollTop = logEl.scrollHeight;
       return;
-    } catch (_) { return; }
+    } catch (e) {
+      if (isFilteredText((e && e.message) || '')) showBlockedChat();
+      return;
+    }
   }
   if (api && api.productPath) {
     feedback('busy', t('t_api_unreachable'));
@@ -2120,22 +2317,32 @@ async function sendChat() {
 $('#chat-send').addEventListener('click', sendChat);
 $('#chat-field').addEventListener('keydown', e => { if (e.key === 'Enter') sendChat(); });
 
-/* outcome — own side only (peer answers on their device) */
+/* outcome — own side only (peer answers on their device); cooldown is server-only after both */
 async function submitOutcome(kind) {
   if (state.busy) return;
-  $('#cd-num').textContent = kind === 'yes' ? '30' : '15';
   if (liveApi() && state.connectionId) {
     try {
       await withLoading(t('t_outcome'), async () => {
         const o = kind === 'yes' ? 'YES' : 'NO';
-        await api.outcome(state.connectionId, { outcome: o });
+        const res = await api.outcome(state.connectionId, { outcome: o });
         if (allowPeerSim() && state.peerId) {
           await api.outcome(state.connectionId, { outcome: o }, { userId: state.peerId });
         }
         const c = await api.connection(state.connectionId);
-        state.connectionState = c.connection && c.connection.state;
+        noteServerTime(c.serverTime);
+        const conn = (c && c.connection) || (res && res.connection);
+        state.connectionState = conn && conn.state;
+        rememberExpires(conn, c.remainingMs);
+        if (state.connectionState === 'COOLDOWN_ACTIVE') {
+          feedback('success', t('t_mission_done'));
+          show('v-cooldown');
+          return;
+        }
+        syncOutcomeWaiting(conn);
+        feedback('success', t('t_outcome_saved'));
       });
     } catch (_) { return; }
+    return;
   } else if (api && api.productPath) {
     feedback('busy', t('t_api_unreachable'));
     return;
@@ -2255,20 +2462,22 @@ window.addEventListener('offline', () => {
 
 function applyEntitlements(e) {
   if (!e) return;
-  state.plan = e.plan || 'FREE';
+  const plan = e.plan === 'WINGMAN_PLUS' ? 'WINGMAN_PLUS' : 'FREE';
+  state.plan = plan;
   const caps = e.capabilities || {};
   if (typeof caps.dailySignals === 'number') state.signalsLeft = caps.dailySignals;
   if (typeof caps.activeConnectionTickets === 'number') state.ticketsActive = caps.activeConnectionTickets;
   const sig = $('#stat-signals'); if (sig) sig.textContent = String(state.signalsLeft);
   const tk = $('#stat-tickets'); if (tk) tk.textContent = String(state.ticketsActive);
-  const pl = $('#plan-label'); if (pl) pl.textContent = state.plan === 'WINGMAN_PLUS' ? 'PLUS' : 'FREE';
+  const pl = $('#plan-label'); if (pl) pl.textContent = plan === 'WINGMAN_PLUS' ? 'PLUS' : 'FREE';
   const pd = $('#plan-detail');
   if (pd) {
     pd.textContent = state.signalsLeft + ' ' + t('stat_signals');
   }
-  const sp = $('#settings-plan'); if (sp) sp.textContent = state.plan === 'WINGMAN_PLUS' ? 'Wingman+' : 'FREE';
+  const sp = $('#settings-plan'); if (sp) sp.textContent = plan === 'WINGMAN_PLUS' ? 'Wingman+' : 'FREE';
   const ss = $('#settings-signals'); if (ss) ss.textContent = String(caps.dailySignals ?? state.signalsLeft);
   const st = $('#settings-tickets'); if (st) st.textContent = String(caps.activeConnectionTickets ?? state.ticketsActive);
+  syncTicketCopy();
 }
 
 async function bootApi() {
@@ -2419,6 +2628,7 @@ function restoreSessionIfAny() {
   if (saved.signalId) state.signalId = saved.signalId;
   if (saved.connectionId) state.connectionId = saved.connectionId;
   if (saved.connectionState) state.connectionState = saved.connectionState;
+  if (typeof saved.connectionExpiresAt === 'number') state.connectionExpiresAt = saved.connectionExpiresAt;
   if (typeof saved.signalsLeft === 'number') {
     state.signalsLeft = saved.signalsLeft;
     const sig = $('#stat-signals'); if (sig) sig.textContent = String(state.signalsLeft);
@@ -2882,6 +3092,10 @@ function handleRealtimeEvent(env) {
   }
   if (env.type === 'mission.message') {
     if (p.connectionId && state.connectionId && p.connectionId !== state.connectionId) return;
+    if (p.filtered || isFilteredText(p.text)) {
+      if (p.senderId === state.meId) showBlockedChat();
+      return;
+    }
     appendChatMessage({
       text: p.text,
       senderId: p.senderId,

@@ -435,8 +435,8 @@
         <div class="body pad" style="display:flex;flex-direction:column;justify-content:center;text-align:center;flex:1">
           <div class="pill-badge" style="align-self:center" data-i18n="ticket_badge">Held for you</div>
           <h2 class="head mt" data-i18n="ticket_title">Can't meet right now?</h2>
-          <p class="lead mt-s" data-i18n="ticket_body">Hold this moment — up to 2 hours on Free. You can chat only when you both decide to meet.</p>
-          <div class="cd-num mt" style="font-size:34px" id="ticket-time">2:00:00</div>
+          <p class="lead mt-s" data-i18n="ticket_body">Hold this moment — up to 2 hours. You can chat only when you both decide to meet.</p>
+          <div class="cd-num mt" style="font-size:34px" id="ticket-time">—</div>
           <button class="btn btn-primary mt" id="ticket-open-btn" data-i18n="ticket_open">I'm available now</button>
           <button class="btn btn-ghost mt-s" id="ticket-later-btn" data-i18n="ticket_later">Later</button>
           <button type="button" class="btn btn-ghost mt-s" id="ticket-report-btn" data-i18n="report_sub">Report & block</button>
@@ -481,6 +481,7 @@
         <div class="mission-mode">
           <h2 class="head center" data-i18n="outcome_title">Did you meet?</h2>
           <p class="lead center" data-i18n="outcome_body">Your answer stays private. The other person never sees it.</p>
+          <p class="lead center hidden" id="outcome-wait" data-i18n="t_outcome_saved">Your answer is saved. Waiting for the other person.</p>
           <button class="btn btn-primary mt" id="outcome-yes-btn" data-outcome="yes" data-i18n="outcome_yes">Yes, we met</button>
           <button class="btn btn-ghost mt-s" id="outcome-no-btn" data-outcome="no" data-i18n="outcome_no">Not this time</button>
         </div>

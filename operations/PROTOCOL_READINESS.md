@@ -87,7 +87,7 @@ still required. **PRODUCT PROTOCOL READY = NO.**
 | S31 | **WIRED (infra)** — `@wingman/media` + Vercel Blob private; server `capturedAt`; authz tests; Evidence Pack NOT STARTED |
 | S32 | **PARTIAL wire (web)** — reconnect/restore; push **BLOCKED** on VAPID/FCM credentials. See [`S32_WEB_BACKGROUND.md`](./S32_WEB_BACKGROUND.md) |
 | S33 | **WIRED (product path)** — two-tap report/block from Radar, Discover, Signal, Selfie/ticket, Mission Meet, Me → Safety; server-enforced; Evidence Pack row 19 later. See [`S33_SAFETY.md`](./S33_SAFETY.md) |
-| S34 | **QUEUED / BLOCKED** upstream |
+| S34 | **WIRED (prep)** — public-surface hygiene + server ticket/cooldown remaining + human anti-contact + own-outcome. Live cohort / Evidence Pack **OPEN**. See [`S34_CERTIFICATION_PREP.md`](./S34_CERTIFICATION_PREP.md) |
 | S35 V2 | **EXPERIMENT SPEC ONLY** — `PRODUCT_PROTOCOL_V2_ENABLED=false`; no engine merge |
 
 ## PRODUCT PROTOCOL READY

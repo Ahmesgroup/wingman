@@ -38,6 +38,19 @@ describe("S4 mutual validation", () => {
 });
 
 describe("S5 mission cycle", () => {
+  it("FREE ticket hold is 2 hours from the server clock", () => {
+    const { clock, engine } = readyPair(false);
+    const sig = engine.sendSignal("a", "b");
+    const conn = engine.acceptSignal(sig.id, "b");
+    engine.applyConnection(conn.id, "initiator_selfie", "a", { mediaId: "m1" });
+    engine.applyConnection(conn.id, "recipient_selfie", "b", { mediaId: "m2" });
+    engine.applyConnection(conn.id, "initiator_approve", "a");
+    engine.applyConnection(conn.id, "hold_ticket", "a");
+    const held = engine.connections.get(conn.id);
+    expect(held?.state).toBe("TICKET_ACTIVE");
+    expect(held && held.expiresAt.getTime() - clock.now().getTime()).toBe(WINDOWS_MS.TICKET_FREE);
+  });
+
   it("ticket path and cooldown without frontend", () => {
     const { clock, engine } = readyPair(true);
     const sig = engine.sendSignal("a", "b");
@@ -46,7 +59,9 @@ describe("S5 mission cycle", () => {
     engine.applyConnection(conn.id, "recipient_selfie", "b", { mediaId: "m2" });
     engine.applyConnection(conn.id, "initiator_approve", "a");
     engine.applyConnection(conn.id, "hold_ticket", "a");
-    expect(engine.connections.get(conn.id)?.state).toBe("TICKET_ACTIVE");
+    const held = engine.connections.get(conn.id);
+    expect(held?.state).toBe("TICKET_ACTIVE");
+    expect(held && held.expiresAt.getTime() - clock.now().getTime()).toBe(WINDOWS_MS.TICKET_PLUS);
     engine.applyConnection(conn.id, "ticket_available", "a");
     engine.applyConnection(conn.id, "ticket_confirm", "b");
     expect(engine.connections.get(conn.id)?.state).toBe("MISSION_MEET_ACTIVE");
