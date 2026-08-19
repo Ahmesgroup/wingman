@@ -113,23 +113,41 @@ export class TwilioVerifyProvider implements OtpVerificationProvider {
 export function mapTwilioVerifyHttpError(status: number, body: TwilioErrorBody): AuthError {
   const code = body.code;
   // 60202 max check attempts; 60203 max send attempts; 60212 too many concurrent
-  if (code === 60202 || code === 60203 || code === 60212 || status === 429) {
+  // 60410 Verify Fraud Guard temporary prefix block (~12h) — keep protection, tell human to wait
+  if (code === 60202 || code === 60203 || code === 60212 || code === 60410 || status === 429) {
     return new AuthError("OTP_RATE_LIMITED", "Too many OTP attempts");
   }
   // 20404 resource not found / expired verification
   if (code === 20404 || status === 404) {
     return new AuthError("OTP_EXPIRED", "OTP expired");
   }
-  // 60200 invalid parameter (often bad phone / code shape)
-  if (code === 60200) {
+  // 60200 invalid parameter; 21614 / 21211 not a reachable mobile; 60205 SMS channel unsupported
+  if (code === 60200 || code === 21614 || code === 21211 || code === 60205) {
     return new AuthError("PHONE_INVALID", "Invalid phone or verification parameter");
+  }
+  // Auth / trial / geo — do not globally weaken Fraud Guard or geo permissions in code
+  if (
+    code === 20003 ||
+    code === 20008 ||
+    code === 21608 ||
+    code === 21408 ||
+    code === 60605 ||
+    status === 401 ||
+    status === 403
+  ) {
+    logVerify({
+      msg: "verify.http_error",
+      httpStatus: status,
+      twilioCode: code,
+    });
+    return new AuthError("OTP_PROVIDER_UNAVAILABLE", "SMS verification is temporarily unavailable");
   }
   logVerify({
     msg: "verify.http_error",
     httpStatus: status,
     twilioCode: code,
   });
-  return new AuthError("OTP_INVALID", "Verification failed");
+  return new AuthError("OTP_PROVIDER_UNAVAILABLE", "SMS verification is temporarily unavailable");
 }
 
 export function createOtpVerificationFromEnv(
@@ -159,11 +177,10 @@ export function createOtpVerificationFromEnv(
       return {
         name: "twilio_verify_misconfigured",
         async start() {
-          // Not OTP_RATE_LIMITED — UI should surface this message (ops must paste TWILIO_AUTH_TOKEN).
-          throw new AuthError("OTP_INVALID", "SMS verification is not configured yet");
+          throw new AuthError("OTP_PROVIDER_UNAVAILABLE", "SMS verification is not configured yet");
         },
         async check() {
-          throw new AuthError("OTP_INVALID", "SMS verification is not configured yet");
+          throw new AuthError("OTP_PROVIDER_UNAVAILABLE", "SMS verification is not configured yet");
         },
       };
     }

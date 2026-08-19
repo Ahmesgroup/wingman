@@ -18,6 +18,7 @@ export class AuthError extends Error {
       | "OTP_INVALID"
       | "OTP_EXPIRED"
       | "OTP_RATE_LIMITED"
+      | "OTP_PROVIDER_UNAVAILABLE"
       | "PHONE_INVALID"
       | "PHONE_NOT_ALLOWED"
       | "SESSION_INVALID"

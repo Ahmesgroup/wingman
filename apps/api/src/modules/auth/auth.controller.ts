@@ -40,6 +40,7 @@ export class AuthApiService {
 
   mode() {
     const otpProvider = (process.env.OTP_PROVIDER ?? "local").trim().toLowerCase();
+    const serviceSid = (process.env.TWILIO_VERIFY_SERVICE_SID ?? "").trim();
     return {
       fieldTest: isFieldTestAuthMode(),
       authAllowDev: process.env.AUTH_ALLOW_DEV === "true",
@@ -50,6 +51,16 @@ export class AuthApiService {
           : "local",
       publicProd:
         process.env.WINGMAN_PUBLIC_PROD === "true" || process.env.NODE_ENV === "production",
+      twilio: {
+        hasAccountSid: Boolean((process.env.TWILIO_ACCOUNT_SID ?? "").trim()),
+        hasAuthToken: Boolean((process.env.TWILIO_AUTH_TOKEN ?? "").trim()),
+        verifyServiceSidKind: serviceSid.startsWith("VA")
+          ? "VA"
+          : serviceSid
+            ? "other"
+            : "missing",
+        verifyServiceSidLast4: serviceSid.length >= 4 ? serviceSid.slice(-4) : null,
+      },
     };
   }
 

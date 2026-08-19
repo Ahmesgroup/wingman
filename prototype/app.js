@@ -259,6 +259,8 @@ function humanApiCopy(e) {
   if (code === 'UNAUTHORIZED') return t('t_auth_required');
   if (code === 'OTP_EXPIRED') return t('t_otp_expired');
   if (code === 'OTP_RATE_LIMITED') return t('t_otp_rate');
+  if (code === 'PHONE_INVALID') return t('t_bad_phone');
+  if (code === 'OTP_PROVIDER_UNAVAILABLE') return t('t_otp_unavailable');
   if (code === 'PHONE_NOT_ALLOWED') return t('t_otp_not_allowed');
   if (code === 'VALIDATION_REQUIRED' && e && e.details && e.details.partial) return t('t_outcome_saved');
   if (code === 'CAMERA_DENIED') return t('t_cam_required');
@@ -556,7 +558,7 @@ const I18N = {
     phone_body_ft: 'Enter your real number. In this field-test build, no SMS is sent — you will use a coordinator code.',
     otp_sub: 'Enter the code', otp_title: '6-digit code', otp_body: 'Sent to your phone', otp_cta: 'Verify', otp_resend: 'Resend code',
     otp_body_ft: 'Field test for', otp_field_note: 'Field test verification — no SMS is sent. Use the code from your test coordinator.',
-    t_auth_required: 'Sign in with your phone to continue', t_auth_ok: 'Signed in', t_otp_sent: 'Code sent', t_otp_ready_ft: 'Enter the field-test code', t_otp_bad: 'Invalid code', t_otp_expired: 'Code expired', t_otp_rate: 'Too many attempts — wait and retry', t_otp_not_allowed: 'This number isn’t on the field-test list',
+    t_auth_required: 'Sign in with your phone to continue', t_auth_ok: 'Signed in', t_otp_sent: 'Code sent', t_otp_ready_ft: 'Enter the field-test code', t_otp_bad: 'Invalid code', t_otp_expired: 'Code expired', t_otp_rate: 'SMS is paused for this number right now. Wait and try again later.', t_otp_unavailable: 'SMS verification is temporarily unavailable. Try again later.', t_otp_not_allowed: 'This number isn’t on the field-test list',
     profile_sub: 'Your profile', pf_name: 'First name', pf_birth: 'Date of birth', pf_birth_day: 'Day', pf_birth_month: 'Month', pf_birth_year: 'Year', pf_birth_hint: 'Tap each column — native picker on iPhone.',
     pf_gender: 'Gender', g_male: 'Male', g_female: 'Female', g_nb: 'Non-binary',
     pf_sec_identity: 'Who you are', pf_sec_intention: 'Intention', pf_sec_interests: 'Interests',
@@ -658,7 +660,7 @@ const I18N = {
     phone_body_ft: 'Entrez votre vrai numéro. Dans ce build field-test, aucun SMS n\'est envoyé — utilisez le code du coordinateur.',
     otp_sub: 'Entrez le code', otp_title: 'Code à 6 chiffres', otp_body: 'Envoyé sur votre téléphone', otp_cta: 'Vérifier', otp_resend: 'Renvoyer le code',
     otp_body_ft: 'Test terrain pour', otp_field_note: 'Vérification test terrain — aucun SMS n\'est envoyé. Utilisez le code fourni par le coordinateur.',
-    t_auth_required: 'Connectez-vous avec votre téléphone', t_auth_ok: 'Connecté', t_otp_sent: 'Code envoyé', t_otp_ready_ft: 'Entrez le code du test terrain', t_otp_bad: 'Code invalide', t_otp_expired: 'Code expiré', t_otp_rate: 'Trop de tentatives — réessayez plus tard', t_otp_not_allowed: 'Ce numéro n’est pas sur la liste du test terrain',
+    t_auth_required: 'Connectez-vous avec votre téléphone', t_auth_ok: 'Connecté', t_otp_sent: 'Code envoyé', t_otp_ready_ft: 'Entrez le code du test terrain', t_otp_bad: 'Code invalide', t_otp_expired: 'Code expiré', t_otp_rate: 'SMS momentanément en pause pour ce numéro. Réessayez plus tard.', t_otp_unavailable: 'La vérification SMS est temporairement indisponible. Réessayez plus tard.', t_otp_not_allowed: 'Ce numéro n’est pas sur la liste du test terrain',
     profile_sub: 'Votre profil', pf_name: 'Prénom', pf_birth: 'Date de naissance', pf_birth_day: 'Jour', pf_birth_month: 'Mois', pf_birth_year: 'Année', pf_birth_hint: 'Touchez chaque colonne — molette native sur iPhone.',
     pf_gender: 'Genre', g_male: 'Homme', g_female: 'Femme', g_nb: 'Non-binaire',
     pf_sec_identity: 'Qui vous êtes', pf_sec_intention: 'Intention', pf_sec_interests: 'Centres d’intérêt',
@@ -3772,6 +3774,16 @@ $$('#otp-inputs input').forEach((inp, idx, arr) => {
   });
 });
 
+function otpHumanCopy(e) {
+  const code = e && e.code;
+  if (code === 'OTP_RATE_LIMITED') return t('t_otp_rate');
+  if (code === 'PHONE_INVALID') return t('t_bad_phone');
+  if (code === 'OTP_PROVIDER_UNAVAILABLE') return t('t_otp_unavailable');
+  if (code === 'PHONE_NOT_ALLOWED') return t('t_otp_not_allowed');
+  if (code === 'OTP_EXPIRED') return t('t_otp_expired');
+  return t('t_otp_bad');
+}
+
 async function requestOtpForPhone(phone) {
   const errEl = $('#phone-error') || $('#otp-error');
   if (errEl) errEl.textContent = '';
@@ -3800,10 +3812,7 @@ async function requestOtpForPhone(phone) {
     feedback('success', authFieldTest ? t('t_otp_ready_ft') : t('t_otp_sent'));
     return true;
   } catch (e) {
-    const code = e && e.code;
-    const msg = code === 'OTP_RATE_LIMITED' ? t('t_otp_rate')
-      : code === 'PHONE_NOT_ALLOWED' ? t('t_otp_not_allowed')
-      : ((e && e.message) || t('t_otp_bad'));
+    const msg = otpHumanCopy(e);
     if (errEl) errEl.textContent = msg;
     feedback('error', msg);
     return false;
@@ -3863,11 +3872,7 @@ $('#otp-verify-btn') && $('#otp-verify-btn').addEventListener('click', async () 
     ensureRealtime();
     await restoreIdentityAndRoute();
   } catch (e) {
-    const codeErr = e && e.code;
-    const msg = codeErr === 'OTP_EXPIRED' ? t('t_otp_expired')
-      : codeErr === 'OTP_RATE_LIMITED' ? t('t_otp_rate')
-      : codeErr === 'PHONE_NOT_ALLOWED' ? t('t_otp_not_allowed')
-      : t('t_otp_bad');
+    const msg = otpHumanCopy(e);
     if (errEl) errEl.textContent = msg;
     feedback('error', msg);
   }
