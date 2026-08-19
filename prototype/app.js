@@ -286,6 +286,7 @@ function persistSession() {
       hasIncomingSignal: state.hasIncomingSignal,
       meId: state.meId,
       peerId: state.peerId,
+      viewerCity: state.viewerCity || null,
     }));
   } catch (_) { /* ignore */ }
 }
@@ -1251,7 +1252,11 @@ const lmFilterState = { proximity: [], presence: [], intention: [], interests: [
 
 const LM_PREAUTH = new Set(['v-splash', 'v-onboard1', 'v-onboard2', 'v-onboard3', 'v-phone', 'v-otp', 'v-profile', 'v-consent']);
 const LM_MAP_TABS = new Set(['v-radar', 'v-discover', 'v-pulse']);
-const LM_SHELL_NAV = new Set(['v-radar', 'v-discover', 'v-pulse', 'v-settings', 'v-signal']);
+const LM_SHELL_NAV = new Set(['v-radar', 'v-discover', 'v-pulse', 'v-settings']);
+const LM_PROTOCOL = new Set([
+  'v-signal', 'v-selfie', 'v-confirmed', 'v-ticket', 'v-mission-meet', 'v-mission-mode',
+  'v-outcome', 'v-cooldown', 'v-destiny', 'v-report', 'v-report-done',
+]);
 
 function livingMapOn() {
   return Boolean(state.livingMap);
@@ -1305,7 +1310,7 @@ function enableLivingMapUi() {
 
 function disableLivingMapUi() {
   state.livingMap = false;
-  document.body.classList.remove('living-map', 'lm-preauth', 'lm-shell-nav', 'lm-map-chrome', 'lm-me');
+  document.body.classList.remove('living-map', 'lm-preauth', 'lm-shell-nav', 'lm-map-chrome', 'lm-me', 'lm-protocol');
   document.body.removeAttribute('data-lm-world');
   document.body.removeAttribute('data-lm-layer');
   document.body.removeAttribute('data-lm-count');
@@ -1325,29 +1330,40 @@ function disableLivingMapUi() {
   startRadar();
 }
 
+function restoreMapSurface() {
+  if (!state.livingMap || !livingMapCtl) return;
+  livingMapCtl.invalidate();
+  if (state.viewerLoc) livingMapCtl.setViewer(state.viewerLoc);
+  if (state.lmOpportunities && state.lmOpportunities.length) {
+    livingMapCtl.setOpportunities(state.lmOpportunities, state.meId);
+  }
+}
+
 function setLivingMapWorld(viewId) {
   if (!state.livingMap) {
     document.body.removeAttribute('data-lm-world');
     document.body.removeAttribute('data-lm-layer');
-    document.body.classList.remove('lm-preauth', 'lm-shell-nav', 'lm-map-chrome', 'lm-me');
+    document.body.classList.remove('lm-preauth', 'lm-shell-nav', 'lm-map-chrome', 'lm-me', 'lm-protocol');
     return;
   }
-  const preauth = LM_PREAUTH.has(viewId);
+  const LM = typeof WingmanLivingMap !== 'undefined' ? WingmanLivingMap : null;
+  const preauth = LM && LM.isPreauthView ? LM.isPreauthView(viewId) : LM_PREAUTH.has(viewId);
   const mapTab = LM_MAP_TABS.has(viewId);
-  const me = viewId === 'v-settings';
+  const protocol = LM && LM.isProtocolOverlay ? LM.isProtocolOverlay(viewId) : LM_PROTOCOL.has(viewId);
+  const me = LM && LM.isMeSheet ? LM.isMeSheet(viewId) : viewId === 'v-settings';
   const layer = viewId === 'v-discover' ? 'discover' : viewId === 'v-pulse' ? 'pulse' : 'radar';
   document.body.classList.toggle('lm-preauth', preauth);
   document.body.classList.toggle('lm-shell-nav', LM_SHELL_NAV.has(viewId));
   document.body.classList.toggle('lm-map-chrome', mapTab);
+  document.body.classList.toggle('lm-protocol', protocol);
   document.body.classList.toggle('lm-me', me);
   document.body.dataset.lmWorld = preauth ? 'away' : 'near';
   document.body.dataset.lmLayer = layer;
   if (mapTab) state.lmReturnView = viewId;
-  if (livingMapCtl && mapTab) {
-    livingMapCtl.setLayer(layer);
+  if (livingMapCtl && !preauth) {
+    if (mapTab) livingMapCtl.setLayer(layer);
     livingMapCtl.invalidate();
-  } else if (livingMapCtl && me) {
-    livingMapCtl.invalidate();
+    if (mapTab) restoreMapSurface();
   }
 }
 
@@ -2090,6 +2106,7 @@ function onEnter(id) {
       void (async function () {
         const loc = await requestViewerLocation();
         if (loc && livingMapCtl) livingMapCtl.setViewer(loc);
+        if (loc && state.radarActive) void tickPresenceHeartbeat(true);
         await refreshLivingMap();
       })();
     }
@@ -2351,7 +2368,7 @@ $('#selfie-approve').addEventListener('click', async () => {
   show('v-confirmed');
 });
 
-$('#open-signal-btn').addEventListener('click', async () => {
+async function acceptIncomingSignal() {
   if (state.busy) return;
   if (liveApi() && state.signalId) {
     try {
@@ -2377,6 +2394,13 @@ $('#open-signal-btn').addEventListener('click', async () => {
   feedback('signal', t('t_signal_received'));
   setPhase('validation', t('t_phase_validation'));
   show('v-selfie');
+}
+
+$('#open-signal-btn').addEventListener('click', () => { void acceptIncomingSignal(); });
+$('#lm-inbox-open') && $('#lm-inbox-open').addEventListener('click', (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  void acceptIncomingSignal();
 });
 
 $('#ticket-open-btn').addEventListener('click', async () => {
@@ -2474,7 +2498,8 @@ function openReportFor(userId) {
 function bindReportEntry(id) {
   const el = $('#' + id);
   if (!el) return;
-  el.addEventListener('click', () => {
+  el.addEventListener('click', (e) => {
+    if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
     if (id === 'sheet-report-btn') {
       openReportFor(currentDot && currentDot.userId);
       return;
@@ -2486,6 +2511,7 @@ function bindReportEntry(id) {
 bindReportEntry('mm-report-btn');
 bindReportEntry('sheet-report-btn');
 bindReportEntry('sig-report-btn');
+bindReportEntry('lm-inbox-report');
 bindReportEntry('selfie-report-btn');
 bindReportEntry('ticket-report-btn');
 $('#set-safety-btn') && $('#set-safety-btn').addEventListener('click', () => {
@@ -2998,6 +3024,10 @@ function restoreSessionIfAny() {
     syncSignalsChrome();
   }
   state.hasIncomingSignal = Boolean(saved.hasIncomingSignal || saved.signalId);
+  if (typeof saved.viewerCity === 'string' && saved.viewerCity && !/\d{1,3}\.\d/.test(saved.viewerCity)) {
+    state.viewerCity = saved.viewerCity;
+    syncLivingMapPlace();
+  }
   if (saved.radarActive) {
     state.radarActive = true;
     const btn = $('#radar-toggle'), st = $('#radar-state');
@@ -3117,7 +3147,7 @@ async function restoreIdentityAndRoute() {
       profile: state.cachedProfile,
       consents: state.cachedConsents,
     });
-    const protocolHold = new Set(['v-signal', 'v-selfie', 'v-ticket', 'v-mission-meet', 'v-mission-mode', 'v-outcome', 'v-cooldown']);
+    const protocolHold = new Set(['v-signal', 'v-selfie', 'v-confirmed', 'v-ticket', 'v-mission-meet', 'v-mission-mode', 'v-outcome', 'v-cooldown']);
     if (protocolHold.has(state.viewId)) {
       finishSessionRestore();
       return;
@@ -3634,6 +3664,13 @@ function urlBase64ToUint8Array(base64String) {
   return out;
 }
 
+function ensureServiceWorker() {
+  if (!('serviceWorker' in navigator) || !navigator.serviceWorker) return;
+  navigator.serviceWorker.register('/sw.js').then(function (reg) {
+    if (reg && typeof reg.update === 'function') void reg.update();
+  }).catch(function () { /* push remains credential-blocked; SW is cache-bust only */ });
+}
+
 async function onPushSwitch(wantOn) {
   const sw = $('#set-push');
   const status = $('#push-status');
@@ -3872,6 +3909,7 @@ bootApi().then(() => {
     applyLivingMapFlag(serverOn);
   } catch (_) { /* keep last resolved surface */ }
   await restoreIdentityAndRoute();
+  ensureServiceWorker();
   if (/[?&]smoke=1\b/.test(location.search)) runP4Smoke();
 });
 window.__wingmanRunP4Smoke = runP4Smoke;

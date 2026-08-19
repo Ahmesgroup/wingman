@@ -270,6 +270,54 @@
     return 'v-selfie';
   }
 
+  var PREAUTH_VIEWS = {
+    'v-splash': true,
+    'v-onboard1': true,
+    'v-onboard2': true,
+    'v-onboard3': true,
+    'v-phone': true,
+    'v-otp': true,
+    'v-profile': true,
+    'v-consent': true,
+  };
+
+  var PROTOCOL_OVERLAY_VIEWS = {
+    'v-signal': true,
+    'v-selfie': true,
+    'v-confirmed': true,
+    'v-ticket': true,
+    'v-mission-meet': true,
+    'v-mission-mode': true,
+    'v-outcome': true,
+    'v-cooldown': true,
+    'v-destiny': true,
+    'v-report': true,
+    'v-report-done': true,
+  };
+
+  function isPreauthView(viewId) {
+    return Boolean(PREAUTH_VIEWS[viewId]);
+  }
+
+  function isProtocolOverlay(viewId) {
+    return Boolean(PROTOCOL_OVERLAY_VIEWS[viewId]);
+  }
+
+  function isMeSheet(viewId) {
+    return viewId === 'v-settings';
+  }
+
+  /** After auth the Leaflet instance stays mounted; protocol/Me are layers, not a new world. */
+  function mapStaysMounted(viewId) {
+    if (!viewId) return false;
+    return !isPreauthView(viewId);
+  }
+
+  /** Incoming Signal is a map card. Opening it must not leave the spatial shell. */
+  function incomingSignalNavigatesAway() {
+    return false;
+  }
+
   /**
    * Protocol selection — opaque ids only. Display lat/lng are never sent onward.
    */
@@ -313,6 +361,11 @@
     emptyCountMutuallyExclusive: emptyCountMutuallyExclusive,
     sayHelloOpensCamera: sayHelloOpensCamera,
     selfieLeadView: selfieLeadView,
+    isPreauthView: isPreauthView,
+    isProtocolOverlay: isProtocolOverlay,
+    isMeSheet: isMeSheet,
+    mapStaysMounted: mapStaysMounted,
+    incomingSignalNavigatesAway: incomingSignalNavigatesAway,
     selectionFromMarker: selectionFromMarker,
   };
 });

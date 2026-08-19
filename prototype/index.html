@@ -52,7 +52,7 @@
         <span id="loading-text">Loading…</span>
       </div>
 
-      <!-- Living Map — permanent terrain behind Radar / Discover / Pulse -->
+      <!-- Living Map — permanent authenticated terrain. Protocol = sheets over this map. -->
       <div id="living-map-root" class="living-map-root hidden" hidden>
         <div id="living-map-el" class="living-map-el" role="application" aria-label="Around you"></div>
         <p class="lm-attrib" id="lm-attrib">
@@ -78,10 +78,19 @@
           <button type="button" class="lm-mood-btn" data-mood="OPEN" aria-pressed="true" data-i18n="mood_open">Open</button>
           <button type="button" class="lm-mood-btn" data-mood="UNSURE" aria-pressed="false" data-i18n="mood_explore">Unsure</button>
         </div>
-        <button type="button" class="lm-inbox hidden" id="lm-inbox" data-go="v-signal">
-          <span class="inbox-dot" aria-hidden="true"></span>
-          <b data-i18n="inbox_title">Someone nearby wants to meet you.</b>
-        </button>
+        <div class="lm-inbox hidden" id="lm-inbox" role="region" aria-live="polite">
+          <div class="lm-inbox-row">
+            <span class="inbox-dot" aria-hidden="true"></span>
+            <div class="lm-inbox-copy">
+              <b data-i18n="inbox_title">Someone nearby wants to meet you.</b>
+              <p class="small muted" data-i18n="inbox_hint">Open it before it quietly expires.</p>
+            </div>
+          </div>
+          <div class="lm-inbox-actions">
+            <button type="button" class="btn btn-secondary btn-compact" id="lm-inbox-open" data-i18n="open">Open</button>
+            <button type="button" class="btn btn-ghost btn-compact" id="lm-inbox-report" data-i18n="report_sub">Report & block</button>
+          </div>
+        </div>
         <div class="lm-destiny-banner hidden" id="lm-destiny-banner" role="button" tabindex="0" hidden>
           <span class="eyebrow" data-i18n="destiny_eyebrow">Your paths crossed again</span>
           <b data-i18n="destiny_card_t">You keep crossing paths</b>

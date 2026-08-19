@@ -955,7 +955,10 @@ body.field-test .brand-tag{letter-spacing:1.2px}
   display:flex;align-items:center
 }
 body.living-map #living-map-root{display:block!important;visibility:visible}
+body.living-map:not(.lm-preauth) #living-map-root{z-index:2}
 body.living-map.lm-map-chrome #living-map-root{z-index:2;pointer-events:auto}
+body.living-map.lm-protocol #living-map-root,
+body.living-map.lm-me #living-map-root{pointer-events:none}
 body.living-map.lm-preauth #living-map-root{visibility:hidden;pointer-events:none;z-index:0}
 body.living-map #radar-canvas,
 body.living-map .radar-shell,
@@ -978,8 +981,34 @@ body.living-map:not(.lm-preauth) #v-discover.view.active,
 body.living-map:not(.lm-preauth) #v-pulse.view.active{
   background:transparent;pointer-events:none
 }
-body.living-map:not(.lm-preauth) .view.active:not(#v-radar):not(#v-discover):not(#v-pulse){
-  position:absolute;inset:0;z-index:6;background:var(--bg-primary);pointer-events:auto
+/* Me / leftover full sheets — map stays mounted underneath */
+body.living-map.lm-me .view.active,
+body.living-map:not(.lm-preauth):not(.lm-protocol):not(.lm-map-chrome) .view.active{
+  position:absolute;inset:0;z-index:6;background:rgba(11,16,32,.96);pointer-events:auto
+}
+/* Protocol = dimmed sheet over the Living Map, never a replacement world */
+body.living-map.lm-protocol .view.active{
+  position:absolute;inset:0;z-index:6;background:rgba(11,16,32,.38);pointer-events:auto;
+  justify-content:flex-end
+}
+body.living-map.lm-protocol .view.active > .statusbar,
+body.living-map.lm-protocol .view.active > .topbar{display:none!important}
+body.living-map.lm-protocol #v-signal .body,
+body.living-map.lm-protocol #v-selfie .selfie-stage,
+body.living-map.lm-protocol #v-confirmed .confirm-stage,
+body.living-map.lm-protocol #v-ticket .body,
+body.living-map.lm-protocol #v-mission-meet .chat,
+body.living-map.lm-protocol #v-mission-mode .mission-mode,
+body.living-map.lm-protocol #v-outcome .mission-mode,
+body.living-map.lm-protocol #v-cooldown .cooldown,
+body.living-map.lm-protocol #v-destiny .mission-mode,
+body.living-map.lm-protocol #v-report .body,
+body.living-map.lm-protocol #v-report-done .body{
+  margin:12px 12px calc(16px + var(--safe-bottom));
+  max-height:min(88dvh, calc(100% - 24px));
+  overflow-y:auto;-webkit-overflow-scrolling:touch;
+  background:rgba(11,16,32,.90);border:1px solid rgba(255,255,255,.10);
+  border-radius:22px;flex:0 1 auto;width:calc(100% - 24px);box-sizing:border-box;align-self:center
 }
 body.living-map #lm-nav{
   display:none;pointer-events:auto;z-index:5;background:rgba(11,16,32,.78)
@@ -1079,8 +1108,13 @@ body.keyboard-open .lm-dock,body.keyboard-open .lm-inbox,body.keyboard-open .lm-
 }
 .lm-inbox{
   position:absolute;left:12px;right:12px;bottom:calc(146px + var(--safe-bottom));
-  z-index:4;margin:0;width:auto
+  z-index:4;margin:0;width:auto;flex-direction:column;align-items:stretch;gap:10px
 }
+.lm-inbox-row{display:flex;align-items:center;gap:12px;width:100%}
+.lm-inbox-copy{flex:1;min-width:0;text-align:left}
+.lm-inbox-copy p{margin:2px 0 0}
+.lm-inbox-actions{display:flex;gap:8px;width:100%}
+.lm-inbox-actions .btn{flex:1;width:auto}
 .radar-chrome{padding-top:10px}
 .radar-meta{
   display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 8px;

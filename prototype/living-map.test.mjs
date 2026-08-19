@@ -335,3 +335,64 @@ describe('living-map P0 actionability', () => {
     assert.match(css, /min-height:44px/);
   });
 });
+
+describe('protocol overlays stay on the Living Map', () => {
+  const dir = dirname(fileURLToPath(import.meta.url));
+  const app = readFileSync(join(dir, 'app.js'), 'utf8');
+  const css = readFileSync(join(dir, 'styles.css'), 'utf8');
+  const html = readFileSync(join(dir, 'index.html'), 'utf8');
+  const sw = readFileSync(join(dir, 'sw.js'), 'utf8');
+  const writeCfg = readFileSync(join(dir, 'scripts/write-config.mjs'), 'utf8');
+
+  it('classifies protocol views as overlays and keeps the map mounted after auth', () => {
+    assert.equal(LM.isProtocolOverlay('v-selfie'), true);
+    assert.equal(LM.isProtocolOverlay('v-mission-meet'), true);
+    assert.equal(LM.isProtocolOverlay('v-outcome'), true);
+    assert.equal(LM.isProtocolOverlay('v-cooldown'), true);
+    assert.equal(LM.isProtocolOverlay('v-signal'), true);
+    assert.equal(LM.isProtocolOverlay('v-radar'), false);
+    assert.equal(LM.isMeSheet('v-settings'), true);
+    assert.equal(LM.isMeSheet('v-selfie'), false);
+    assert.equal(LM.mapStaysMounted('v-selfie'), true);
+    assert.equal(LM.mapStaysMounted('v-settings'), true);
+    assert.equal(LM.mapStaysMounted('v-radar'), true);
+    assert.equal(LM.mapStaysMounted('v-phone'), false);
+    assert.equal(LM.mapStaysMounted('v-splash'), false);
+    assert.equal(LM.incomingSignalNavigatesAway(), false);
+  });
+
+  it('does not paint protocol views as opaque replacement screens', () => {
+    assert.match(css, /body\.living-map\.lm-protocol \.view\.active/);
+    assert.match(css, /background:rgba\(11,16,32,\.38\)/);
+    assert.doesNotMatch(css, /lm-protocol \.view\.active\{[^}]*background:var\(--bg-primary\)/);
+    assert.doesNotMatch(css, /\.view\.active:not\(#v-radar\):not\(#v-discover\):not\(#v-pulse\)\{[^}]*background:var\(--bg-primary\)/);
+    assert.match(app, /classList\.toggle\('lm-protocol'/);
+    const setWorld = app.slice(app.indexOf('function setLivingMapWorld'), app.indexOf('function setLivingMapMoodOpen'));
+    assert.doesNotMatch(setWorld, /destroy\(/);
+    assert.match(setWorld, /restoreMapSurface/);
+    assert.match(app, /function restoreMapSurface/);
+  });
+
+  it('incoming Signal is a map card — Open does not data-go to a Signal world', () => {
+    const inbox = html.slice(html.indexOf('id="lm-inbox"'), html.indexOf('id="lm-destiny-banner"'));
+    assert.doesNotMatch(inbox, /data-go="v-signal"/);
+    assert.match(inbox, /id="lm-inbox-open"/);
+    assert.match(inbox, /id="lm-inbox-report"/);
+    assert.match(app, /function acceptIncomingSignal/);
+    assert.match(app, /lm-inbox-open/);
+    const recv = app.slice(app.indexOf("if (env.type === 'signal.received')"), app.indexOf("if (env.type === 'radar.changed'"));
+    assert.doesNotMatch(recv, /show\('v-signal'\)/);
+    assert.match(recv, /syncInboxChrome/);
+  });
+
+  it('PWA worker busts caches and deploy stamps asset versions', () => {
+    assert.match(sw, /var ASSET_V = 'dev'/);
+    assert.match(sw, /caches\.delete/);
+    assert.match(sw, /cache: 'no-store'/);
+    assert.match(sw, /skipWaiting/);
+    assert.match(app, /function ensureServiceWorker/);
+    assert.match(writeCfg, /VERCEL_GIT_COMMIT_SHA/);
+    assert.match(writeCfg, /bustHtmlAssets/);
+    assert.match(writeCfg, /stampServiceWorker/);
+  });
+});

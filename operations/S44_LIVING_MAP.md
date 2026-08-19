@@ -7,7 +7,9 @@
 
 ## What this is
 
-Users enter the Wingman world. The map is the permanent terrain. Radar, Discover, Pulse, and Destiny are **layers** on that terrain. Signal → Selfie → Mutual → Mission stay the existing protocol screens (overlays above the map), not a second Radar.
+Users enter the Wingman world. The map is the permanent terrain. Radar, Discover, Pulse, and Destiny are **layers** on that terrain. Signal received, selfie, mutual, mission, outcome, and cooldown are **sheets over the same map** (`lm-protocol`) — not full-page dark screens that unmount the world. Me may be a full sheet (`lm-me`); the Leaflet instance stays mounted and `restoreMapSurface` re-applies viewer + markers when the sheet closes. Incoming Signal is the map inbox card (`#lm-inbox`); it does not `data-go` into a separate Signal world.
+
+S35 stays **OFF**. Signal and Selfie stay separate artefacts. Canvas Radar remains rollback only.
 
 The map is a **new representation of server truth**. Eligibility, presence, ranking, Signal, Destiny, tickets, cooldown, and state machines are unchanged.
 
@@ -52,7 +54,7 @@ Radar opportunities → privacy-safe markers (`candidateId` / `userId` opaque) �
 
 ## Say hello protocol handoff (this sprint)
 
-**What “Say hello” / “Dire bonjour” does on Production:** it starts the canonical **V3.1** engine — `POST /signals` with opaque `receiverId`. It does **not** open the live camera, upload media, or bind a selfie.
+**What “Say hello” / “Dire bonjour” does on Production:** it starts the canonical **V3.1** engine — `POST /signals` with opaque `receiverId`. It does **not** open the live camera, upload media, or bind a selfie. Recipient sees a **map card**, not a Signal-only screen. Accept still leads to `v-selfie` as a sheet over the map.
 
 | Step | Actor | Existing operation |
 |------|--------|-------------------|
