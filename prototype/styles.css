@@ -743,6 +743,7 @@ body.field-test #destiny-card{display:none!important}
   background:rgba(4,7,15,.72);backdrop-filter:blur(6px);color:var(--t-primary);font-size:13px;font-weight:600
 }
 .loading-overlay.hidden{display:none!important}
+body.lm-restoring .splash-cta{visibility:hidden;pointer-events:none}
 .loading-spin{
   width:28px;height:28px;border-radius:50%;border:2px solid rgba(185,167,255,.25);border-top-color:var(--wingman);
   animation:spin .7s linear infinite

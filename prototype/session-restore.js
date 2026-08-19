@@ -55,6 +55,25 @@
     return fallback === 'fr' ? 'fr' : 'en';
   }
 
+  /** localStorage keys used by prototype/api.js — never surface values in UI. */
+  function hasLocalTokens() {
+    try {
+      return Boolean(
+        localStorage.getItem('wingman_access_token') ||
+        localStorage.getItem('wingman_refresh_token'),
+      );
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /** Hold splash/onboarding while stored tokens are being restored. */
+  function holdOnboarding(opts) {
+    opts = opts || {};
+    if (opts.hasSession) return false;
+    return Boolean(opts.restoring || opts.hadStoredTokens);
+  }
+
   return {
     ACCESS_TTL_MS: ACCESS_TTL_MS,
     REFRESH_TTL_MS: REFRESH_TTL_MS,
@@ -63,5 +82,7 @@
     nextAuthedView: nextAuthedView,
     localeFromProfile: localeFromProfile,
     bootView: bootView,
+    hasLocalTokens: hasLocalTokens,
+    holdOnboarding: holdOnboarding,
   };
 });

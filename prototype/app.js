@@ -38,6 +38,7 @@ const state = {
   cachedProfile: null,
   cachedConsents: [],
   viewerCity: null,
+  restoringSession: false,
   serverNow: () => Date.now(),
 };
 
@@ -201,6 +202,19 @@ function setApiBanner(kind, msg) {
 }
 
 let loadingTimer = null;
+(function holdSplashWhileTokensRestore() {
+  const SR = typeof WingmanSessionRestore !== 'undefined' ? WingmanSessionRestore : null;
+  const hold = SR ? SR.hasLocalTokens() : false;
+  if (!hold) return;
+  state.restoringSession = true;
+  document.body.classList.add('lm-restoring');
+  const ov = document.getElementById('loading-overlay');
+  if (ov) {
+    ov.classList.remove('hidden');
+    ov.setAttribute('aria-busy', 'true');
+  }
+})();
+
 function setLoading(on, label) {
   state.busy = Boolean(on);
   const ov = $('#loading-overlay');
@@ -1567,7 +1581,10 @@ if (typeof document !== 'undefined') {
   document.addEventListener('visibilitychange', onPresenceVisibility);
 }
 window.addEventListener('pageshow', function (e) {
-  if (e.persisted || document.visibilityState === 'visible') void restoreForeground({ silent: true });
+  if (e.persisted || document.visibilityState === 'visible') {
+    void restoreForeground({ silent: true });
+    if (isAuthedSession()) void restoreIdentityAndRoute();
+  }
 });
 
 let restoreForegroundInFlight = null;
@@ -1598,7 +1615,8 @@ async function restoreForeground(opts) {
     if (!plan.restoreSession) return;
     if (!liveApi()) return;
     try {
-      await api.me();
+      const me = await api.me();
+      applyRestoredMe(me);
     } catch (e) {
       if (Recon ? Recon.isHardAuthFailure(e) : (e && (e.code === 'UNAUTHORIZED' || e.status === 401))) {
         try { api.clearSession(); } catch (_) { /* ignore */ }
@@ -1618,6 +1636,7 @@ async function restoreForeground(opts) {
     if (plan.reconnectSocket || plan.restoreSession) ensureRealtimeReconnect();
     if (plan.restoreRadar) {
       await tickPresenceHeartbeat(true);
+      syncLivingMapPlace();
       if (state.radarActive) {
         try {
           const cands = await api.radarCandidates();
@@ -1625,6 +1644,7 @@ async function restoreForeground(opts) {
         } catch (_) {
           clearRadarDots();
         }
+        if (state.livingMap) void refreshLivingMap();
       } else {
         clearRadarDots();
       }
@@ -2670,7 +2690,10 @@ $('#outcome-no-btn').addEventListener('click', () => submitOutcome('no'));
 
 /* generic data-go + destiny card keyboard */
 document.addEventListener('click', e => {
-  const g = e.target.closest('[data-go]'); if (g) { show(g.dataset.go); }
+  const g = e.target.closest('[data-go]'); if (!g) return;
+  const dest = g.dataset.go;
+  if (state.restoringSession && dest && dest.indexOf('v-onboard') === 0) return;
+  show(dest);
 });
 $$('[data-go][role="button"]').forEach(el => el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); show(el.dataset.go); } }));
 
@@ -2936,7 +2959,7 @@ async function bootApi() {
     }
     applyEntitlements({ plan: 'FREE', capabilities: { dailySignals: 2, activeConnectionTickets: 1 } });
   } finally {
-    setLoading(false);
+    if (!state.restoringSession) setLoading(false);
   }
 }
 
@@ -2950,6 +2973,7 @@ function restoreSessionIfAny() {
   const wantsProtocol = saved.viewId && resumeViews.has(saved.viewId);
   const SR = typeof WingmanSessionRestore !== 'undefined' ? WingmanSessionRestore : null;
   const profileOk = SR ? SR.profileComplete(state.cachedProfile) : Boolean(state.cachedProfile && state.cachedProfile.firstName);
+  const consentOk = SR ? SR.hasCoreConsent(state.cachedConsents) : true;
 
   // Hosted product: never dump users onto Radar with dead CTAs when OTP tokens are gone.
   if (wantsProtocol && api && api.productPath && !isAuthedSession()) {
@@ -2992,7 +3016,7 @@ function restoreSessionIfAny() {
   }
   syncRadarEmpty();
   syncSignalEmpty();
-  if (wantsProtocol && saved.viewId !== 'v-splash' && profileOk) {
+  if (wantsProtocol && saved.viewId !== 'v-splash' && profileOk && consentOk) {
     show(saved.viewId);
     feedback('info', t('t_session_restored'));
   } else if (saved.phase && saved.phase !== 'offline') {
@@ -3071,6 +3095,7 @@ async function restoreIdentityAndRoute() {
   const SR = typeof WingmanSessionRestore !== 'undefined' ? WingmanSessionRestore : null;
   if (!SR) {
     resumeAuthedFunnelIfNeeded();
+    finishSessionRestore();
     return;
   }
   if (isAuthedSession()) {
@@ -3081,6 +3106,7 @@ async function restoreIdentityAndRoute() {
       } catch (e) {
         if (e && (e.code === 'UNAUTHORIZED' || e.status === 401)) {
           try { api.clearSession(); } catch (_) { /* ignore */ }
+          finishSessionRestore();
           show('v-phone');
           return;
         }
@@ -3092,9 +3118,13 @@ async function restoreIdentityAndRoute() {
       consents: state.cachedConsents,
     });
     const protocolHold = new Set(['v-signal', 'v-selfie', 'v-ticket', 'v-mission-meet', 'v-mission-mode', 'v-outcome', 'v-cooldown']);
-    if (protocolHold.has(state.viewId)) return;
+    if (protocolHold.has(state.viewId)) {
+      finishSessionRestore();
+      return;
+    }
     if (dest === 'v-radar') feedback('info', t('t_session_restored'));
     show(dest);
+    finishSessionRestore();
     return;
   }
   const dest = SR.bootView({
@@ -3102,6 +3132,13 @@ async function restoreIdentityAndRoute() {
     hadStoredTokens: Boolean(api && api.hadBootTokens),
   });
   if (dest !== 'v-splash' && dest !== state.viewId) show(dest);
+  finishSessionRestore();
+}
+
+function finishSessionRestore() {
+  state.restoringSession = false;
+  document.body.classList.remove('lm-restoring');
+  setLoading(false);
 }
 
 /** After OTP session exists, don't trap the user on splash/phone again. */

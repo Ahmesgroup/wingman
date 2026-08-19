@@ -277,8 +277,13 @@ describe('living-map P0 actionability', () => {
   it('session restore skips phone when profile+consent exist', () => {
     assert.match(app, /restoreIdentityAndRoute/);
     assert.match(app, /applyRestoredMe/);
+    assert.match(app, /holdSplashWhileTokensRestore/);
+    assert.match(app, /finishSessionRestore/);
+    assert.match(app, /consentOk/);
+    assert.match(app, /applyRestoredMe\(me\)/);
     assert.match(html, /id="logout-btn"/);
     assert.doesNotMatch(apiSrc, /lsSet\(AUTH_PHONE, phoneE164\)/);
+    assert.match(css, /lm-restoring/);
   });
 
   it('Say hello from the sheet uses the existing Signal API with opaque userId', () => {

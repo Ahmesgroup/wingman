@@ -45,4 +45,11 @@ describe('session restore routing', () => {
     assert.equal(SR.localeFromProfile({ locale: 'fr' }, 'en'), 'fr');
     assert.equal(SR.localeFromProfile({}, 'en'), 'en');
   });
+
+  it('holds splash/onboarding while stored tokens restore', () => {
+    assert.equal(SR.holdOnboarding({ hasSession: true }), false);
+    assert.equal(SR.holdOnboarding({ hasSession: false, hadStoredTokens: true }), true);
+    assert.equal(SR.holdOnboarding({ hasSession: false, restoring: true }), true);
+    assert.equal(SR.holdOnboarding({ hasSession: false }), false);
+  });
 });

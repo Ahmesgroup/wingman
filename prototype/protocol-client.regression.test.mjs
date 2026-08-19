@@ -84,6 +84,7 @@ assert(fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8').includes('set
 assert(!fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8').includes('data-go="v-consent"'), 'profile still data-go');
 assert(fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8').includes("/radar/heartbeat"), 'radarHeartbeat client missing');
 assert(src.includes('restoreIdentityAndRoute'), 'session restore routing missing');
+assert(src.includes('finishSessionRestore'), 'restore hold must end after boot');
 assert(html.includes('id="logout-btn"'), 'logout control missing');
 assert(html.includes('session-restore.js'), 'session restore module missing');
 assert(src.includes('ensureRealtimeReconnect'), 'WS reconnect helper missing');
