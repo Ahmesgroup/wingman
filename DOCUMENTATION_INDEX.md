@@ -191,6 +191,7 @@ Start with `README.md`, then `docs/PRD.md`, `architecture/STATE_MACHINES.md`, `d
 - [`operations/PROTOCOL_READINESS.md`](operations/PROTOCOL_READINESS.md) — **SoT** PRODUCT PROTOCOL READY = NO; 12-step matrix
 - [`operations/EVIDENCE_PACK_TWO_PHONE.md`](operations/EVIDENCE_PACK_TWO_PHONE.md) — **SoT** two-phone 12-step run sheet (NOT STARTED)
 - [`operations/S27_IDENTITY_OTP.md`](operations/S27_IDENTITY_OTP.md) — S27 binary gate + impl status (OPEN until phone proof)
+- [`operations/FIELD_TEST_OTP_SAFE_LIST.md`](operations/FIELD_TEST_OTP_SAFE_LIST.md) — Twilio Verify Safe List for Fraud Guard 60410 (ops; PRODUCT PROTOCOL READY: NO)
 - [`operations/S20_PRODUCTION_CERTIFICATION.md`](operations/S20_PRODUCTION_CERTIFICATION.md) — **Backend V1 certification GO**
 - [`operations/V1.1_ADVANCED_ENGINE.md`](operations/V1.1_ADVANCED_ENGINE.md) — V1.1 advanced engines roadmap
 - [`operations/S21_RADAR_INTELLIGENCE.md`](operations/S21_RADAR_INTELLIGENCE.md) — Radar Intelligence (flagged ranking)

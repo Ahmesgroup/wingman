@@ -131,6 +131,14 @@ When **S27A GREEN**, S28 may start. S27B stays OPEN until Twilio Verify phone pr
 
 **Status:** Implementation shipped in repo — **S27B remains OPEN** until Evidence Pack is filled with real-phone proof **through the website**. Do **not** promote product status without that evidence.
 
+### Fraud Guard 60410 (field testers, Luxembourg `+352`)
+
+If Send code succeeds in the API but **no SMS** arrives, and Twilio shows **60410**, Fraud Guard has **prefix-blocked** the destination (often `+352`) for ~12 hours. **Do not** disable Fraud Guard. **Do not** open Verify Geo Permissions globally.
+
+Ops: Safe List **only** authorized field-test E.164s (`+352XXXXXXXX`) on the **Verify** Service **`VA…`** (not Conversations **`IS…`**). Exact Console clicks: [`FIELD_TEST_OTP_SAFE_LIST.md`](./FIELD_TEST_OTP_SAFE_LIST.md).
+
+**PRODUCT PROTOCOL READY: NO** until the Evidence Pack below is filled.
+
 ### Ops prerequisites (credentials never in git)
 
 1. Reuse the same Twilio **account** across projects if desired (Account SID is account-scoped).
