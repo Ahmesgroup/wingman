@@ -133,9 +133,11 @@ When **S27A GREEN**, S28 may start. S27B stays OPEN until Twilio Verify phone pr
 
 ### Fraud Guard 60410 (field testers, Luxembourg `+352`)
 
-If Send code succeeds in the API but **no SMS** arrives, and Twilio shows **60410**, Fraud Guard has **prefix-blocked** the destination (often `+352`) for ~12 hours. **Do not** disable Fraud Guard. **Do not** open Verify Geo Permissions globally.
+If Send code succeeds in the API but **no SMS** arrives, and Twilio shows **60410**, Fraud Guard has **prefix-blocked** the destination (often `+352`) for ~12 hours. **Do not** disable Fraud Guard. **Do not** open Verify Geo Permissions globally. The public UI must show a wait message (FR/EN), never raw “Verification failed”.
 
 Ops: Safe List **only** authorized field-test E.164s (`+352XXXXXXXX`) on the **Verify** Service **`VA…`** (not Conversations **`IS…`**). Exact Console clicks: [`FIELD_TEST_OTP_SAFE_LIST.md`](./FIELD_TEST_OTP_SAFE_LIST.md).
+
+After Safe List or cooldown, the next human check is: **number → SMS → code → session → `/me` → Living Map → kill/reopen**. Do not spam `+352` OTP until that gate is open.
 
 **PRODUCT PROTOCOL READY: NO** until the Evidence Pack below is filled.
 

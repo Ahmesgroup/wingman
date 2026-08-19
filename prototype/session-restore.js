@@ -55,7 +55,17 @@
     return fallback === 'fr' ? 'fr' : 'en';
   }
 
-  /** localStorage keys used by prototype/api.js — never surface values in UI. */
+  /** localStorage keys used by prototype/api.js — never surface values in UI.
+   *  PWA ASSET_V / Cache API bust must never delete these. */
+  var AUTH_STORAGE_KEYS = [
+    'wingman_access_token',
+    'wingman_refresh_token',
+    'wingman_device_id',
+    'wingman_user_id',
+    'wingman_access_expires',
+    'wingman_refresh_expires',
+  ];
+
   function hasLocalTokens() {
     try {
       return Boolean(
@@ -82,6 +92,7 @@
     nextAuthedView: nextAuthedView,
     localeFromProfile: localeFromProfile,
     bootView: bootView,
+    AUTH_STORAGE_KEYS: AUTH_STORAGE_KEYS,
     hasLocalTokens: hasLocalTokens,
     holdOnboarding: holdOnboarding,
   };

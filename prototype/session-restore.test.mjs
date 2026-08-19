@@ -52,4 +52,10 @@ describe('session restore routing', () => {
     assert.equal(SR.holdOnboarding({ hasSession: false, restoring: true }), true);
     assert.equal(SR.holdOnboarding({ hasSession: false }), false);
   });
+
+  it('lists durable auth keys the PWA must not wipe', () => {
+    assert.ok(SR.AUTH_STORAGE_KEYS.includes('wingman_refresh_token'));
+    assert.ok(SR.AUTH_STORAGE_KEYS.includes('wingman_access_token'));
+    assert.ok(SR.AUTH_STORAGE_KEYS.includes('wingman_device_id'));
+  });
 });

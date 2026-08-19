@@ -32,6 +32,11 @@ END-TO-END PROTOCOL : PENDING
 PRODUCT PROTOCOL READY : NO
 
 NEXT GATE:
+Twilio Fraud Guard 60410 may still pause SMS to +352 until Safe List or ~12h cooldown.
+Do not disable Fraud Guard. Do not send more +352 OTP until that lifts.
+Then: number → SMS → code → session → /me → Living Map → kill/reopen.
+Then two real phones for this Evidence Pack.
+
 Two real phones.
 Public production URL only: https://wingman-prototype.vercel.app/
 No x-user-id. No synthetic peers. No developer intervention.

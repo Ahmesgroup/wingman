@@ -1,5 +1,8 @@
 /* Wingman web push SW — display only. No phone numbers, no selfies.
-   ASSET_V is stamped at deploy so browsers pick up a new worker. */
+   ASSET_V is stamped at deploy so browsers pick up a new worker.
+   Activate may delete Cache API shells only. Never localStorage / IndexedDB.
+   ASSET_V bump must not clear wingman_access_token, wingman_refresh_token,
+   wingman_device_id, wingman_user_id, or wingman_* auth keys. */
 var ASSET_V = 'dev';
 
 self.addEventListener('install', function (event) {

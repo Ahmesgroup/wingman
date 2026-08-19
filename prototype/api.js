@@ -159,6 +159,9 @@
         throw err;
       }
       const headers = {};
+      if (!accessToken && refreshToken && !reqOpts.public && !reqOpts.forceDevHeader && !preferDevHeader) {
+        try { await refreshSession(); } catch (_) { /* request may 401 below */ }
+      }
       if (accessToken && !reqOpts.forceDevHeader) {
         headers.Authorization = 'Bearer ' + accessToken;
         headers['x-device-id'] = deviceId;

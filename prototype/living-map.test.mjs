@@ -390,6 +390,10 @@ describe('protocol overlays stay on the Living Map', () => {
     assert.match(sw, /caches\.delete/);
     assert.match(sw, /cache: 'no-store'/);
     assert.match(sw, /skipWaiting/);
+    const swCode = sw.replace(/\/\*[\s\S]*?\*\//g, '');
+    assert.doesNotMatch(swCode, /localStorage/);
+    assert.doesNotMatch(swCode, /indexedDB/);
+    assert.match(sw, /ASSET_V bump must not clear wingman_access_token/);
     assert.match(app, /function ensureServiceWorker/);
     assert.match(writeCfg, /VERCEL_GIT_COMMIT_SHA/);
     assert.match(writeCfg, /bustHtmlAssets/);

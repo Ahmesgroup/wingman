@@ -256,12 +256,15 @@ async function withLoading(label, fn) {
 
 function humanApiCopy(e) {
   const code = e && e.code;
-  if (code === 'UNAUTHORIZED') return t('t_auth_required');
+  if (code === 'UNAUTHORIZED' || code === 'SESSION_INVALID' || code === 'SESSION_REVOKED' || code === 'DEVICE_MISMATCH') {
+    return t('t_auth_required');
+  }
   if (code === 'OTP_EXPIRED') return t('t_otp_expired');
-  if (code === 'OTP_RATE_LIMITED') return t('t_otp_rate');
+  if (code === 'OTP_RATE_LIMITED' || (e && e.status === 429)) return t('t_otp_rate');
   if (code === 'PHONE_INVALID') return t('t_bad_phone');
-  if (code === 'OTP_PROVIDER_UNAVAILABLE') return t('t_otp_unavailable');
+  if (code === 'OTP_PROVIDER_UNAVAILABLE' || (e && e.status === 503)) return t('t_otp_unavailable');
   if (code === 'PHONE_NOT_ALLOWED') return t('t_otp_not_allowed');
+  if (/60410/.test(String((e && e.message) || ''))) return t('t_otp_rate');
   if (code === 'VALIDATION_REQUIRED' && e && e.details && e.details.partial) return t('t_outcome_saved');
   if (code === 'CAMERA_DENIED') return t('t_cam_required');
   const raw = String((e && e.message) || '');
@@ -307,7 +310,9 @@ function clearProtoSession() {
 }
 
 function isAuthedSession() {
-  return Boolean(api && api.hasSession && api.userId && api.userId !== 'proto-alex');
+  // Tokens are identity. Do not require wingman_user_id — a PWA reopen can
+  // restore via refresh before /me writes the user id back.
+  return Boolean(api && api.hasSession && api.userId !== 'proto-alex');
 }
 
 /** Public product: protocol screens need OTP session — never resume a ghost Radar. */
@@ -3136,12 +3141,23 @@ async function restoreIdentityAndRoute() {
         const me = await api.me();
         applyRestoredMe(me);
       } catch (e) {
-        if (e && (e.code === 'UNAUTHORIZED' || e.status === 401)) {
+        const hard = e && (
+          e.status === 401 ||
+          e.code === 'UNAUTHORIZED' ||
+          e.code === 'SESSION_INVALID' ||
+          e.code === 'SESSION_REVOKED' ||
+          e.code === 'DEVICE_MISMATCH'
+        );
+        if (hard) {
           try { api.clearSession(); } catch (_) { /* ignore */ }
           finishSessionRestore();
+          feedback('busy', t('t_auth_required'));
           show('v-phone');
           return;
         }
+        finishSessionRestore();
+        feedback('offline', t('t_api_unreachable'));
+        return;
       }
     }
     const dest = SR.bootView({
@@ -3163,6 +3179,7 @@ async function restoreIdentityAndRoute() {
     hasSession: false,
     hadStoredTokens: Boolean(api && api.hadBootTokens),
   });
+  if (dest === 'v-phone') feedback('busy', t('t_auth_required'));
   if (dest !== 'v-splash' && dest !== state.viewId) show(dest);
   finishSessionRestore();
 }
@@ -3776,11 +3793,12 @@ $$('#otp-inputs input').forEach((inp, idx, arr) => {
 
 function otpHumanCopy(e) {
   const code = e && e.code;
-  if (code === 'OTP_RATE_LIMITED') return t('t_otp_rate');
+  if (code === 'OTP_RATE_LIMITED' || (e && e.status === 429)) return t('t_otp_rate');
   if (code === 'PHONE_INVALID') return t('t_bad_phone');
-  if (code === 'OTP_PROVIDER_UNAVAILABLE') return t('t_otp_unavailable');
+  if (code === 'OTP_PROVIDER_UNAVAILABLE' || (e && e.status === 503)) return t('t_otp_unavailable');
   if (code === 'PHONE_NOT_ALLOWED') return t('t_otp_not_allowed');
   if (code === 'OTP_EXPIRED') return t('t_otp_expired');
+  if (/60410/.test(String((e && e.message) || ''))) return t('t_otp_rate');
   return t('t_otp_bad');
 }
 

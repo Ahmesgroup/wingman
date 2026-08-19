@@ -112,4 +112,13 @@ assert(html.includes('id="outcome-wait"'), 'outcome waiting copy missing in HTML
 assert(html.includes('id="pulse-legacy"') && html.includes('qa-only'), 'fake Pulse legacy must stay qa-only');
 assert(html.includes('id="destiny-card"') && html.includes('hidden'), 'Destiny card must stay hidden by default');
 
+assert(src.includes("if (code === 'OTP_RATE_LIMITED' || (e && e.status === 429)) return t('t_otp_rate')"), '60410 wait copy missing');
+assert(src.includes("if (code === 'OTP_PROVIDER_UNAVAILABLE' || (e && e.status === 503)) return t('t_otp_unavailable')"), 'OTP provider wait copy missing');
+assert(src.includes("SMS is paused for this number right now"), 'EN 60410 wait copy missing');
+assert(src.includes("SMS momentanément en pause pour ce numéro"), 'FR 60410 wait copy missing');
+assert(src.includes("La vérification SMS est temporairement indisponible"), 'FR provider wait copy missing');
+assert(!src.includes('Verification failed'), 'generic Verification failed must not ship in UI copy');
+assert(fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8').includes('!accessToken && refreshToken'), 'refresh without access token missing');
+assert(src.includes("api.userId !== 'proto-alex'"), 'token-only session restore missing');
+
 console.log('protocol-client.regression.test.mjs: ok');

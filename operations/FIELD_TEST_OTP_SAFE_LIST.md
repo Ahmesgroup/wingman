@@ -130,3 +130,13 @@ Use **only** the public product URL. No Nest URL, no `?api=`, no `?qa=1`.
 If SMS still fails: in Console, **Monitor** → **Logs** → **Errors** / Verify **Blocked Verifications** — if **60410** remains on a **non**-safe-listed number, wait for prefix cooldown or confirm the E.164 is actually on the Safe List (§3 GET). If Fraud Guard was turned off, **turn it back on** and use Safe List only.
 
 **PRODUCT PROTOCOL READY stays NO** until the S27B Evidence Pack in [`S27_IDENTITY_OTP.md`](./S27_IDENTITY_OTP.md) is complete. This runbook only unblocks delivery for listed testers.
+
+## Next human check (after Safe List or ~12h cooldown)
+
+Do **not** keep sending OTP to `+352` while 60410 is active. When Twilio says the prefix or the listed E.164 can receive SMS:
+
+1. Public site only → number → SMS arrives → 6-digit code → session tokens persist  
+2. `GET /me` succeeds → Living Map (not onboarding) if profile+consent are complete  
+3. Kill/reopen the PWA → same session, not forced back to phone  
+
+Two-phone Evidence Pack still starts only after this SMS path works. **PRODUCT PROTOCOL READY = NO.** **REAL SMS still NOT RUN.**
